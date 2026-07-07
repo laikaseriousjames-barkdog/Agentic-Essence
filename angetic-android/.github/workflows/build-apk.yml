@@ -1,0 +1,52 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [android-app]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: angetic-android
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept SDK licenses
+        run: yes | sdkmanager --licenses || true
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build debug APK
+        run: gradle assembleDebug --no-daemon --stacktrace
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: angetic-essence-android
+          path: angetic-android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publish APK to gh-pages downloads folder
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git clone --branch gh-pages https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git /tmp/gh-pages-repo
+          mkdir -p /tmp/gh-pages-repo/downloads
+          cp app/build/outputs/apk/debug/app-debug.apk /tmp/gh-pages-repo/downloads/AngeticEssence-Android.apk
+          cd /tmp/gh-pages-repo
+          git add downloads/AngeticEssence-Android.apk
+          git commit -m "Auto-publish latest Android APK build" || echo "no changes"
+          git push

@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Angetic Essence</string>
+    <string name="accessibility_service_description">Lets the Angetic Essence agent read what\'s on screen so it knows what to tap, type, or navigate — the same technology screen readers use, repurposed for AI task automation.</string>
+</resources>

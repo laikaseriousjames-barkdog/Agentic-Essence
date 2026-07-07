@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.AngeticEssence" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#00E5CC</item>
+        <item name="colorPrimaryDark">#0A0E1A</item>
+        <item name="colorAccent">#00E5CC</item>
+        <item name="android:windowBackground">#0A0E1A</item>
+    </style>
+</resources>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="#0A0E1A">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Angetic Essence"
+        android:textColor="#00E5CC"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="On-device agent — Shizuku powered"
+        android:textColor="#8A93A6"
+        android:textSize="13sp"
+        android:layout_marginBottom="20dp" />
+
+    <Button
+        android:id="@+id/grantShizukuBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="1. Connect Shizuku"
+        android:layout_marginBottom="10dp" />
+
+    <Button
+        android:id="@+id/openAccessibilityBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="2. Enable Accessibility Service"
+        android:layout_marginBottom="10dp" />
+
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Status: not connected"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="20dp" />
+
+    <EditText
+        android:id="@+id/taskInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="e.g. Reply to the latest WhatsApp message with 'on my way'"
+        android:textColorHint="#8A93A6"
+        android:textColor="#FFFFFF"
+        android:background="#1A2030"
+        android:padding="12dp"
+        android:layout_marginBottom="10dp" />
+
+    <Button
+        android:id="@+id/runTaskBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Run Task"
+        android:backgroundTint="#00E5CC"
+        android:layout_marginBottom="16dp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/logText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Agent log will appear here…"
+            android:textColor="#8A93A6"
+            android:fontFamily="monospace"
+            android:textSize="12sp" />
+    </ScrollView>
+
+</LinearLayout>
