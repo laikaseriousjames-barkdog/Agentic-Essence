@@ -5,6 +5,7 @@ import android.util.Log
 import rikka.shizuku.Shizuku
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.lang.reflect.Method
 
 /**
  * Wraps Shizuku so the agent can run privileged shell commands (input taps/swipes/text,
@@ -20,6 +21,18 @@ object ShizukuManager {
     private const val TAG = "AngeticShizuku"
 
     var onPermissionResult: ((granted: Boolean) -> Unit)? = null
+
+    // Shizuku's own AIDL-backed process launcher (Shizuku.newProcess) is marked private
+    // in modern versions of the library (a known Shizuku quirk) — Shizuku's own official
+    // demo app works around this via reflection, which we replicate here.
+    private val newProcessMethod: Method by lazy {
+        Shizuku::class.java.getDeclaredMethod(
+            "newProcess",
+            Array<String>::class.java,
+            Array<String>::class.java,
+            String::class.java
+        ).apply { isAccessible = true }
+    }
 
     private val permissionListener = Shizuku.OnRequestPermissionResultListener { requestCode, grantResult ->
         if (requestCode == REQUEST_CODE) {
@@ -46,12 +59,7 @@ object ShizukuManager {
 
     fun requestPermission() {
         try {
-            if (Shizuku.isPreV11()) {
-                // Pre-API 11 Shizuku permission model — handled via legacy request
-                Shizuku.requestPermission(REQUEST_CODE)
-            } else {
-                Shizuku.requestPermission(REQUEST_CODE)
-            }
+            Shizuku.requestPermission(REQUEST_CODE)
         } catch (e: Throwable) {
             Log.e(TAG, "requestPermission failed", e)
         }
@@ -70,7 +78,7 @@ object ShizukuManager {
     fun runCommand(cmd: String): String {
         if (!hasPermission()) return "ERROR: Shizuku permission not granted"
         return try {
-            val process = Shizuku.newProcess(arrayOf("sh", "-c", cmd), null, null)
+            val process = newProcessMethod.invoke(null, arrayOf("sh", "-c", cmd), null, null) as Process
             val reader = BufferedReader(InputStreamReader(process.inputStream))
             val output = reader.readText()
             process.waitFor()
