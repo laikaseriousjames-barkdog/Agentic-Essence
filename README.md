@@ -51,7 +51,7 @@ No cloud. No censorship. No rate limits. **Your hardware, your swarm.**
 
 ### Step 1 — Download the Free App
 
-[![Download](https://img.shields.io/badge/Download_Free_App-0d1222?style=for-the-badge&logo=windows&logoColor=06b6d4)](https://github.com/laikaseriousjames-barkdog/Angetic-Essence/releases/latest/download/Angetic-Essencev1.exe)
+[![Download](https://img.shields.io/badge/Download_Free_App-0d1222?style=for-the-badge&logo=windows&logoColor=06b6d4)](https://github.com/laikaseriousjames-barkdog/Angetic-Essence/releases/latest/download/Angetic-Essence-Setup-2.5.0.exe)
 
 ### Step 2 — Purchase a Pro License Key
 
