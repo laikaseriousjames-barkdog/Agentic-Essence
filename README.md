@@ -1,26 +1,26 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/laikaseriousjames-barkdog/Angetic-Essence/main/angetic-logo.svg" alt="Angetic Essence" width="80" />
+<img src="https://raw.githubusercontent.com/laikaseriousjames-barkdog/Agentic-Essence/main/agentic-logo.svg" alt="Agentic Essence" width="80" />
 
-# Angetic Essence
+# Agentic Essence
 
 **Autonomous AI, Untethered.**
 
 A fully local, hardware-locked Tri-Agent orchestration console.  
 Execute system commands, autonomous network pentesting, and surgical codebase patching from a single command center.
 
-[![Version](https://img.shields.io/badge/version-v1.0.0-06b6d4?style=for-the-badge&logo=github)](https://github.com/laikaseriousjames-barkdog/Angetic-Essence/releases)
+[![Version](https://img.shields.io/badge/version-v1.0.0-06b6d4?style=for-the-badge&logo=github)](https://github.com/laikaseriousjames-barkdog/Agentic-Essence/releases)
 [![License](https://img.shields.io/badge/license-proprietary-8b5cf6?style=for-the-badge)](#license)
-[![Platform](https://img.shields.io/badge/platform-Windows-0078D6?style=for-the-badge&logo=windows)](https://github.com/laikaseriousjames-barkdog/Angetic-Essence/releases)
-[![Live Site](https://img.shields.io/badge/live_site-visit-10b981?style=for-the-badge&logo=netlify)](https://laikaseriousjames-barkdog.github.io/Angetic-Essence/)
+[![Platform](https://img.shields.io/badge/platform-Windows-0078D6?style=for-the-badge&logo=windows)](https://github.com/laikaseriousjames-barkdog/Agentic-Essence/releases)
+[![Live Site](https://img.shields.io/badge/live_site-visit-10b981?style=for-the-badge&logo=netlify)](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/)
 
 </div>
 
 ---
 
-## What is Angetic Essence?
+## What is Agentic Essence?
 
-Angetic Essence is a sandboxed AI agent framework that deploys **three self-evolving historical agents** working in parallel — a Commander, Developer, and Tester — to tackle complex, long-horizon tasks on your local hardware.
+Agentic Essence is a sandboxed AI agent framework that deploys **three self-evolving historical agents** working in parallel — a Commander, Developer, and Tester — to tackle complex, long-horizon tasks on your local hardware.
 
 No cloud. No censorship. No rate limits. **Your hardware, your swarm.**
 
@@ -51,7 +51,7 @@ No cloud. No censorship. No rate limits. **Your hardware, your swarm.**
 
 ### Step 1 — Download the Free App
 
-[![Download](https://img.shields.io/badge/Download_Free_App-0d1222?style=for-the-badge&logo=windows&logoColor=06b6d4)](https://github.com/laikaseriousjames-barkdog/Angetic-Essence/releases/latest/download/Angetic-Essence-Setup-2.5.0.exe)
+[![Download](https://img.shields.io/badge/Download_Free_App-0d1222?style=for-the-badge&logo=windows&logoColor=06b6d4)](https://github.com/laikaseriousjames-barkdog/Agentic-Essence/releases/latest/download/Agentic-Essence-Setup-2.5.0.exe)
 
 ### Step 2 — Purchase a Pro License Key
 
@@ -75,7 +75,7 @@ The license is HWID-locked to your machine and works fully offline after activat
 
 ## Security Model
 
-Angetic Essence uses a **Zero-Trust Cryptographic Licensing** model:
+Agentic Essence uses a **Zero-Trust Cryptographic Licensing** model:
 
 - **HWID Fingerprinting** — License is bound to your hardware, non-transferable
 - **Ed25519/RSA Asymmetric Validation** — License verified offline via public-key cryptography
@@ -87,7 +87,7 @@ Angetic Essence uses a **Zero-Trust Cryptographic Licensing** model:
 ## Repository Structure
 
 ```
-Angetic-Essence/
+Agentic-Essence/
 ├── index.html          # Landing page
 ├── styles.css          # Site styles
 ├── downloads/          # Release binaries
@@ -100,14 +100,14 @@ Angetic-Essence/
 ## Contact & Support
 
 - 📧 Email: [laikaseriousjames@gmail.com](mailto:laikaseriousjames@gmail.com)
-- 🌐 Website: [laikaseriousjames-barkdog.github.io/Angetic-Essence](https://laikaseriousjames-barkdog.github.io/Angetic-Essence/)
+- 🌐 Website: [laikaseriousjames-barkdog.github.io/Agentic-Essence](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/)
 
 ---
 
 ## License
 
-Angetic Essence is proprietary software. All rights reserved.  
+Agentic Essence is proprietary software. All rights reserved.  
 See [EULA](docs/EULA.md) for terms of use.
 
-© 2026 Angetic Essence.
+© 2026 Agentic Essence.
 
