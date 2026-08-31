@@ -7,11 +7,17 @@
     <meta property="og:title" content="Angetic Essence — Autonomous AI, Untethered.">
     <meta property="og:description" content="Deploy 3 self-evolving AI agents. Kali Linux bridge, ADB automation, surgical AST patching. Your hardware, your swarm.">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://laikaseriousjames-barkdog.github.io/Angetic-Essence/">
+    <meta property="og:url" content="https://agentic-essence.com/">
+    <meta name="theme-color" content="#0B0C10">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Angetic Essence">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Angetic Essence — Autonomous AI, Untethered.">
     <meta name="twitter:description" content="Deploy 3 self-evolving AI agents. Kali Linux, ADB, AST patching. No cloud limits.">
     <title>Angetic Essence — Local Autonomous AI Agent Cyberdeck</title>
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -347,6 +353,15 @@
             if (a.getAttribute('href') === '#' + current) a.classList.add('active');
         });
     }, { passive: true });
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js').catch(err => {
+                console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+    }
     </script>
 </body>
 </html>
