@@ -1,8 +1,10 @@
 const CACHE_NAME = 'angetic-essence-v1';
 const ASSETS = [
+  '/',
   '/index.html',
   '/styles.css',
-  '/manifest.json'
+  '/manifest.json',
+  '/favicon.svg'
 ];
 
 self.addEventListener('install', event => {
