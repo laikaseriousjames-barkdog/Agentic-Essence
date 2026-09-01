@@ -30,18 +30,22 @@ def test_asset_files_integrity():
 
     with open(index_html, "r", encoding="utf-8") as f:
         html = f.read()
-        assert "agentic_essence" in html
-        assert "turingState" in html
-        assert "knuthState" in html
-        assert "lovelaceState" in html
-        assert "terminalOutput" in html
-        assert "taskInput" in html
-        assert "deployBtn" in html
+        assert "chatViewport" in html
+        assert "chatInput" in html
+        assert "sendBtn" in html
+        assert "micBtn" in html
+        assert "pillTuring" in html
+        assert "pillKnuth" in html
+        assert "pillLovelace" in html
 
     with open(app_js, "r", encoding="utf-8") as f:
         js = f.read()
-        assert "deploySwarm" in js
-        assert "pollinations" in js
+        assert "handleUserMessage" in js
+        assert "makeCall" in js
+        assert "sendSms" in js
+        assert "setAlarm" in js
+        assert "openApp" in js
+        assert "openMaps" in js
         assert "AndroidBridge" in js
 
 
@@ -50,10 +54,21 @@ def test_bridge_methods_consistency():
     with open(java_bridge, "r", encoding="utf-8") as f:
         java_content = f.read()
 
-    # Extract all @JavascriptInterface methods
     js_interfaces = re.findall(r"@JavascriptInterface\s+public\s+[\w<>]+\s+(\w+)\s*\(", java_content)
 
     expected_methods = [
+        "makePhoneCall",
+        "dialPhoneNumber",
+        "sendSmsDirect",
+        "composeSms",
+        "findContactNumber",
+        "getAllContactsJson",
+        "openAppByName",
+        "setDeviceAlarm",
+        "setDeviceTimer",
+        "openMapsNavigation",
+        "searchWeb",
+        "startVoiceRecognition",
         "showToast",
         "vibrate",
         "toggleFlashlight",

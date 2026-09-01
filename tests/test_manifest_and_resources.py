@@ -16,7 +16,6 @@ def test_manifest_structure():
     assert root.tag == "manifest"
     assert root.attrib.get("package") == "org.antigravity.agenticessence"
 
-    # Check application element
     app = root.find("application")
     assert app is not None, "<application> missing in AndroidManifest.xml"
     assert app.attrib.get("{http://schemas.android.com/apk/res/android}label") == "@string/app_name"
@@ -31,12 +30,17 @@ def test_manifest_structure():
     assert main_activity is not None, "MainActivity not defined in manifest"
     assert main_activity.attrib.get("{http://schemas.android.com/apk/res/android}exported") == "true"
 
-    # Check permissions
+    # Check telephony, SMS, contacts, alarm, and hardware permissions
     permissions = [elem.attrib.get("{http://schemas.android.com/apk/res/android}name") for elem in root.findall("uses-permission")]
+    assert "android.permission.CALL_PHONE" in permissions
+    assert "android.permission.SEND_SMS" in permissions
+    assert "android.permission.READ_SMS" in permissions
+    assert "android.permission.READ_CONTACTS" in permissions
+    assert "android.permission.SET_ALARM" in permissions
     assert "android.permission.INTERNET" in permissions
-    assert "android.permission.VIBRATE" in permissions
     assert "android.permission.CAMERA" in permissions
     assert "android.permission.RECORD_AUDIO" in permissions
+    assert "android.permission.VIBRATE" in permissions
 
 
 def test_resource_files():
@@ -52,7 +56,6 @@ def test_resource_files():
     assert os.path.isfile(layout_path)
     assert os.path.isfile(icon_path)
 
-    # Check icon is valid png
     with open(icon_path, "rb") as f:
         header = f.read(8)
         assert header.startswith(b"\x89PNG\r\n\x1a\n"), "Icon is not a valid PNG"

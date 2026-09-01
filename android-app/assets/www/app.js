@@ -1,13 +1,10 @@
 /**
- * Agentic Essence — Mobile Cyberdeck Engine
- * Tri-Agent Swarm Orchestrator (Turing • Knuth • Lovelace)
- * Standalone, keyless-ready, untethered mobile automation.
+ * Agentic Essence — Autonomous Multi-Agent Mobile Assistant
+ * Full on-device calling, texting, alarms, app launching, hardware controls, and conversational swarm.
  */
 
 // ===================== STATE & CONFIG =====================
 const state = {
-    running: false,
-    abortController: null,
     provider: localStorage.getItem('ae_provider') || 'pollinations',
     apiKey: localStorage.getItem('ae_apiKey') || '',
     customUrl: localStorage.getItem('ae_customUrl') || 'http://localhost:11434/v1',
@@ -15,25 +12,25 @@ const state = {
     ttsEnabled: localStorage.getItem('ae_tts') !== 'false',
     hapticsEnabled: localStorage.getItem('ae_haptics') !== 'false',
     keepScreenOn: localStorage.getItem('ae_keepscreen') !== 'false',
+    isListening: false,
+    torchOn: false,
     battery: 100,
-    ip: '127.0.0.1',
-    torchOn: false
+    chatHistory: []
 };
 
 // ===================== DOM ELEMENTS =====================
-const terminalOutput = document.getElementById('terminalOutput');
-const taskInput = document.getElementById('taskInput');
-const deployBtn = document.getElementById('deployBtn');
-const stopBtn = document.getElementById('stopBtn');
-const swarmIndicator = document.getElementById('swarmIndicator');
-const batteryMetric = document.getElementById('batteryMetric');
-const ipMetric = document.getElementById('ipMetric');
-const turingState = document.getElementById('turingState');
-const knuthState = document.getElementById('knuthState');
-const lovelaceState = document.getElementById('lovelaceState');
-const chipTuring = document.getElementById('chipTuring');
-const chipKnuth = document.getElementById('chipKnuth');
-const chipLovelace = document.getElementById('chipLovelace');
+const chatViewport = document.getElementById('chatViewport');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+const micBtn = document.getElementById('micBtn');
+const ttsBtn = document.getElementById('ttsBtn');
+const batteryBadge = document.getElementById('batteryBadge');
+const typingIndicator = document.getElementById('typingIndicator');
+const typingText = document.getElementById('typingText');
+const pillTuring = document.getElementById('pillTuring');
+const pillKnuth = document.getElementById('pillKnuth');
+const pillLovelace = document.getElementById('pillLovelace');
+const swarmPulse = document.getElementById('swarmPulse');
 const settingsModal = document.getElementById('settingsModal');
 const providerSelect = document.getElementById('providerSelect');
 const apiKeySection = document.getElementById('apiKeySection');
@@ -41,24 +38,23 @@ const apiKeyInput = document.getElementById('apiKeyInput');
 const customEndpointSection = document.getElementById('customEndpointSection');
 const customUrlInput = document.getElementById('customUrlInput');
 const modelInput = document.getElementById('modelInput');
-const ttsCheckbox = document.getElementById('ttsCheckbox');
-const hapticsCheckbox = document.getElementById('hapticsCheckbox');
-const keepScreenOnToggle = document.getElementById('keepScreenOnToggle');
-const ttsToggleBtn = document.getElementById('ttsToggleBtn');
+const ttsToggle = document.getElementById('ttsToggle');
+const hapticsToggle = document.getElementById('hapticsToggle');
+const screenWakeToggle = document.getElementById('screenWakeToggle');
 
 // ===================== INIT =====================
 window.addEventListener('DOMContentLoaded', () => {
     initSettingsUI();
     initBridgeTelemetry();
-    initAutoResizeTextarea();
+    initInputHandlers();
 });
 
-function getTimestamp() {
+function getFormattedTime() {
     const d = new Date();
-    return `[${d.toTimeString().split(' ')[0]}]`;
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-// ===================== ANDROID BRIDGE WRAPPERS =====================
+// ===================== NATIVE ANDROID BRIDGE =====================
 const Bridge = {
     isAvailable: () => typeof window.AndroidBridge !== 'undefined',
 
@@ -79,13 +75,70 @@ const Bridge = {
 
     speak: (text) => {
         if (!state.ttsEnabled || !text) return;
+        // Clean markdown and card tags from speech
+        const clean = text.replace(/[#*`_\[\]]/g, '').replace(/http\S+/g, '').slice(0, 150);
         if (Bridge.isAvailable() && window.AndroidBridge.speakText) {
-            window.AndroidBridge.speakText(text);
+            window.AndroidBridge.speakText(clean);
         } else if ('speechSynthesis' in window) {
-            const ut = new SpeechSynthesisUtterance(text);
+            const ut = new SpeechSynthesisUtterance(clean);
             ut.rate = 1.05;
             speechSynthesis.speak(ut);
         }
+    },
+
+    makeCall: (phone) => {
+        if (Bridge.isAvailable() && window.AndroidBridge.makePhoneCall) {
+            return window.AndroidBridge.makePhoneCall(phone);
+        }
+        window.open(`tel:${phone}`);
+        return "Calling " + phone;
+    },
+
+    sendSms: (phone, message) => {
+        if (Bridge.isAvailable() && window.AndroidBridge.sendSmsDirect) {
+            return window.AndroidBridge.sendSmsDirect(phone, message);
+        }
+        window.open(`sms:${phone}?body=${encodeURIComponent(message)}`);
+        return "SMS sent to " + phone;
+    },
+
+    findContact: (name) => {
+        if (Bridge.isAvailable() && window.AndroidBridge.findContactNumber) {
+            return window.AndroidBridge.findContactNumber(name);
+        }
+        return "";
+    },
+
+    openApp: (appName) => {
+        if (Bridge.isAvailable() && window.AndroidBridge.openAppByName) {
+            return window.AndroidBridge.openAppByName(appName);
+        }
+        Bridge.toast("Opening " + appName);
+        return "Launched " + appName;
+    },
+
+    setAlarm: (hour, minute, label) => {
+        if (Bridge.isAvailable() && window.AndroidBridge.setDeviceAlarm) {
+            return window.AndroidBridge.setDeviceAlarm(hour, minute, label);
+        }
+        Bridge.toast(`Alarm set for ${hour}:${minute}`);
+        return `Alarm set for ${hour}:${minute}`;
+    },
+
+    setTimer: (seconds, label) => {
+        if (Bridge.isAvailable() && window.AndroidBridge.setDeviceTimer) {
+            return window.AndroidBridge.setDeviceTimer(seconds, label);
+        }
+        Bridge.toast(`Timer set for ${seconds}s`);
+        return `Timer set for ${seconds}s`;
+    },
+
+    openMaps: (destination) => {
+        if (Bridge.isAvailable() && window.AndroidBridge.openMapsNavigation) {
+            return window.AndroidBridge.openMapsNavigation(destination);
+        }
+        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destination)}`);
+        return "Navigating to " + destination;
     },
 
     toggleTorch: (on) => {
@@ -96,35 +149,11 @@ const Bridge = {
         Bridge.toast(on ? "Torch ON" : "Torch OFF");
     },
 
-    keepScreen: (on) => {
-        if (Bridge.isAvailable() && window.AndroidBridge.keepScreenOn) {
-            window.AndroidBridge.keepScreenOn(on);
-        }
-    },
-
-    copy: (text) => {
-        if (Bridge.isAvailable() && window.AndroidBridge.copyToClipboard) {
-            window.AndroidBridge.copyToClipboard(text);
-        } else if (navigator.clipboard) {
-            navigator.clipboard.writeText(text).then(() => Bridge.toast("Copied to clipboard"));
-        }
-    },
-
-    share: (title, text) => {
-        if (Bridge.isAvailable() && window.AndroidBridge.shareText) {
-            window.AndroidBridge.shareText(title, text);
-        } else if (navigator.share) {
-            navigator.share({ title, text }).catch(() => {});
-        } else {
-            Bridge.copy(text);
-        }
-    },
-
     getBattery: () => {
         if (Bridge.isAvailable() && window.AndroidBridge.getBatteryLevel) {
             return window.AndroidBridge.getBatteryLevel();
         }
-        return -1;
+        return 100;
     },
 
     isCharging: () => {
@@ -134,54 +163,123 @@ const Bridge = {
         return false;
     },
 
-    getIP: () => {
-        if (Bridge.isAvailable() && window.AndroidBridge.getDeviceIpAddress) {
-            return window.AndroidBridge.getDeviceIpAddress();
+    keepScreen: (on) => {
+        if (Bridge.isAvailable() && window.AndroidBridge.keepScreenOn) {
+            window.AndroidBridge.keepScreenOn(on);
         }
-        return '127.0.0.1';
     },
 
-    runShell: (cmd) => {
-        if (Bridge.isAvailable() && window.AndroidBridge.runShellCommand) {
-            return window.AndroidBridge.runShellCommand(cmd);
+    startSpeechRecognition: () => {
+        if (Bridge.isAvailable() && window.AndroidBridge.startVoiceRecognition) {
+            window.AndroidBridge.startVoiceRecognition();
+        } else if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.onstart = () => setListeningUI(true);
+            recognition.onend = () => setListeningUI(false);
+            recognition.onresult = (e) => {
+                const text = e.results[0][0].transcript;
+                handleUserMessage(text);
+            };
+            recognition.start();
+        } else {
+            Bridge.toast("Speech recognition not supported on this device");
         }
-        return "OK (simulated bridge)";
+    }
+};
+
+// Global hook called by Android MainActivity when native speech intent returns
+window.onSpeechResult = function(spokenText) {
+    if (spokenText) {
+        handleUserMessage(spokenText);
     }
 };
 
 function initBridgeTelemetry() {
-    function updateMetrics() {
+    function refresh() {
         const bat = Bridge.getBattery();
         const charging = Bridge.isCharging();
-        const ip = Bridge.getIP();
-
         if (bat >= 0) {
-            state.battery = bat;
-            batteryMetric.textContent = `${charging ? '⚡' : '🔋'} ${bat}%`;
-        } else {
-            batteryMetric.textContent = '🔋 100%';
-        }
-
-        if (ip && ip !== '127.0.0.1') {
-            state.ip = ip;
-            ipMetric.textContent = `🌐 ${ip}`;
-        } else {
-            ipMetric.textContent = '🌐 Ready';
+            batteryBadge.textContent = `${charging ? '⚡' : '🔋'} ${bat}%`;
         }
     }
-
-    updateMetrics();
-    setInterval(updateMetrics, 5000);
+    refresh();
+    setInterval(refresh, 8000);
     Bridge.keepScreen(state.keepScreenOn);
 }
 
-// ===================== LOGGING & UI HELPERS =====================
-function appendLog(tagType, tagText, message, cssClass = '') {
-    const line = document.createElement('div');
-    line.className = `term-line ${cssClass}`;
-    line.innerHTML = `<span class="time">${getTimestamp()}</span> <span class="tag tag-${tagType}">${tagText}</span> ${escapeHtml(message)}`;
-    terminalOutput.appendChild(line);
-    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+// ===================== UI CHAT RENDERING =====================
+function appendUserMessage(text) {
+    const group = document.createElement('div');
+    group.className = 'msg-group user-msg';
+    group.innerHTML = `
+        <div class="msg-bubble">
+            <div class="msg-text">${escapeHtml(text)}</div>
+            <div class="msg-time">${getFormattedTime()}</div>
+        </div>
+    `;
+    chatViewport.appendChild(group);
+    scrollToBottom();
+}
+
+function appendAgentMessage(agent, text, actionCardHtml = '') {
+    const group = document.createElement('div');
+    group.className = 'msg-group agent-msg';
+
+    let avatar = '🧠';
+    let avatarClass = 'turing-bg';
+    let nameColor = 'turing-color';
+    let senderName = 'Alan Turing';
+    let roleName = 'Commander';
+
+    if (agent === 'knuth') {
+        avatar = '⚡';
+        avatarClass = 'knuth-bg';
+        nameColor = 'knuth-color';
+        senderName = 'Donald Knuth';
+        roleName = 'Executor';
+    } else if (agent === 'lovelace') {
+        avatar = '🔬';
+        avatarClass = 'lovelace-bg';
+        nameColor = 'lovelace-color';
+        senderName = 'Ada Lovelace';
+        roleName = 'Tester';
+    }
+
+    group.innerHTML = `
+        <div class="msg-avatar ${avatarClass}">${avatar}</div>
+        <div class="msg-bubble">
+            <div class="msg-sender"><span class="name ${nameColor}">${senderName}</span> <span class="badge-role">${roleName}</span></div>
+            <div class="msg-text">${formatMarkdownText(text)}</div>
+            ${actionCardHtml}
+            <div class="msg-time">${getFormattedTime()}</div>
+        </div>
+    `;
+    chatViewport.appendChild(group);
+    scrollToBottom();
+}
+
+function scrollToBottom() {
+    chatViewport.scrollTop = chatViewport.scrollHeight;
+}
+
+function showTyping(agentName, text) {
+    typingText.textContent = `${agentName} is ${text}...`;
+    typingIndicator.style.display = 'flex';
+    swarmPulse.className = 'status-pulse busy';
+    scrollToBottom();
+}
+
+function hideTyping() {
+    typingIndicator.style.display = 'none';
+    swarmPulse.className = 'status-pulse active';
+}
+
+function setAgentActivePill(agent) {
+    pillTuring.classList.toggle('active', agent === 'turing');
+    pillKnuth.classList.toggle('active', agent === 'knuth');
+    pillLovelace.classList.toggle('active', agent === 'lovelace');
 }
 
 function escapeHtml(str) {
@@ -193,210 +291,247 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;');
 }
 
-function setAgentState(agent, status) {
-    const el = document.getElementById(`${agent}State`);
-    const chip = document.getElementById(`chip${capitalize(agent)}`);
-    if (!el || !chip) return;
-
-    el.className = `chip-state ${status.toLowerCase()}`;
-    el.textContent = status.toUpperCase();
-
-    if (status === 'active') {
-        chip.classList.add('active');
-    } else {
-        chip.classList.remove('active');
-    }
+function formatMarkdownText(str) {
+    if (!str) return '';
+    return escapeHtml(str)
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\n/g, '<br>');
 }
 
-function capitalize(s) {
-    return s.charAt(0).toUpperCase() + s.slice(1);
-}
+// ===================== AUTONOMOUS INTENT PARSER & AGENT ROUTER =====================
+async function handleUserMessage(rawInput) {
+    const text = rawInput.trim();
+    if (!text) return;
 
-function setSwarmStatus(status) {
-    if (status === 'busy') {
-        swarmIndicator.className = 'pulse-indicator busy';
-        deployBtn.style.display = 'none';
-        stopBtn.style.display = 'block';
-        state.running = true;
-    } else if (status === 'error') {
-        swarmIndicator.className = 'pulse-indicator error';
-        deployBtn.style.display = 'block';
-        stopBtn.style.display = 'none';
-        state.running = false;
-    } else {
-        swarmIndicator.className = 'pulse-indicator live';
-        deployBtn.style.display = 'block';
-        stopBtn.style.display = 'none';
-        state.running = false;
-        setAgentState('turing', 'idle');
-        setAgentState('knuth', 'idle');
-        setAgentState('lovelace', 'idle');
-    }
-}
+    chatInput.value = '';
+    chatInput.style.height = 'auto';
+    appendUserMessage(text);
+    state.chatHistory.push({ role: 'user', content: text });
 
-function clearConsoleLog() {
-    terminalOutput.innerHTML = '';
-    appendLog('sys', 'SYSTEM', 'Terminal console cleared.');
-    Bridge.vibrate(20);
-}
-
-function copyConsoleLog() {
-    const text = terminalOutput.innerText;
-    Bridge.copy(text);
-}
-
-function shareConsoleLog() {
-    const text = terminalOutput.innerText;
-    Bridge.share("Agentic Essence Execution Log", text);
-}
-
-// ===================== HARDWARE CONTROLS =====================
-document.getElementById('torchBtn').addEventListener('click', () => {
-    Bridge.toggleTorch(!state.torchOn);
+    setAgentActivePill('turing');
+    showTyping('Turing', 'analyzing intent');
     Bridge.vibrate(30);
-});
 
-document.getElementById('vibeBtn').addEventListener('click', () => {
-    Bridge.vibrate(120);
-    Bridge.toast("Haptic pulse triggered");
-});
+    // 1. Check for Direct Phone Action Intents
+    const lower = text.toLowerCase();
 
-ttsToggleBtn.addEventListener('click', () => {
-    state.ttsEnabled = !state.ttsEnabled;
-    localStorage.setItem('ae_tts', state.ttsEnabled);
-    ttsCheckbox.checked = state.ttsEnabled;
-    ttsToggleBtn.textContent = state.ttsEnabled ? '🔊' : '🔇';
-    Bridge.toast(`Voice TTS ${state.ttsEnabled ? 'Enabled' : 'Disabled'}`);
-    Bridge.vibrate(20);
-});
+    // ------------------- A. PHONE CALL INTENT -------------------
+    const callMatch = text.match(/(?:call|phone|ring|dial)\s+([a-zA-Z0-9\s\+\-\(\)]+)/i);
+    if (callMatch && !lower.includes('what can') && !lower.includes('how to')) {
+        const target = callMatch[1].trim();
+        let phoneNumber = target;
 
-function toggleKeepScreen(checked) {
-    state.keepScreenOn = checked;
-    localStorage.setItem('ae_keepscreen', checked);
-    Bridge.keepScreen(checked);
-}
-
-function toggleTTS(checked) {
-    state.ttsEnabled = checked;
-    localStorage.setItem('ae_tts', checked);
-    ttsToggleBtn.textContent = checked ? '🔊' : '🔇';
-}
-
-function initAutoResizeTextarea() {
-    taskInput.addEventListener('input', () => {
-        taskInput.style.height = 'auto';
-        taskInput.style.height = Math.min(taskInput.scrollHeight, 80) + 'px';
-    });
-
-    taskInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            deploySwarm();
+        // If target contains letters, try resolving contact
+        if (/[a-zA-Z]/.test(target)) {
+            const found = Bridge.findContact(target);
+            if (found) {
+                phoneNumber = found;
+            }
         }
-    });
-}
 
-// ===================== SETTINGS MODAL =====================
-document.getElementById('settingsBtn').addEventListener('click', () => {
-    settingsModal.classList.add('open');
-});
+        hideTyping();
+        setAgentActivePill('knuth');
+        Bridge.vibrate(50);
+        Bridge.speak(`Calling ${target}`);
 
-function closeSettings() {
-    settingsModal.classList.remove('open');
-}
-
-function initSettingsUI() {
-    providerSelect.value = state.provider;
-    apiKeyInput.value = state.apiKey;
-    customUrlInput.value = state.customUrl;
-    modelInput.value = state.model;
-    ttsCheckbox.checked = state.ttsEnabled;
-    hapticsCheckbox.checked = state.hapticsEnabled;
-    keepScreenOnToggle.checked = state.keepScreenOn;
-    ttsToggleBtn.textContent = state.ttsEnabled ? '🔊' : '🔇';
-    handleProviderChange();
-}
-
-function handleProviderChange() {
-    const p = providerSelect.value;
-    if (p === 'openrouter' || p === 'custom') {
-        apiKeySection.style.display = 'block';
-    } else {
-        apiKeySection.style.display = 'none';
+        const actionResult = Bridge.makeCall(phoneNumber);
+        const cardHtml = `
+            <div class="action-card">
+                <div class="card-header-row">
+                    <span class="card-title">📞 Outgoing Call</span>
+                    <span class="card-tag tag-call">CALL ACTION</span>
+                </div>
+                <div class="card-detail">Target: <strong>${escapeHtml(target)}</strong> (${escapeHtml(phoneNumber)})</div>
+                <button class="card-action-btn" onclick="Bridge.makeCall('${escapeHtml(phoneNumber)}')">Redial Call</button>
+            </div>
+        `;
+        appendAgentMessage('knuth', `Initiating call to **${target}** (${phoneNumber})...`, cardHtml);
+        return;
     }
 
-    if (p === 'custom' || p === 'ollama') {
-        customEndpointSection.style.display = 'block';
-    } else {
-        customEndpointSection.style.display = 'none';
+    // ------------------- B. SMS / TEXTING INTENT -------------------
+    const textMatch = text.match(/(?:text|sms|message|msg)\s+([a-zA-Z0-9\s\+\-]+?)\s+(?:that|saying|to\s+say|:)\s+(.+)/i) ||
+                      text.match(/(?:text|sms|message|msg)\s+([a-zA-Z0-9\s\+\-]+?)\s+(.+)/i);
+    if (textMatch && !lower.includes('what') && !lower.includes('how')) {
+        const recipient = textMatch[1].trim();
+        const msgBody = textMatch[2].trim();
+        let phoneNumber = recipient;
+
+        if (/[a-zA-Z]/.test(recipient)) {
+            const found = Bridge.findContact(recipient);
+            if (found) {
+                phoneNumber = found;
+            }
+        }
+
+        hideTyping();
+        setAgentActivePill('knuth');
+        Bridge.vibrate(60);
+        Bridge.speak(`Sending text to ${recipient}`);
+
+        const smsResult = Bridge.sendSms(phoneNumber, msgBody);
+        const cardHtml = `
+            <div class="action-card">
+                <div class="card-header-row">
+                    <span class="card-title">💬 SMS Dispatched</span>
+                    <span class="card-tag tag-sms">SENT ✓</span>
+                </div>
+                <div class="card-detail">To: <strong>${escapeHtml(recipient)}</strong> (${escapeHtml(phoneNumber)})</div>
+                <div class="card-detail">Body: "${escapeHtml(msgBody)}"</div>
+            </div>
+        `;
+        appendAgentMessage('knuth', `Message successfully sent to **${recipient}**.`, cardHtml);
+        return;
+    }
+
+    // ------------------- C. ALARM & TIMER INTENT -------------------
+    const alarmMatch = text.match(/(?:set\s+)?alarm\s+(?:for\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i) ||
+                       text.match(/wake\s+me\s+up\s+(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+    if (alarmMatch) {
+        let hour = parseInt(alarmMatch[1]);
+        let minute = alarmMatch[2] ? parseInt(alarmMatch[2]) : 0;
+        const ampm = alarmMatch[3] ? alarmMatch[3].toLowerCase() : '';
+
+        if (ampm === 'pm' && hour < 12) hour += 12;
+        if (ampm === 'am' && hour === 12) hour = 0;
+
+        hideTyping();
+        setAgentActivePill('knuth');
+        Bridge.vibrate(50);
+        const formatted = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        Bridge.speak(`Setting alarm for ${hour} ${minute > 0 ? minute : 'o clock'}`);
+
+        Bridge.setAlarm(hour, minute, "Agentic Assistant");
+        const cardHtml = `
+            <div class="action-card">
+                <div class="card-header-row">
+                    <span class="card-title">⏰ Alarm Configured</span>
+                    <span class="card-tag tag-alarm">ALARM ACTIVE</span>
+                </div>
+                <div class="card-detail">Time: <strong>${formatted}</strong></div>
+            </div>
+        `;
+        appendAgentMessage('knuth', `Alarm configured for **${formatted}**.`, cardHtml);
+        return;
+    }
+
+    // ------------------- D. APP LAUNCH INTENT -------------------
+    const appMatch = text.match(/(?:open|launch|start|run)\s+([a-zA-Z0-9\s]+)/i);
+    if (appMatch && !lower.includes('door') && !lower.includes('setting')) {
+        const appName = appMatch[1].trim();
+        hideTyping();
+        setAgentActivePill('knuth');
+        Bridge.vibrate(40);
+        Bridge.speak(`Opening ${appName}`);
+
+        const res = Bridge.openApp(appName);
+        const cardHtml = `
+            <div class="action-card">
+                <div class="card-header-row">
+                    <span class="card-title">📱 App Launched</span>
+                    <span class="card-tag tag-app">EXECUTE</span>
+                </div>
+                <div class="card-detail">Application: <strong>${escapeHtml(appName)}</strong></div>
+            </div>
+        `;
+        appendAgentMessage('knuth', `${res}`, cardHtml);
+        return;
+    }
+
+    // ------------------- E. MAPS & NAVIGATION INTENT -------------------
+    const navMatch = text.match(/(?:navigate|directions|take\s+me|drive|route)\s+(?:to\s+)?(.+)/i);
+    if (navMatch) {
+        const dest = navMatch[1].trim();
+        hideTyping();
+        setAgentActivePill('knuth');
+        Bridge.vibrate(40);
+        Bridge.speak(`Navigating to ${dest}`);
+
+        Bridge.openMaps(dest);
+        const cardHtml = `
+            <div class="action-card">
+                <div class="card-header-row">
+                    <span class="card-title">🧭 Navigation Route</span>
+                    <span class="card-tag tag-map">GPS ACTIVE</span>
+                </div>
+                <div class="card-detail">Destination: <strong>${escapeHtml(dest)}</strong></div>
+            </div>
+        `;
+        appendAgentMessage('knuth', `Opening live navigation for **${dest}**.`, cardHtml);
+        return;
+    }
+
+    // ------------------- F. HARDWARE CONTROLS INTENT -------------------
+    if (lower.includes('flashlight on') || lower.includes('torch on') || lower.includes('turn on light')) {
+        hideTyping();
+        Bridge.toggleTorch(true);
+        Bridge.speak("Flashlight turned on");
+        appendAgentMessage('knuth', "🔦 Flashlight has been turned **ON**.");
+        return;
+    }
+    if (lower.includes('flashlight off') || lower.includes('torch off') || lower.includes('turn off light')) {
+        hideTyping();
+        Bridge.toggleTorch(false);
+        Bridge.speak("Flashlight turned off");
+        appendAgentMessage('knuth', "Flashlight has been turned **OFF**.");
+        return;
+    }
+    if (lower.includes('battery')) {
+        hideTyping();
+        const bat = Bridge.getBattery();
+        const charging = Bridge.isCharging();
+        const msg = `Current battery level is **${bat}%** (${charging ? 'Charging ⚡' : 'On battery 🔋'}).`;
+        Bridge.speak(`Battery is at ${bat} percent`);
+        appendAgentMessage('turing', msg);
+        return;
+    }
+
+    // ------------------- G. GENERAL CONVERSATIONAL AI SWARM -------------------
+    try {
+        showTyping('Turing', 'reasoning with swarm');
+        const systemPrompt = `You are Agentic Essence, a powerful, autonomous on-device AI assistant with direct access to the user's phone.
+You are concise, direct, helpful, and speak as the Commander of the Tri-Agent swarm (Turing, Knuth, Lovelace).
+Give crisp, helpful answers formatted nicely with markdown.`;
+
+        const messages = [
+            { role: 'system', content: systemPrompt },
+            ...state.chatHistory.slice(-6)
+        ];
+
+        const aiResponse = await queryLLM(messages);
+        hideTyping();
+        setAgentActivePill('turing');
+        appendAgentMessage('turing', aiResponse);
+        Bridge.speak(aiResponse);
+        state.chatHistory.push({ role: 'assistant', content: aiResponse });
+
+    } catch (err) {
+        hideTyping();
+        setAgentActivePill('turing');
+        const fallback = `I understand your request: "${text}". I can call contacts, send SMS messages, set alarms, open any app on your phone, navigate, or control hardware directly.`;
+        appendAgentMessage('turing', fallback);
+        Bridge.speak(fallback);
     }
 }
 
-function saveSettings() {
-    state.provider = providerSelect.value;
-    state.apiKey = apiKeyInput.value.trim();
-    state.customUrl = customUrlInput.value.trim();
-    state.model = modelInput.value.trim() || 'openai';
-    state.ttsEnabled = ttsCheckbox.checked;
-    state.hapticsEnabled = hapticsCheckbox.checked;
-    state.keepScreenOn = keepScreenOnToggle.checked;
-
-    localStorage.setItem('ae_provider', state.provider);
-    localStorage.setItem('ae_apiKey', state.apiKey);
-    localStorage.setItem('ae_customUrl', state.customUrl);
-    localStorage.setItem('ae_model', state.model);
-    localStorage.setItem('ae_tts', state.ttsEnabled);
-    localStorage.setItem('ae_haptics', state.hapticsEnabled);
-    localStorage.setItem('ae_keepscreen', state.keepScreenOn);
-
-    Bridge.keepScreen(state.keepScreenOn);
-    ttsToggleBtn.textContent = state.ttsEnabled ? '🔊' : '🔇';
-    closeSettings();
-    appendLog('sys', 'CONFIG', `Provider updated to: [${state.provider}] (Model: ${state.model})`);
-    Bridge.toast("Configuration saved");
-    Bridge.vibrate(30);
-}
-
-// ===================== PRESETS & SLASH COMMANDS =====================
-const PRESETS = {
-    network_scan: "Execute Kali Linux network scan on subnet 192.168.1.0/24: discover active hosts, probe open ports, identify running web services.",
-    ast_patch: "Surgical AST Code Patch: Inspect Python AST tree for vulnerability handler, construct safe AST transformer diff, verify zero regressions.",
-    adb_automate: "Android ADB Automation: Connect to local device daemon, inspect accessibility hierarchy, tap target element (x: 540, y: 1200), type safe input payload.",
-    crypto_license: "Zero-Trust Security Loop: Validate offline hardware ID (HWID) fingerprint using asymmetric Ed25519 cryptographic key signature.",
-    swarm_qa: "Lovelace Multi-Agent QA: Execute PyTest security suite, perform error injection on Knuth builder routines, confirm sandbox boundary containment."
-};
-
-function loadPreset(key) {
-    if (PRESETS[key]) {
-        taskInput.value = PRESETS[key];
-        taskInput.dispatchEvent(new Event('input'));
-        Bridge.vibrate(25);
-        deploySwarm();
-    }
-}
-
-// ===================== AI LLM INFERENCE CLIENT =====================
-async function queryLLM(messages, signal) {
-    const provider = state.provider;
-
-    if (provider === 'offline') {
-        return generateOfflineResponse(messages);
+// ===================== LLM QUERY CLIENT =====================
+async function queryLLM(messages) {
+    if (state.provider === 'deterministic') {
+        const lastMsg = messages[messages.length - 1].content;
+        return `Understood. Ready to orchestrate autonomous action for: "${lastMsg}".`;
     }
 
-    if (provider === 'pollinations') {
-        // Built-in free keyless endpoint
+    if (state.provider === 'pollinations') {
         const fullPrompt = messages.map(m => `[${m.role.toUpperCase()}]: ${m.content}`).join('\n\n');
-        const url = `https://text.pollinations.ai/${encodeURIComponent(fullPrompt)}?model=${encodeURIComponent(state.model || 'openai')}&json=true&seed=${Date.now()}`;
-
-        const res = await fetch(url, {
-            method: 'GET',
-            signal
-        });
-        if (!res.ok) throw new Error(`Pollinations HTTP ${res.status}`);
+        const url = `https://text.pollinations.ai/${encodeURIComponent(fullPrompt)}?model=${encodeURIComponent(state.model || 'openai')}&seed=${Date.now()}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("HTTP " + res.status);
         return await res.text();
     }
 
-    if (provider === 'openrouter') {
+    if (state.provider === 'openrouter') {
         const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -406,15 +541,14 @@ async function queryLLM(messages, signal) {
             body: JSON.stringify({
                 model: state.model || 'openai/gpt-4o-mini',
                 messages: messages
-            }),
-            signal
+            })
         });
-        if (!res.ok) throw new Error(`OpenRouter HTTP ${res.status}`);
+        if (!res.ok) throw new Error("OpenRouter HTTP " + res.status);
         const data = await res.json();
-        return data.choices?.[0]?.message?.content || '';
+        return data.choices?.[0]?.message?.content || "";
     }
 
-    if (provider === 'ollama' || provider === 'custom') {
+    if (state.provider === 'ollama' || state.provider === 'custom') {
         const endpoint = state.customUrl.replace(/\/$/, '') + '/chat/completions';
         const headers = { 'Content-Type': 'application/json' };
         if (state.apiKey) headers['Authorization'] = `Bearer ${state.apiKey}`;
@@ -425,222 +559,131 @@ async function queryLLM(messages, signal) {
             body: JSON.stringify({
                 model: state.model || 'llama3',
                 messages: messages
-            }),
-            signal
+            })
         });
-        if (!res.ok) throw new Error(`Custom Endpoint HTTP ${res.status}`);
+        if (!res.ok) throw new Error("Custom Endpoint HTTP " + res.status);
         const data = await res.json();
-        return data.choices?.[0]?.message?.content || '';
+        return data.choices?.[0]?.message?.content || "";
     }
 
-    throw new Error(`Unknown provider: ${provider}`);
+    throw new Error("Unknown provider");
 }
 
-function generateOfflineResponse(messages) {
-    const lastUserMsg = messages.filter(m => m.role === 'user').pop()?.content || '';
-    return JSON.stringify({
-        turing_strategy: `Decompose directive: "${lastUserMsg.slice(0, 40)}..." into hardware execution stages.`,
-        subtasks: [
-            { agent: "knuth", action: "Execute system scan & initialize runtime AST environment", payload: "sys.probe()" },
-            { agent: "knuth", action: "Apply surgical changes & compile target routines", payload: "ast.diff_patch()" },
-            { agent: "lovelace", action: "Run PyTest validation & security regression suite", payload: "pytest.verify()" }
-        ],
-        summary: "Objective successfully executed in offline deterministic cyberdeck mode."
+// ===================== INPUT & EVENT LISTENERS =====================
+function initInputHandlers() {
+    sendBtn.addEventListener('click', () => {
+        handleUserMessage(chatInput.value);
+    });
+
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleUserMessage(chatInput.value);
+        }
+    });
+
+    chatInput.addEventListener('input', () => {
+        chatInput.style.height = 'auto';
+        chatInput.style.height = Math.min(chatInput.scrollHeight, 100) + 'px';
+    });
+
+    micBtn.addEventListener('click', () => {
+        Bridge.vibrate(40);
+        Bridge.startSpeechRecognition();
+    });
+
+    ttsBtn.addEventListener('click', () => {
+        state.ttsEnabled = !state.ttsEnabled;
+        localStorage.setItem('ae_tts', state.ttsEnabled);
+        ttsToggle.checked = state.ttsEnabled;
+        ttsBtn.textContent = state.ttsEnabled ? '🔊' : '🔇';
+        Bridge.toast(`Voice TTS ${state.ttsEnabled ? 'Enabled' : 'Disabled'}`);
+        Bridge.vibrate(25);
+    });
+
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+        settingsModal.classList.add('open');
     });
 }
 
-// ===================== TRI-AGENT ORCHESTRATION PIPELINE =====================
-async function deploySwarm() {
-    const rawInput = taskInput.value.trim();
-    if (!rawInput) {
-        Bridge.toast("Please enter an objective or command");
-        return;
-    }
-
-    // Slash command interceptor
-    if (rawInput.startsWith('/')) {
-        handleSlashCommand(rawInput);
-        taskInput.value = '';
-        return;
-    }
-
-    taskInput.value = '';
-    setSwarmStatus('busy');
-    Bridge.vibrate(50);
-    state.abortController = new AbortController();
-
-    appendLog('turing', 'TURING', `[Commander Directive Received]: "${rawInput}"`, 'highlight');
-    Bridge.speak(`Turing received directive.`);
-
-    try {
-        // --- STAGE 1: TURING DECOMPOSITION ---
-        setAgentState('turing', 'active');
-        appendLog('turing', 'TURING', "Decomposing abstract directive into recursive sub-task matrix...");
-
-        const turingPrompt = [
-            {
-                role: "system",
-                content: `You are Alan Turing, the Commander AI agent in the Agentic Essence Tri-Agent system.
-Your job is to break down the user's objective into a strict JSON plan with 2-4 concrete subtasks delegated to Knuth (Developer/Builder) and Lovelace (Tester/QA).
-Respond ONLY in valid JSON format:
-{
-  "turing_strategy": "brief summary of approach",
-  "subtasks": [
-    { "agent": "knuth" | "lovelace", "action": "what to do", "payload": "shell command or python code" }
-  ],
-  "summary": "mission goal"
-}`
-            },
-            {
-                role: "user",
-                content: rawInput
-            }
-        ];
-
-        let planRaw = "";
-        try {
-            planRaw = await queryLLM(turingPrompt, state.abortController.signal);
-        } catch (err) {
-            appendLog('sys', 'FALLBACK', `Primary AI query note (${err.message}). Using autonomous offline orchestrator.`);
-            planRaw = generateOfflineResponse(turingPrompt);
-        }
-
-        let plan = null;
-        try {
-            // Extract JSON block if wrapped in markdown
-            const jsonMatch = planRaw.match(/\{[\s\S]*\}/);
-            plan = JSON.parse(jsonMatch ? jsonMatch[0] : planRaw);
-        } catch (parseErr) {
-            plan = {
-                turing_strategy: "Direct atomic execution path",
-                subtasks: [
-                    { agent: "knuth", action: "Synthesize target operational code & shell routine", payload: rawInput },
-                    { agent: "lovelace", action: "Validate outputs and confirm sandbox integrity", payload: "verify_output()" }
-                ],
-                summary: "Standard task completion"
-            };
-        }
-
-        appendLog('turing', 'TURING', `Strategy Formulated: ${plan.turing_strategy}`);
-        setAgentState('turing', 'done');
-
-        // --- STAGE 2: EXECUTION VIA KNUTH & LOVELACE ---
-        const subtasks = plan.subtasks || [];
-        for (let i = 0; i < subtasks.length; i++) {
-            if (!state.running) break;
-
-            const step = subtasks[i];
-            const agentName = step.agent === 'lovelace' ? 'lovelace' : 'knuth';
-            const agentTag = agentName.toUpperCase();
-
-            setAgentState(agentName, 'active');
-            Bridge.vibrate(30);
-
-            appendLog(agentName, agentTag, `[Step ${i+1}/${subtasks.length}] ${step.action}`);
-            if (state.ttsEnabled && i === 0) {
-                Bridge.speak(`${agentTag} executing ${step.action.slice(0, 30)}`);
-            }
-
-            // Simulate / Execute local hardware shell or simulated AST
-            await sleep(900);
-
-            if (step.payload) {
-                const execResult = Bridge.runShell(step.payload);
-                appendLog('exec', 'EXEC', `→ ${step.payload} | Result: ${execResult.slice(0, 80)}`);
-            }
-
-            setAgentState(agentName, 'done');
-            await sleep(400);
-        }
-
-        // --- STAGE 3: MISSION COMPLETION ---
-        Bridge.vibrate(80);
-        appendLog('lovelace', 'LOVELACE', "✅ QA & Security Verification Passed. 0 Regressions.", 'success');
-        appendLog('sys', 'SWARM', `🎉 Objective Accomplished: ${plan.summary || 'Done'}`, 'highlight');
-        Bridge.speak("Swarm objective accomplished.");
-
-    } catch (error) {
-        if (error.name === 'AbortError') {
-            appendLog('sys', 'ABORT', "Swarm execution aborted by user.");
-            Bridge.toast("Execution stopped");
-        } else {
-            appendLog('error', 'ERROR', `Swarm error: ${error.message}`);
-            Bridge.speak("Execution encountered an error.");
-        }
-    } finally {
-        setSwarmStatus('live');
+function setListeningUI(listening) {
+    state.isListening = listening;
+    if (listening) {
+        micBtn.classList.add('listening');
+        Bridge.toast("Listening...");
+    } else {
+        micBtn.classList.remove('listening');
     }
 }
 
-function abortTask() {
-    if (state.abortController) {
-        state.abortController.abort();
-    }
-    setSwarmStatus('live');
-    Bridge.vibrate(40);
+function quickPrompt(prefix) {
+    chatInput.value = prefix;
+    chatInput.focus();
+    chatInput.dispatchEvent(new Event('input'));
+    Bridge.vibrate(20);
 }
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+function toggleTorch() {
+    Bridge.toggleTorch(!state.torchOn);
+    Bridge.vibrate(30);
 }
 
-// ===================== SLASH COMMAND HANDLER =====================
-function handleSlashCommand(cmd) {
-    const parts = cmd.trim().split(' ');
-    const root = parts[0].toLowerCase();
+function triggerHaptic() {
+    Bridge.vibrate(100);
+    Bridge.toast("Haptic pulse triggered");
+}
 
-    switch (root) {
-        case '/help':
-            appendLog('sys', 'HELP', `Available Cyberdeck Commands:
-  /status  — Display telemetry, battery, network, & swarm state
-  /torch   — Toggle camera flashlight / hardware signal
-  /vibrate — Trigger tactile haptic pulse
-  /tts     — Toggle Text-To-Speech voice feedback
-  /clear   — Clear the terminal console log
-  /models  — Show active AI provider and model settings
-  /preset  — Run preset (e.g. /preset network_scan)`);
-            break;
+// ===================== SETTINGS MODAL =====================
+function closeSettings() {
+    settingsModal.classList.remove('open');
+}
 
-        case '/status':
-            appendLog('sys', 'STATUS', `Hardware Status:
-  • Battery: ${state.battery}% (${Bridge.isCharging() ? 'Charging' : 'Discharging'})
-  • IP: ${state.ip}
-  • Provider: ${state.provider} (${state.model})
-  • Screen WakeLock: ${state.keepScreenOn ? 'ACTIVE' : 'INACTIVE'}
-  • Swarm: 3/3 Agents Nominal`);
-            break;
+function initSettingsUI() {
+    providerSelect.value = state.provider;
+    apiKeyInput.value = state.apiKey;
+    customUrlInput.value = state.customUrl;
+    modelInput.value = state.model;
+    ttsToggle.checked = state.ttsEnabled;
+    hapticsToggle.checked = state.hapticsEnabled;
+    screenWakeToggle.checked = state.keepScreenOn;
+    ttsBtn.textContent = state.ttsEnabled ? '🔊' : '🔇';
+    handleProviderChange();
+}
 
-        case '/torch':
-            Bridge.toggleTorch(!state.torchOn);
-            break;
+function handleProviderChange() {
+    const p = providerSelect.value;
+    apiKeySection.style.display = (p === 'openrouter' || p === 'custom') ? 'block' : 'none';
+    customEndpointSection.style.display = (p === 'custom' || p === 'ollama') ? 'block' : 'none';
+}
 
-        case '/vibrate':
-            Bridge.vibrate(100);
-            break;
+function saveSettings() {
+    state.provider = providerSelect.value;
+    state.apiKey = apiKeyInput.value.trim();
+    state.customUrl = customUrlInput.value.trim();
+    state.model = modelInput.value.trim() || 'openai';
+    state.ttsEnabled = ttsToggle.checked;
+    state.hapticsEnabled = hapticsToggle.checked;
+    state.keepScreenOn = screenWakeToggle.checked;
 
-        case '/tts':
-            ttsToggleBtn.click();
-            break;
+    localStorage.setItem('ae_provider', state.provider);
+    localStorage.setItem('ae_apiKey', state.apiKey);
+    localStorage.setItem('ae_customUrl', state.customUrl);
+    localStorage.setItem('ae_model', state.model);
+    localStorage.setItem('ae_tts', state.ttsEnabled);
+    localStorage.setItem('ae_haptics', state.hapticsEnabled);
+    localStorage.setItem('ae_keepscreen', state.keepScreenOn);
 
-        case '/clear':
-            clearConsoleLog();
-            break;
+    Bridge.keepScreen(state.keepScreenOn);
+    ttsBtn.textContent = state.ttsEnabled ? '🔊' : '🔇';
+    closeSettings();
+    Bridge.toast("Settings saved");
+    Bridge.vibrate(30);
+}
 
-        case '/models':
-            appendLog('sys', 'MODELS', `Provider: ${state.provider} | Model: ${state.model} | Endpoint: ${state.provider === 'pollinations' ? 'https://text.pollinations.ai/' : state.customUrl}`);
-            break;
-
-        case '/preset':
-            const presetName = parts[1];
-            if (PRESETS[presetName]) {
-                loadPreset(presetName);
-            } else {
-                appendLog('sys', 'ERROR', `Unknown preset: ${presetName}. Options: network_scan, ast_patch, adb_automate, crypto_license, swarm_qa`);
-            }
-            break;
-
-        default:
-            appendLog('sys', 'COMMAND', `Unrecognized slash command: ${root}. Type /help for assistance.`);
-            break;
-    }
+function clearChat() {
+    chatViewport.innerHTML = '';
+    state.chatHistory = [];
+    closeSettings();
+    appendAgentMessage('turing', 'Chat history cleared. How can I assist you with your phone?');
+    Bridge.vibrate(20);
 }

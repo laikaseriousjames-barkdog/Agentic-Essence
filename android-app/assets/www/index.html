@@ -2,124 +2,121 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agentic Essence — Mobile Cyberdeck</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Agentic Essence — Autonomous Assistant</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="cyberdeck-container">
-        <!-- TOP TELEMETRY BAR -->
-        <header class="telemetry-bar">
-            <div class="brand-group">
-                <div class="pulse-indicator live" id="swarmIndicator"></div>
-                <div class="brand-title">agentic_essence<span class="accent">//</span></div>
+    <div class="app-container">
+        <!-- TOP APP BAR -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="status-pulse active" id="swarmPulse"></div>
+                <div class="header-brand">
+                    <span class="brand-title">Agentic<span class="accent">AI</span></span>
+                    <span class="brand-sub" id="swarmSubTitle">Tri-Agent Swarm</span>
+                </div>
             </div>
-            <div class="telemetry-metrics">
-                <span class="telemetry-item" id="batteryMetric" title="Battery Status">⚡ --%</span>
-                <span class="telemetry-item" id="ipMetric" title="Local IP">🌐 ...</span>
-                <button class="icon-btn" id="ttsToggleBtn" title="Toggle Voice/TTS">🔊</button>
-                <button class="icon-btn" id="settingsBtn" title="Swarm Configuration">⚙️</button>
+            <div class="header-right">
+                <span class="badge-pill" id="batteryBadge">🔋 --%</span>
+                <button class="header-icon-btn" id="ttsBtn" title="Toggle Voice Feedback">🔊</button>
+                <button class="header-icon-btn" id="settingsBtn" title="Settings">⚙️</button>
             </div>
         </header>
 
-        <!-- AGENTS STATUS PANEL -->
-        <section class="agents-matrix">
-            <div class="agent-chip" id="chipTuring" data-agent="turing">
-                <div class="chip-avatar turing-glow">01</div>
-                <div class="chip-info">
-                    <span class="chip-name">Turing</span>
-                    <span class="chip-role">Commander</span>
-                </div>
-                <span class="chip-state idle" id="turingState">IDLE</span>
+        <!-- AGENTS STATUS STRIP -->
+        <div class="agents-strip">
+            <div class="agent-pill active" id="pillTuring">
+                <span class="agent-avatar turing">🧠</span>
+                <span class="agent-label">Turing</span>
+                <span class="agent-role">Plan</span>
             </div>
-
-            <div class="agent-chip" id="chipKnuth" data-agent="knuth">
-                <div class="chip-avatar knuth-glow">02</div>
-                <div class="chip-info">
-                    <span class="chip-name">Knuth</span>
-                    <span class="chip-role">Developer</span>
-                </div>
-                <span class="chip-state idle" id="knuthState">IDLE</span>
+            <div class="agent-pill" id="pillKnuth">
+                <span class="agent-avatar knuth">⚡</span>
+                <span class="agent-label">Knuth</span>
+                <span class="agent-role">Exec</span>
             </div>
-
-            <div class="agent-chip" id="chipLovelace" data-agent="lovelace">
-                <div class="chip-avatar lovelace-glow">03</div>
-                <div class="chip-info">
-                    <span class="chip-name">Lovelace</span>
-                    <span class="chip-role">Tester</span>
-                </div>
-                <span class="chip-state idle" id="lovelaceState">IDLE</span>
+            <div class="agent-pill" id="pillLovelace">
+                <span class="agent-avatar lovelace">🔬</span>
+                <span class="agent-label">Lovelace</span>
+                <span class="agent-role">QA</span>
             </div>
-        </section>
+        </div>
 
-        <!-- QUICK PRESETS -->
-        <section class="presets-row">
-            <button class="preset-pill" onclick="loadPreset('network_scan')">⚡ Port & Net Scan</button>
-            <button class="preset-pill" onclick="loadPreset('ast_patch')">✂️ AST Code Patch</button>
-            <button class="preset-pill" onclick="loadPreset('adb_automate')">📱 Device Automation</button>
-            <button class="preset-pill" onclick="loadPreset('crypto_license')">🔐 Zero-Trust HWID</button>
-            <button class="preset-pill" onclick="loadPreset('swarm_qa')">🧪 Lovelace QA Suite</button>
-        </section>
-
-        <!-- TERMINAL CONSOLE -->
-        <main class="terminal-container">
-            <div class="terminal-header">
-                <div class="term-dots">
-                    <span class="dot red"></span>
-                    <span class="dot yellow"></span>
-                    <span class="dot green"></span>
-                </div>
-                <div class="term-title">Swarm Execution Pipeline</div>
-                <div class="term-actions">
-                    <button class="term-btn" onclick="copyConsoleLog()" title="Copy Logs">📋</button>
-                    <button class="term-btn" onclick="shareConsoleLog()" title="Share Logs">📤</button>
-                    <button class="term-btn" onclick="clearConsoleLog()" title="Clear Logs">🧹</button>
-                </div>
+        <!-- QUICK ACTION CHIPS -->
+        <div class="action-chips-wrapper">
+            <div class="action-chips">
+                <button class="chip" onclick="quickPrompt('Call ')">📞 Call</button>
+                <button class="chip" onclick="quickPrompt('Text ')">💬 Text</button>
+                <button class="chip" onclick="quickPrompt('Set alarm for ')">⏰ Alarm</button>
+                <button class="chip" onclick="quickPrompt('Open ')">📱 Open App</button>
+                <button class="chip" onclick="toggleTorch()">🔦 Torch</button>
+                <button class="chip" onclick="triggerHaptic()">📳 Vibe</button>
+                <button class="chip" onclick="quickPrompt('Navigate to ')">🧭 Navigate</button>
+                <button class="chip" onclick="quickPrompt('What can you do on my phone?')">❓ Help</button>
             </div>
+        </div>
 
-            <div class="terminal-body" id="terminalOutput">
-                <div class="term-line sys-msg">
-                    <span class="time">[00:00:00]</span> <span class="tag tag-sys">SYSTEM</span> Agentic Essence Mobile v1.0.0 Cyberdeck Initialized.
-                </div>
-                <div class="term-line info-msg">
-                    <span class="time">[00:00:01]</span> <span class="tag tag-sys">CORE</span> Tri-Agent Swarm standing by (Turing • Knuth • Lovelace).
-                </div>
-                <div class="term-line ready-msg">
-                    <span class="time">[00:00:02]</span> <span class="tag tag-turing">READY</span> Enter a prompt or tap a preset to begin untethered orchestration.
+        <!-- MAIN CHAT STREAM -->
+        <main class="chat-viewport" id="chatViewport">
+            <!-- Welcome message -->
+            <div class="msg-group agent-msg">
+                <div class="msg-avatar turing-bg">🧠</div>
+                <div class="msg-bubble">
+                    <div class="msg-sender"><span class="name turing-color">Alan Turing</span> <span class="badge-role">Commander</span></div>
+                    <div class="msg-text">
+                        Welcome! I am your autonomous on-device AI assistant. I can directly control your phone:
+                        <div class="features-list">
+                            <div>📞 <strong>Phone Calls</strong> — "Call Mom", "Call 555-0199"</div>
+                            <div>💬 <strong>SMS &amp; Texting</strong> — "Text Sarah I'm on my way"</div>
+                            <div>⏰ <strong>Alarms &amp; Timers</strong> — "Set alarm for 7:30 AM"</div>
+                            <div>📱 <strong>App Launcher</strong> — "Open YouTube / WhatsApp / Spotify"</div>
+                            <div>🧭 <strong>Navigation</strong> — "Navigate to Central Park"</div>
+                            <div>🔦 <strong>Hardware</strong> — Torch, Haptics, Volume, Battery</div>
+                        </div>
+                        Speak or type any command to begin!
+                    </div>
+                    <div class="msg-time">Just now</div>
                 </div>
             </div>
         </main>
 
-        <!-- TASK INPUT / CONTROL PANEL -->
-        <footer class="input-panel">
-            <div class="input-wrapper">
-                <textarea id="taskInput" placeholder="Enter autonomous objective or /help..." rows="1"></textarea>
-                <div class="input-controls">
-                    <button id="torchBtn" class="action-mini-btn" title="Toggle Hardware Torch">🔦</button>
-                    <button id="vibeBtn" class="action-mini-btn" title="Trigger Haptic Pulse">📳</button>
-                    <button id="stopBtn" class="btn-stop" style="display:none;" onclick="abortTask()">⏹ STOP</button>
-                    <button id="deployBtn" class="btn-deploy" onclick="deploySwarm()">⚡ DEPLOY</button>
-                </div>
+        <!-- TYPING INDICATOR -->
+        <div class="typing-indicator-bar" id="typingIndicator" style="display:none;">
+            <div class="typing-dots">
+                <span></span><span></span><span></span>
             </div>
+            <span class="typing-text" id="typingText">Turing is analyzing directive...</span>
+        </div>
+
+        <!-- INPUT BAR -->
+        <footer class="chat-input-bar">
+            <button class="icon-action-btn mic-btn" id="micBtn" title="Voice Input">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+            <textarea id="chatInput" placeholder="Message or command (e.g. Call Mom)..." rows="1"></textarea>
+            <button class="send-btn" id="sendBtn" title="Send Directive">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
         </footer>
 
         <!-- SETTINGS MODAL -->
         <div class="modal-overlay" id="settingsModal">
             <div class="modal-card">
                 <div class="modal-header">
-                    <h3>⚡ Swarm Configuration</h3>
+                    <h3>⚡ Swarm &amp; Phone Settings</h3>
                     <button class="modal-close" onclick="closeSettings()">✕</button>
                 </div>
                 <div class="modal-body">
                     <label class="setting-label">AI Reasoning Provider</label>
                     <select id="providerSelect" class="cyber-select" onchange="handleProviderChange()">
-                        <option value="pollinations">Pollinations AI (Keyless • 100% Free & Built-in)</option>
+                        <option value="pollinations">Pollinations AI (Keyless • 100% Free &amp; Built-in)</option>
                         <option value="openrouter">OpenRouter API</option>
                         <option value="ollama">Local Ollama (http://localhost:11434)</option>
                         <option value="custom">Custom OpenAI-Compatible Endpoint</option>
-                        <option value="offline">Offline Autonomous Agent Simulation</option>
+                        <option value="deterministic">Deterministic On-Device Fast Router</option>
                     </select>
 
                     <div id="apiKeySection" style="display:none;">
@@ -133,25 +130,26 @@
                     </div>
 
                     <label class="setting-label">Model Selection</label>
-                    <input type="text" id="modelInput" class="cyber-input" value="openai" placeholder="e.g. openai, mistral, qwen, llama3" />
+                    <input type="text" id="modelInput" class="cyber-input" value="openai" placeholder="e.g. openai, mistral, qwen" />
 
-                    <div class="hardware-switches">
-                        <label class="switch-row">
-                            <span>Keep Screen Active During Tasks</span>
-                            <input type="checkbox" id="keepScreenOnToggle" onchange="toggleKeepScreen(this.checked)" checked>
-                        </label>
-                        <label class="switch-row">
+                    <div class="switches-list">
+                        <label class="switch-item">
                             <span>Voice Text-To-Speech (TTS)</span>
-                            <input type="checkbox" id="ttsCheckbox" onchange="toggleTTS(this.checked)" checked>
+                            <input type="checkbox" id="ttsToggle" checked>
                         </label>
-                        <label class="switch-row">
-                            <span>Haptic Vibrations</span>
-                            <input type="checkbox" id="hapticsCheckbox" checked>
+                        <label class="switch-item">
+                            <span>Haptic Vibrations on Actions</span>
+                            <input type="checkbox" id="hapticsToggle" checked>
+                        </label>
+                        <label class="switch-item">
+                            <span>Keep Screen Awake</span>
+                            <input type="checkbox" id="screenWakeToggle" checked>
                         </label>
                     </div>
 
                     <div class="modal-actions">
-                        <button class="btn-primary" onclick="saveSettings()">Save & Apply</button>
+                        <button class="btn-clear-chat" onclick="clearChat()">Clear Chat</button>
+                        <button class="btn-save" onclick="saveSettings()">Save &amp; Apply</button>
                     </div>
                 </div>
             </div>
