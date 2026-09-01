@@ -11,9 +11,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: angetic-android
 
     steps:
       - uses: actions/checkout@v4
@@ -30,17 +27,24 @@ jobs:
       - name: Accept SDK licenses
         run: yes | sdkmanager --licenses || true
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - name: Install build tools & run tests
+        run: |
+          sudo apt-get update && sudo apt-get install -y aapt zipalign apksigner python3-pytest
+          pytest tests/
 
-      - name: Build debug APK
-        run: gradle assembleDebug --no-daemon --stacktrace
+      - name: Build and Sign APK
+        run: |
+          mkdir -p /root/android-sdk
+          cp "$ANDROID_HOME/platforms/android-34/android.jar" /root/android-sdk/android.jar 2>/dev/null || cp "$ANDROID_HOME/platforms/"*/android.jar /root/android-sdk/android.jar
+          find "$ANDROID_HOME/build-tools" -name "d8.jar" -o -name "r8.jar" | head -n 1 | xargs -I {} cp {} /root/android-sdk/r8.jar
+          chmod +x ./build_apk.sh
+          ./build_apk.sh
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: angetic-essence-android
-          path: angetic-android/app/build/outputs/apk/debug/app-debug.apk
+          name: agentic-essence-android
+          path: android-app/bin/AgenticEssence-Android.apk
 
       - name: Publish APK to gh-pages downloads folder
         run: |
@@ -48,8 +52,9 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git clone --branch gh-pages https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git /tmp/gh-pages-repo
           mkdir -p /tmp/gh-pages-repo/downloads
-          cp app/build/outputs/apk/debug/app-debug.apk /tmp/gh-pages-repo/downloads/AngeticEssence-Android.apk
+          cp android-app/bin/AgenticEssence-Android.apk /tmp/gh-pages-repo/downloads/AgenticEssence-Android.apk
+          cp android-app/bin/AgenticEssence-Android.apk /tmp/gh-pages-repo/downloads/AngeticEssence-Android.apk
           cd /tmp/gh-pages-repo
-          git add downloads/AngeticEssence-Android.apk
-          git commit -m "Auto-publish latest Android APK build" || echo "no changes"
+          git add downloads/
+          git commit -m "Auto-publish latest Agentic Essence Android APK build" || echo "no changes"
           git push

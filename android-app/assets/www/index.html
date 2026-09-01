@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Agentic Essence — Mobile Cyberdeck</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="cyberdeck-container">
+        <!-- TOP TELEMETRY BAR -->
+        <header class="telemetry-bar">
+            <div class="brand-group">
+                <div class="pulse-indicator live" id="swarmIndicator"></div>
+                <div class="brand-title">agentic_essence<span class="accent">//</span></div>
+            </div>
+            <div class="telemetry-metrics">
+                <span class="telemetry-item" id="batteryMetric" title="Battery Status">⚡ --%</span>
+                <span class="telemetry-item" id="ipMetric" title="Local IP">🌐 ...</span>
+                <button class="icon-btn" id="ttsToggleBtn" title="Toggle Voice/TTS">🔊</button>
+                <button class="icon-btn" id="settingsBtn" title="Swarm Configuration">⚙️</button>
+            </div>
+        </header>
+
+        <!-- AGENTS STATUS PANEL -->
+        <section class="agents-matrix">
+            <div class="agent-chip" id="chipTuring" data-agent="turing">
+                <div class="chip-avatar turing-glow">01</div>
+                <div class="chip-info">
+                    <span class="chip-name">Turing</span>
+                    <span class="chip-role">Commander</span>
+                </div>
+                <span class="chip-state idle" id="turingState">IDLE</span>
+            </div>
+
+            <div class="agent-chip" id="chipKnuth" data-agent="knuth">
+                <div class="chip-avatar knuth-glow">02</div>
+                <div class="chip-info">
+                    <span class="chip-name">Knuth</span>
+                    <span class="chip-role">Developer</span>
+                </div>
+                <span class="chip-state idle" id="knuthState">IDLE</span>
+            </div>
+
+            <div class="agent-chip" id="chipLovelace" data-agent="lovelace">
+                <div class="chip-avatar lovelace-glow">03</div>
+                <div class="chip-info">
+                    <span class="chip-name">Lovelace</span>
+                    <span class="chip-role">Tester</span>
+                </div>
+                <span class="chip-state idle" id="lovelaceState">IDLE</span>
+            </div>
+        </section>
+
+        <!-- QUICK PRESETS -->
+        <section class="presets-row">
+            <button class="preset-pill" onclick="loadPreset('network_scan')">⚡ Port & Net Scan</button>
+            <button class="preset-pill" onclick="loadPreset('ast_patch')">✂️ AST Code Patch</button>
+            <button class="preset-pill" onclick="loadPreset('adb_automate')">📱 Device Automation</button>
+            <button class="preset-pill" onclick="loadPreset('crypto_license')">🔐 Zero-Trust HWID</button>
+            <button class="preset-pill" onclick="loadPreset('swarm_qa')">🧪 Lovelace QA Suite</button>
+        </section>
+
+        <!-- TERMINAL CONSOLE -->
+        <main class="terminal-container">
+            <div class="terminal-header">
+                <div class="term-dots">
+                    <span class="dot red"></span>
+                    <span class="dot yellow"></span>
+                    <span class="dot green"></span>
+                </div>
+                <div class="term-title">Swarm Execution Pipeline</div>
+                <div class="term-actions">
+                    <button class="term-btn" onclick="copyConsoleLog()" title="Copy Logs">📋</button>
+                    <button class="term-btn" onclick="shareConsoleLog()" title="Share Logs">📤</button>
+                    <button class="term-btn" onclick="clearConsoleLog()" title="Clear Logs">🧹</button>
+                </div>
+            </div>
+
+            <div class="terminal-body" id="terminalOutput">
+                <div class="term-line sys-msg">
+                    <span class="time">[00:00:00]</span> <span class="tag tag-sys">SYSTEM</span> Agentic Essence Mobile v1.0.0 Cyberdeck Initialized.
+                </div>
+                <div class="term-line info-msg">
+                    <span class="time">[00:00:01]</span> <span class="tag tag-sys">CORE</span> Tri-Agent Swarm standing by (Turing • Knuth • Lovelace).
+                </div>
+                <div class="term-line ready-msg">
+                    <span class="time">[00:00:02]</span> <span class="tag tag-turing">READY</span> Enter a prompt or tap a preset to begin untethered orchestration.
+                </div>
+            </div>
+        </main>
+
+        <!-- TASK INPUT / CONTROL PANEL -->
+        <footer class="input-panel">
+            <div class="input-wrapper">
+                <textarea id="taskInput" placeholder="Enter autonomous objective or /help..." rows="1"></textarea>
+                <div class="input-controls">
+                    <button id="torchBtn" class="action-mini-btn" title="Toggle Hardware Torch">🔦</button>
+                    <button id="vibeBtn" class="action-mini-btn" title="Trigger Haptic Pulse">📳</button>
+                    <button id="stopBtn" class="btn-stop" style="display:none;" onclick="abortTask()">⏹ STOP</button>
+                    <button id="deployBtn" class="btn-deploy" onclick="deploySwarm()">⚡ DEPLOY</button>
+                </div>
+            </div>
+        </footer>
+
+        <!-- SETTINGS MODAL -->
+        <div class="modal-overlay" id="settingsModal">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3>⚡ Swarm Configuration</h3>
+                    <button class="modal-close" onclick="closeSettings()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <label class="setting-label">AI Reasoning Provider</label>
+                    <select id="providerSelect" class="cyber-select" onchange="handleProviderChange()">
+                        <option value="pollinations">Pollinations AI (Keyless • 100% Free & Built-in)</option>
+                        <option value="openrouter">OpenRouter API</option>
+                        <option value="ollama">Local Ollama (http://localhost:11434)</option>
+                        <option value="custom">Custom OpenAI-Compatible Endpoint</option>
+                        <option value="offline">Offline Autonomous Agent Simulation</option>
+                    </select>
+
+                    <div id="apiKeySection" style="display:none;">
+                        <label class="setting-label">API Key</label>
+                        <input type="password" id="apiKeyInput" class="cyber-input" placeholder="sk-or-..." />
+                    </div>
+
+                    <div id="customEndpointSection" style="display:none;">
+                        <label class="setting-label">Custom API Endpoint URL</label>
+                        <input type="text" id="customUrlInput" class="cyber-input" placeholder="http://192.168.1.50:11434/v1" />
+                    </div>
+
+                    <label class="setting-label">Model Selection</label>
+                    <input type="text" id="modelInput" class="cyber-input" value="openai" placeholder="e.g. openai, mistral, qwen, llama3" />
+
+                    <div class="hardware-switches">
+                        <label class="switch-row">
+                            <span>Keep Screen Active During Tasks</span>
+                            <input type="checkbox" id="keepScreenOnToggle" onchange="toggleKeepScreen(this.checked)" checked>
+                        </label>
+                        <label class="switch-row">
+                            <span>Voice Text-To-Speech (TTS)</span>
+                            <input type="checkbox" id="ttsCheckbox" onchange="toggleTTS(this.checked)" checked>
+                        </label>
+                        <label class="switch-row">
+                            <span>Haptic Vibrations</span>
+                            <input type="checkbox" id="hapticsCheckbox" checked>
+                        </label>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button class="btn-primary" onclick="saveSettings()">Save & Apply</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

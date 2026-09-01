@@ -1,9 +1,23 @@
-# Ignore everything
-*
-# Except for the README and gitignore
+# Ignore build artifacts
+*.class
+*.dex
+*.apk
+*.idsig
+bin/
+obj/
+.pytest_cache/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Track essential project sources
 !.gitignore
 !README.md
-!core/
-!website/
-!website/**
-website/downloads/
+!requirements.txt
+!.github/
+!.github/**
+!android-app/
+!android-app/**
+!tests/
+!tests/**
+!build_apk.sh
