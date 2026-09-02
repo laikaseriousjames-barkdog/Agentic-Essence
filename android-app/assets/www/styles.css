@@ -1,28 +1,21 @@
-/* ==========================================================
-   Agentic Essence — Autonomous Mobile Multi-Agent Assistant
-   ========================================================== */
+/* ==========================================================================
+   AGENTIC ESSENCE • COMPACT HOLOGRAPHIC CYBERDECK UI
+   Aesthetic: Scaled-Down Futuristic HUD // 100% Fit // Translucent & Free-Floating
+   ========================================================================== */
 
 :root {
-    --bg-main: #090B0E;
-    --bg-surface: #12161F;
-    --bg-elevated: #1B212E;
-    --bg-user-bubble: #133337;
-    --bg-agent-bubble: #161C26;
-    --text-primary: #F0F4F8;
-    --text-secondary: #94A3B8;
-    --text-muted: #64748B;
-    --accent: #66FCF1;
-    --accent-teal: #45A29E;
-    --accent-glow: rgba(102, 252, 241, 0.2);
-    --turing: #00F0FF;
-    --knuth: #50FA7B;
-    --lovelace: #FF79C6;
-    --danger: #FF4A6E;
-    --warning: #FFB86C;
-    --border: rgba(102, 252, 241, 0.15);
-    --border-light: rgba(255, 255, 255, 0.08);
-    --font-ui: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    --neon-cyan: #00f0ff;
+    --neon-magenta: #ff007f;
+    --neon-violet: #8b00ff;
+    --neon-emerald: #00ff88;
+    --neon-gold: #ffb700;
+    --neon-blue: #0088ff;
+    --text-pure: #ffffff;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --font-hud: 'Orbitron', -apple-system, sans-serif;
+    --font-body: 'Rajdhani', -apple-system, sans-serif;
+    --font-code: 'JetBrains Mono', monospace;
     --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
@@ -33,600 +26,811 @@
     -webkit-tap-highlight-color: transparent;
 }
 
-body {
-    background-color: var(--bg-main);
-    color: var(--text-primary);
-    font-family: var(--font-ui);
+body, html {
+    width: 100%;
     height: 100vh;
     height: 100dvh;
+    overflow: hidden;
+    background-color: #030408;
+    color: var(--text-pure);
+    font-family: var(--font-body);
+    font-size: 11px;
+    letter-spacing: 0.2px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* ================= 1. THE ALIVE COSMIC NEON UNIVERSE ================= */
+.holographic-universe {
+    position: relative;
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    user-select: none;
-    -webkit-user-select: none;
 }
 
-.app-container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    max-width: 600px;
-    margin: 0 auto;
+/* Fullscreen Particle Mesh Canvas */
+#holo-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    position: relative;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
 }
 
-/* ==================== 1. APP HEADER ==================== */
-.app-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 16px;
-    background: var(--bg-surface);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-    z-index: 10;
+/* Alive Shifting Plasma Nebula Glow */
+.plasma-nebula-glow {
+    position: absolute;
+    top: -20%;
+    left: -20%;
+    width: 140%;
+    height: 140%;
+    z-index: 0;
+    pointer-events: none;
+    background: 
+        radial-gradient(circle at 20% 25%, rgba(0, 240, 255, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 80% 30%, rgba(255, 0, 127, 0.10) 0%, transparent 40%),
+        radial-gradient(circle at 50% 75%, rgba(139, 0, 255, 0.12) 0%, transparent 48%),
+        radial-gradient(circle at 75% 85%, rgba(0, 255, 136, 0.08) 0%, transparent 42%);
+    filter: blur(35px);
+    animation: nebulaShift 18s ease-in-out infinite alternate;
 }
 
-.header-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+@keyframes nebulaShift {
+    0% { transform: scale(1) rotate(0deg); opacity: 0.8; }
+    50% { transform: scale(1.08) rotate(3deg); opacity: 1; }
+    100% { transform: scale(1.04) rotate(-2deg); opacity: 0.85; }
 }
 
-.status-pulse {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--knuth);
-    box-shadow: 0 0 10px var(--knuth);
-    animation: pulseAnim 2s infinite ease-in-out;
-}
-
-.status-pulse.busy {
-    background: var(--warning);
-    box-shadow: 0 0 10px var(--warning);
-}
-
-@keyframes pulseAnim {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.85); }
-}
-
-.header-brand {
-    display: flex;
-    flex-direction: column;
-}
-
-.brand-title {
-    font-weight: 800;
-    font-size: 16px;
-    letter-spacing: -0.3px;
-    color: #FFF;
-}
-
-.brand-title .accent {
-    color: var(--accent);
-}
-
-.brand-sub {
-    font-size: 10px;
-    color: var(--text-secondary);
-    font-weight: 500;
-}
-
-.header-right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.badge-pill {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    background: rgba(0,0,0,0.3);
-    color: var(--accent-teal);
-    padding: 4px 8px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-}
-
-.header-icon-btn {
-    background: transparent;
-    border: none;
-    font-size: 16px;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 6px;
-    transition: background 0.15s;
-}
-
-.header-icon-btn:active {
-    background: var(--accent-glow);
-}
-
-/* ==================== 2. AGENTS STATUS STRIP ==================== */
-.agents-strip {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 8px 16px;
-    background: rgba(18, 22, 31, 0.7);
-    border-bottom: 1px solid var(--border-light);
-    flex-shrink: 0;
-}
-
-.agent-pill {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-light);
-    border-radius: 20px;
-    padding: 5px 10px;
-    transition: all 0.25s ease;
-}
-
-.agent-pill.active {
-    border-color: var(--accent);
-    background: #192433;
-    box-shadow: 0 0 10px var(--accent-glow);
-}
-
-.agent-avatar {
-    font-size: 12px;
-}
-
-.agent-label {
-    font-size: 12px;
-    font-weight: 700;
-    color: #FFF;
-}
-
-.agent-role {
-    font-size: 9px;
-    color: var(--text-muted);
-    font-family: var(--font-mono);
-    text-transform: uppercase;
-    margin-left: auto;
-}
-
-/* ==================== 3. ACTION CHIPS ==================== */
-.action-chips-wrapper {
-    padding: 6px 16px;
-    background: var(--bg-main);
-    flex-shrink: 0;
-}
-
-.action-chips {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    padding-bottom: 2px;
-}
-
-.action-chips::-webkit-scrollbar {
-    display: none;
-}
-
-.chip {
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    font-size: 12px;
-    font-weight: 600;
-    padding: 6px 12px;
-    border-radius: 16px;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: all 0.15s;
-}
-
-.chip:active {
-    background: var(--accent-teal);
-    color: #000;
-    transform: scale(0.96);
-}
-
-/* ==================== 4. CHAT VIEWPORT ==================== */
-.chat-viewport {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    user-select: text;
-    -webkit-user-select: text;
-}
-
-.msg-group {
-    display: flex;
-    gap: 10px;
-    max-width: 90%;
-}
-
-.user-msg {
-    align-self: flex-end;
-    flex-direction: row-reverse;
-}
-
-.agent-msg {
-    align-self: flex-start;
-}
-
-.msg-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    flex-shrink: 0;
-}
-
-.turing-bg { background: rgba(0, 240, 255, 0.15); border: 1px solid var(--turing); }
-.knuth-bg { background: rgba(80, 250, 123, 0.15); border: 1px solid var(--knuth); }
-.lovelace-bg { background: rgba(255, 121, 198, 0.15); border: 1px solid var(--lovelace); }
-
-.turing-color { color: var(--turing); }
-.knuth-color { color: var(--knuth); }
-.lovelace-color { color: var(--lovelace); }
-
-.msg-bubble {
-    background: var(--bg-agent-bubble);
-    border: 1px solid var(--border-light);
-    border-radius: 14px;
-    border-top-left-radius: 2px;
-    padding: 10px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
-
-.user-msg .msg-bubble {
-    background: var(--bg-user-bubble);
-    border-color: rgba(102, 252, 241, 0.3);
-    border-radius: 14px;
-    border-top-right-radius: 2px;
-}
-
-.msg-sender {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.badge-role {
-    font-size: 9px;
-    font-family: var(--font-mono);
-    background: rgba(255,255,255,0.08);
-    padding: 2px 5px;
-    border-radius: 4px;
-    color: var(--text-secondary);
-}
-
-.msg-text {
-    font-size: 13.5px;
-    line-height: 1.5;
-    color: var(--text-primary);
-    word-break: break-word;
-}
-
-.msg-time {
-    font-size: 10px;
-    color: var(--text-muted);
-    align-self: flex-end;
-    margin-top: 2px;
-}
-
-.features-list {
-    background: rgba(0,0,0,0.25);
-    border: 1px solid var(--border-light);
-    border-radius: 8px;
-    padding: 8px 10px;
-    margin: 8px 0;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    font-size: 12px;
-}
-
-/* ==================== ACTION CARDS IN CHAT ==================== */
-.action-card {
-    background: #0E131C;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 10px 12px;
-    margin-top: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.card-header-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.card-tag {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 4px;
-}
-
-.tag-call { background: rgba(0, 240, 255, 0.2); color: var(--turing); }
-.tag-sms { background: rgba(80, 250, 123, 0.2); color: var(--knuth); }
-.tag-alarm { background: rgba(255, 184, 108, 0.2); color: var(--warning); }
-.tag-app { background: rgba(255, 121, 198, 0.2); color: var(--lovelace); }
-.tag-map { background: rgba(102, 252, 241, 0.2); color: var(--accent); }
-
-.card-title {
-    font-weight: 700;
-    font-size: 13px;
-    color: #FFF;
-}
-
-.card-detail {
-    font-size: 12px;
-    color: var(--text-secondary);
-}
-
-.card-action-btn {
-    background: var(--accent-teal);
-    color: #000;
-    border: none;
-    font-weight: 700;
-    font-size: 11px;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    align-self: flex-start;
-    margin-top: 4px;
-}
-
-/* ==================== 5. TYPING INDICATOR ==================== */
-.typing-indicator-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 16px;
-    background: rgba(18, 22, 31, 0.9);
-    border-top: 1px solid var(--border-light);
-    flex-shrink: 0;
-}
-
-.typing-dots {
-    display: flex;
-    gap: 4px;
-}
-
-.typing-dots span {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: typingBounce 1.2s infinite ease-in-out;
-}
-
-.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes typingBounce {
-    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-    40% { transform: scale(1.1); opacity: 1; }
-}
-
-.typing-text {
-    font-size: 11px;
-    color: var(--text-secondary);
-    font-family: var(--font-mono);
-}
-
-/* ==================== 6. INPUT BAR ==================== */
-.chat-input-bar {
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
-    padding: 8px 12px;
-    padding-bottom: calc(8px + var(--safe-bottom));
-    background: var(--bg-surface);
-    border-top: 1px solid var(--border);
-    flex-shrink: 0;
-}
-
-.icon-action-btn {
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-light);
-    color: var(--text-primary);
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: all 0.2s;
-}
-
-.mic-btn.listening {
-    background: var(--danger);
-    color: #FFF;
-    animation: micPulse 1s infinite alternate;
-}
-
-@keyframes micPulse {
-    0% { transform: scale(1); }
-    100% { transform: scale(1.1); }
-}
-
-#chatInput {
-    flex: 1;
-    background: var(--bg-main);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 10px 16px;
-    color: var(--text-primary);
-    font-family: var(--font-ui);
-    font-size: 14px;
-    outline: none;
-    resize: none;
-    max-height: 100px;
-    line-height: 1.4;
-}
-
-#chatInput:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 8px var(--accent-glow);
-}
-
-.send-btn {
-    background: linear-gradient(135deg, var(--accent-teal), var(--accent));
-    color: #0B0C10;
-    border: none;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: transform 0.1s;
-}
-
-.send-btn:active {
-    transform: scale(0.92);
-}
-
-/* ==================== 7. SETTINGS MODAL ==================== */
-.modal-overlay {
-    position: fixed;
+/* Subtle Cyber Scanline Grid Overlay */
+.cyber-grid-overlay {
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,0.85);
-    backdrop-filter: blur(5px);
-    display: none;
+    z-index: 2;
+    pointer-events: none;
+    background: linear-gradient(rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%), linear-gradient(90deg, rgba(0,240,255,0.012), rgba(255,0,127,0.012));
+    background-size: 100% 3px, 4px 100%;
+    opacity: 0.5;
+}
+
+/* ================= 2. COMPACT HOLOGRAPHIC HUD HEADER ================= */
+.holo-hud-header {
+    position: relative;
+    z-index: 25;
+    height: 34px;
+    display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 16px;
-    z-index: 1000;
-}
-
-.modal-overlay.open {
-    display: flex;
-}
-
-.modal-card {
-    background: #141822;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    width: 100%;
-    max-width: 480px;
-    padding: 18px;
-    box-shadow: 0 10px 35px rgba(0,0,0,0.7);
-    max-height: 85vh;
-    overflow-y: auto;
-}
-
-.modal-header {
-    display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 14px;
-    border-bottom: 1px solid var(--border-light);
-    padding-bottom: 8px;
+    padding: 0 10px;
+    background: rgba(4, 7, 15, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    flex-shrink: 0;
 }
 
-.modal-close {
+.hud-glyph-btn {
     background: transparent;
     border: none;
-    color: var(--text-secondary);
-    font-size: 20px;
     cursor: pointer;
+    padding: 4px 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    width: 18px;
 }
 
-.setting-label {
-    display: block;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--accent-teal);
-    margin: 10px 0 4px 0;
-}
-
-.cyber-select, .cyber-input {
+.glyph-bar {
+    height: 1.5px;
     width: 100%;
-    background: #090B0E;
-    border: 1px solid var(--border);
+    background: var(--neon-cyan);
+    border-radius: 1px;
+    box-shadow: 0 0 4px var(--neon-cyan);
+    transition: all 0.2s ease;
+}
+
+.glyph-bar.short {
+    width: 60%;
+    background: var(--neon-magenta);
+    box-shadow: 0 0 4px var(--neon-magenta);
+}
+
+.hud-brand-node {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* 3D Multi-Ring Quantum Q-Bit (Scaled Down) */
+.quantum-qbit-holo {
+    position: relative;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 300px;
+    transform-style: preserve-3d;
+    isolation: isolate;
+}
+
+.qbit-core {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ffffff 10%, #00f0ff 70%, #ff007f 100%);
+    box-shadow: 0 0 6px #00f0ff, 0 0 8px rgba(255, 0, 127, 0.8);
+    animation: qPulse 2.4s infinite ease-in-out;
+}
+
+.orbit {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    transform-style: preserve-3d;
+    pointer-events: none;
+}
+
+.orbit.ring-cyan {
+    border: 1px solid rgba(0, 240, 255, 0.7);
+    transform: rotateZ(0deg) rotateX(65deg);
+    animation: spin1 2.5s linear infinite;
+}
+
+.orbit.ring-magenta {
+    border: 1px solid rgba(255, 0, 127, 0.7);
+    transform: rotateZ(60deg) rotateX(65deg);
+    animation: spin2 3.1s linear infinite;
+}
+
+.orbit.ring-violet {
+    border: 1px solid rgba(139, 0, 255, 0.7);
+    transform: rotateZ(120deg) rotateX(65deg);
+    animation: spin3 3.7s linear infinite;
+}
+
+.electron {
+    position: absolute;
+    width: 2.5px;
+    height: 2.5px;
+    border-radius: 50%;
+    top: -1.25px;
+    left: 50%;
+    margin-left: -1.25px;
+    background: #fff;
+}
+
+.electron.cyan { box-shadow: 0 0 4px #00f0ff; }
+.electron.magenta { box-shadow: 0 0 4px #ff007f; }
+.electron.violet { box-shadow: 0 0 4px #8b00ff; }
+
+@keyframes spin1 { 0% { transform: rotateZ(0deg) rotateX(65deg) rotateZ(0deg); } 100% { transform: rotateZ(0deg) rotateX(65deg) rotateZ(360deg); } }
+@keyframes spin2 { 0% { transform: rotateZ(60deg) rotateX(65deg) rotateZ(0deg); } 100% { transform: rotateZ(60deg) rotateX(65deg) rotateZ(360deg); } }
+@keyframes spin3 { 0% { transform: rotateZ(120deg) rotateX(65deg) rotateZ(0deg); } 100% { transform: rotateZ(120deg) rotateX(65deg) rotateZ(360deg); } }
+@keyframes qPulse { 0%, 100% { transform: scale(0.9); } 50% { transform: scale(1.2); box-shadow: 0 0 8px #00f0ff, 0 0 10px #ff007f; } }
+
+.hud-title-cluster {
+    display: flex;
+    flex-direction: column;
+}
+
+.hud-title-main {
+    font-family: var(--font-hud);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, #00f0ff 0%, #ff007f 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.1;
+}
+
+.hud-subtitle {
+    font-family: var(--font-code);
+    font-size: 0.48rem;
+    color: var(--text-muted);
+    letter-spacing: 0.8px;
+}
+
+.hud-quick-nodes {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.hud-pill-btn {
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-pure);
+    font-family: var(--font-code);
+    font-size: 0.58rem;
+    padding: 2px 6px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    transition: all 0.15s ease;
+}
+
+.hud-pill-btn.neon-cyan { border-color: rgba(0, 240, 255, 0.4); color: var(--neon-cyan); }
+.hud-pill-btn.neon-violet { border-color: rgba(139, 0, 255, 0.4); color: #c084fc; }
+.hud-pill-btn.neon-gold { border-color: rgba(255, 183, 0, 0.4); color: var(--neon-gold); }
+
+.hud-pill-btn:active {
+    transform: scale(0.92);
+    box-shadow: 0 0 8px currentColor;
+}
+
+/* ================= 3. COMPACT PERSONA HOLO STREAM BAR ================= */
+.persona-holo-bar {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    gap: 4px;
+    padding: 4px 10px;
+    background: rgba(4, 7, 15, 0.3);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-shrink: 0;
+}
+
+.persona-holo-bar::-webkit-scrollbar { display: none; }
+
+.persona-stream-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-dim);
+    font-family: var(--font-hud);
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    padding: 2px 7px;
     border-radius: 8px;
-    color: var(--text-primary);
-    font-family: var(--font-ui);
-    font-size: 13px;
-    padding: 10px;
-    outline: none;
-    margin-bottom: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    transition: all 0.15s ease;
 }
 
-.cyber-select:focus, .cyber-input:focus {
-    border-color: var(--accent);
+.persona-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+}
+.persona-dot.cyan { background: var(--neon-cyan); box-shadow: 0 0 4px var(--neon-cyan); }
+.persona-dot.magenta { background: var(--neon-magenta); box-shadow: 0 0 4px var(--neon-magenta); }
+.persona-dot.gold { background: var(--neon-gold); box-shadow: 0 0 4px var(--neon-gold); }
+.persona-dot.emerald { background: var(--neon-emerald); box-shadow: 0 0 4px var(--neon-emerald); }
+
+.persona-stream-btn.active {
+    color: #fff;
+    border-color: var(--neon-cyan);
+    background: rgba(0, 240, 255, 0.12);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
 }
 
-.switches-list {
+/* ================= 4. FREE-FLOATING COMPACT HUD STREAM (NO BOXES) ================= */
+.holo-canvas-feed {
+    flex: 1;
+    position: relative;
+    z-index: 10;
+    overflow-y: auto;
+    padding: 10px 10px 72px;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    margin: 14px 0;
-    background: rgba(0,0,0,0.3);
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid var(--border-light);
+    scroll-behavior: smooth;
 }
 
-.switch-item {
+/* Free-floating Holographic Message Node */
+.free-node {
+    position: relative;
+    padding: 3px 0 3px 10px;
+    border-left: 2px solid rgba(0, 240, 255, 0.5);
+    animation: holoFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.2s ease;
+}
+
+.free-node::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -2px;
+    width: 2px;
+    height: 8px;
+    background: var(--neon-cyan);
+    box-shadow: 0 0 6px var(--neon-cyan);
+}
+
+.free-node.user-node {
+    border-left-color: rgba(0, 136, 255, 0.6);
+    margin-left: 10%;
+}
+
+.free-node.user-node::before {
+    background: var(--neon-blue);
+    box-shadow: 0 0 6px var(--neon-blue);
+}
+
+.free-node.system-node {
+    border-left-color: rgba(255, 0, 127, 0.6);
+}
+
+.free-node.system-node::before {
+    background: var(--neon-magenta);
+    box-shadow: 0 0 6px var(--neon-magenta);
+}
+
+@keyframes holoFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.holo-node-tag {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 3px;
+    font-family: var(--font-hud);
+    font-size: 0.56rem;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 6px rgba(0, 240, 255, 0.4);
+}
+
+.holo-node-tag.user-tag {
+    color: var(--neon-blue);
+    text-shadow: 0 0 6px rgba(0, 136, 255, 0.4);
+}
+
+.holo-node-tag.neon-magenta {
+    color: var(--neon-magenta);
+    text-shadow: 0 0 6px rgba(255, 0, 127, 0.4);
+}
+
+.tag-pulse {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--neon-cyan);
+    box-shadow: 0 0 4px var(--neon-cyan);
+    animation: tagBlink 1.8s infinite ease-in-out;
+}
+
+.tag-pulse.magenta { background: var(--neon-magenta); box-shadow: 0 0 4px var(--neon-magenta); }
+.tag-pulse.blue { background: var(--neon-blue); box-shadow: 0 0 4px var(--neon-blue); }
+
+@keyframes tagBlink {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; box-shadow: 0 0 8px currentColor; }
+}
+
+.free-node-text {
+    font-size: 0.82rem;
+    line-height: 1.4;
+    color: #e2e8f0;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    word-break: break-word;
+}
+
+/* Free-floating Holographic Shell Output */
+.holo-terminal-stream {
+    margin-top: 5px;
+    background: rgba(3, 7, 15, 0.65);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.05), 0 2px 10px rgba(0, 0, 0, 0.4);
+    border-radius: 5px;
+    padding: 6px 8px;
+    font-family: var(--font-code);
+    font-size: 0.72rem;
+    color: var(--neon-cyan);
+    line-height: 1.35;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    text-shadow: 0 0 4px rgba(0, 240, 255, 0.3);
+}
+
+/* Free-floating Cyberdeck Tool Container (Cyber Brackets, Compact) */
+.floating-tool-container {
+    position: relative;
+    margin-top: 6px;
+    background: rgba(5, 10, 20, 0.55);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.floating-tool-container::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: -1px;
+    width: 8px; height: 8px;
+    border-top: 2px solid var(--neon-cyan);
+    border-left: 2px solid var(--neon-cyan);
+    z-index: 5;
+    pointer-events: none;
+}
+
+.floating-tool-container::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; right: -1px;
+    width: 8px; height: 8px;
+    border-bottom: 2px solid var(--neon-magenta);
+    border-right: 2px solid var(--neon-magenta);
+    z-index: 5;
+    pointer-events: none;
+}
+
+.floating-tool-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 13px;
+    padding: 4px 8px;
+    background: rgba(10, 15, 30, 0.75);
+    border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+}
+
+.floating-tool-title {
+    font-family: var(--font-hud);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    color: var(--neon-cyan);
+}
+
+.floating-tool-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.floating-tool-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #e2e8f0;
+    font-family: var(--font-code);
+    font-size: 0.6rem;
+    padding: 2px 6px;
+    border-radius: 3px;
     cursor: pointer;
+    transition: all 0.15s ease;
 }
 
-.modal-actions {
-    margin-top: 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.floating-tool-btn:active {
+    background: var(--neon-cyan);
+    color: #000;
 }
 
-.btn-clear-chat {
+.floating-tool-iframe {
+    width: 100%;
+    min-height: 160px;
+    height: 180px;
+    border: none;
+    display: block;
     background: transparent;
-    border: 1px solid var(--danger);
-    color: var(--danger);
-    font-size: 12px;
-    font-weight: 600;
-    padding: 8px 14px;
-    border-radius: 8px;
-    cursor: pointer;
 }
 
-.btn-save {
-    background: var(--accent);
+/* ================= 5. COMPACT FREE-FLOATING NEON CHIPS ================= */
+.floating-chip-cloud {
+    position: absolute;
+    bottom: 42px;
+    left: 0;
+    right: 0;
+    z-index: 30;
+    display: flex;
+    gap: 5px;
+    padding: 2px 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.floating-chip-cloud::-webkit-scrollbar { display: none; }
+
+.holo-chip {
+    background: rgba(8, 14, 28, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #cbd5e1;
+    font-family: var(--font-code);
+    font-size: 0.62rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.holo-chip.chip-cyan { border-color: rgba(0, 240, 255, 0.35); color: var(--neon-cyan); }
+.holo-chip.chip-magenta { border-color: rgba(255, 0, 127, 0.35); color: var(--neon-magenta); }
+.holo-chip.chip-emerald { border-color: rgba(0, 255, 136, 0.35); color: var(--neon-emerald); }
+.holo-chip.chip-gold { border-color: rgba(255, 183, 0, 0.35); color: var(--neon-gold); }
+.holo-chip.chip-violet { border-color: rgba(139, 0, 255, 0.35); color: #c084fc; }
+
+.holo-chip:active {
+    transform: scale(0.92);
+    box-shadow: 0 0 8px currentColor;
+}
+
+/* ================= 6. COMPACT FREE-FLOATING GLASS COMMAND NEBULA ================= */
+.holo-command-nebula {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 94%;
+    max-width: 480px;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(6, 11, 24, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6), 0 0 10px rgba(0, 240, 255, 0.12);
+    border-radius: 20px;
+    padding: 4px 8px;
+    transition: all 0.2s ease;
+}
+
+.holo-command-nebula:focus-within {
+    width: 96%;
+    bottom: 10px;
+    border-color: var(--neon-cyan);
+    box-shadow: 0 6px 24px rgba(0, 240, 255, 0.2);
+}
+
+.nebula-voice-btn {
+    background: transparent;
+    border: none;
+    color: var(--neon-cyan);
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.nebula-voice-btn:active {
+    transform: scale(0.88);
+}
+
+.nebula-input-wrapper {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+#omni-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    font-weight: 500;
+    outline: none;
+    padding: 2px 4px;
+}
+
+#omni-input::placeholder {
+    color: rgba(148, 163, 184, 0.5);
+    font-size: 0.74rem;
+}
+
+.input-glow-line {
+    height: 1px;
+    width: 0%;
+    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+    transition: width 0.3s ease;
+}
+
+#omni-input:focus ~ .input-glow-line {
+    width: 100%;
+}
+
+.nebula-exec-btn {
+    background: linear-gradient(135deg, var(--neon-cyan) 0%, #00a8ff 100%);
     color: #000;
     border: none;
-    font-size: 13px;
+    border-radius: 14px;
+    padding: 5px 11px;
+    font-family: var(--font-hud);
+    font-size: 0.65rem;
     font-weight: 800;
-    padding: 8px 18px;
-    border-radius: 8px;
+    letter-spacing: 0.6px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.35);
+    transition: all 0.15s ease;
+}
+
+.nebula-exec-btn:active {
+    transform: scale(0.92);
+}
+
+/* ================= 7. COMPACT TRANSLUCENT GLASS ENGINE DRAWER ================= */
+.holo-drawer {
+    position: absolute;
+    top: 0;
+    left: -250px;
+    width: 250px;
+    height: 100%;
+    z-index: 1000;
+    background: rgba(4, 7, 16, 0.88);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-right: 1px solid rgba(0, 240, 255, 0.25);
+    box-shadow: 10px 0 35px rgba(0, 0, 0, 0.9);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 16px 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+}
+
+.holo-drawer.drawer-open {
+    transform: translateX(250px);
+}
+
+.holo-drawer-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.drawer-title-holo {
+    font-family: var(--font-hud);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--neon-cyan);
+}
+
+.bracket { color: var(--neon-magenta); }
+
+.holo-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 2px;
+}
+
+.drawer-subhint {
+    font-family: var(--font-code);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    margin-top: -6px;
+}
+
+.drawer-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.drawer-label {
+    font-family: var(--font-hud);
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    color: var(--text-dim);
+}
+
+.holo-input {
+    width: 100%;
+    background: rgba(10, 16, 32, 0.6);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    border-radius: 4px;
+    color: #ffffff;
+    font-family: var(--font-code);
+    font-size: 0.72rem;
+    padding: 5px 7px;
+    outline: none;
+}
+
+.holo-input:focus {
+    border-color: var(--neon-cyan);
+}
+
+.drawer-micro-hint {
+    font-size: 0.58rem;
+    color: var(--text-muted);
+}
+
+.hw-holo-matrix {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+}
+
+.hw-matrix-btn {
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    font-family: var(--font-code);
+    font-size: 0.64rem;
+    padding: 5px 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.hw-matrix-btn.cyan { border-color: rgba(0, 240, 255, 0.3); color: var(--neon-cyan); }
+.hw-matrix-btn.violet { border-color: rgba(139, 0, 255, 0.3); color: #c084fc; }
+.hw-matrix-btn.gold { border-color: rgba(255, 183, 0, 0.3); color: var(--neon-gold); }
+.hw-matrix-btn.magenta { border-color: rgba(255, 0, 127, 0.3); color: var(--neon-magenta); }
+.hw-matrix-btn.emerald { border-color: rgba(0, 255, 136, 0.3); color: var(--neon-emerald); }
+
+.hw-matrix-btn:active {
+    transform: scale(0.94);
+}
+
+.saved-holo-list {
+    background: rgba(5, 10, 22, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    padding: 6px;
+    max-height: 90px;
+    overflow-y: auto;
+}
+
+.saved-holo-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.68rem;
+}
+
+.empty-holo-text {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+.holo-action-btn {
+    margin-top: auto;
+    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+    color: #000;
+    border: none;
+    border-radius: 4px;
+    padding: 7px;
+    font-family: var(--font-hud);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+}
+
+.holo-action-btn:active {
+    transform: scale(0.96);
 }

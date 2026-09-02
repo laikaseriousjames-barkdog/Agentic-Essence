@@ -32,9 +32,17 @@ import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
 
@@ -569,13 +577,13 @@ public class WebAppInterface implements TextToSpeech.OnInitListener {
     @JavascriptInterface
     public String getDeviceIpAddress() {
         try {
-            java.util.Enumeration<java.net.NetworkInterface> interfaces = java.net.NetworkInterface.getNetworkInterfaces();
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
             while (interfaces.hasMoreElements()) {
-                java.net.NetworkInterface iface = interfaces.nextElement();
-                java.util.Enumeration<java.net.InetAddress> addresses = iface.getInetAddresses();
+                NetworkInterface iface = interfaces.nextElement();
+                Enumeration<InetAddress> addresses = iface.getInetAddresses();
                 while (addresses.hasMoreElements()) {
-                    java.net.InetAddress addr = addresses.nextElement();
-                    if (!addr.isLoopbackAddress() && addr instanceof java.net.Inet4Address) {
+                    InetAddress addr = addresses.nextElement();
+                    if (!addr.isLoopbackAddress() && addr instanceof Inet4Address) {
                         return addr.getHostAddress();
                     }
                 }
@@ -587,19 +595,216 @@ public class WebAppInterface implements TextToSpeech.OnInitListener {
     }
 
     @JavascriptInterface
+    public String scanWifiNetworks() {
+        try {
+            Context ctx = mActivity.getApplicationContext();
+            WifiManager wifiManager = (WifiManager) ctx.getSystemService(Context.WIFI_SERVICE);
+            if (wifiManager == null) return "ERR: WifiManager is unavailable on this device.";
+
+            if (!wifiManager.isWifiEnabled()) {
+                return "[!] Wi-Fi interface is currently DISABLED.\nRun 'wifi on' to enable Wi-Fi hardware.";
+            }
+
+            try {
+                wifiManager.startScan();
+            } catch (Exception e) {
+                Log.w(TAG, "startScan: " + e.getMessage());
+            }
+
+            List<ScanResult> results = wifiManager.getScanResults();
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.format(Locale.US, "%-17s  %3s  %2s  %-17s  %s\n", "BSSID", "PWR", "CH", "SECURITY", "ESSID"));
+            sb.append("-----------------  ---  --  -----------------  --------------------\n");
+
+            if (results != null && !results.isEmpty()) {
+                for (ScanResult r : results) {
+                    int chan = convertFrequencyToChannel(r.frequency);
+                    String ssid = (r.SSID != null && !r.SSID.isEmpty()) ? r.SSID : "<Hidden ESSID>";
+                    if (ssid.length() > 22) ssid = ssid.substring(0, 19) + "...";
+                    String bssid = r.BSSID != null ? r.BSSID.toUpperCase(Locale.US) : "00:00:00:00:00:00";
+                    String caps = r.capabilities != null ? r.capabilities : "OPEN";
+                    if (caps.length() > 17) caps = caps.substring(0, 15) + "..";
+                    sb.append(String.format(Locale.US, "%-17s  %3d  %2d  %-17s  %s\n",
+                            bssid, r.level, chan, caps, ssid));
+                }
+                sb.append(String.format(Locale.US, "\n[*] Found %d wireless access points via wlan0 hardware.", results.size()));
+            } else {
+                WifiInfo info = wifiManager.getConnectionInfo();
+                if (info != null && info.getNetworkId() != -1) {
+                    sb.append(String.format(Locale.US, "%-17s  %3d  %2d  [CONNECTED]        %s\n",
+                            info.getBSSID() != null ? info.getBSSID().toUpperCase(Locale.US) : "ACTIVE",
+                            info.getRssi(),
+                            convertFrequencyToChannel(info.getFrequency()),
+                            info.getSSID() != null ? info.getSSID() : "Connected AP"));
+                    sb.append(String.format(Locale.US, "\n[*] Active connection: %s (%d Mbps, %d MHz)\n[*] For broader passive scanning, ensure Location / Nearby permissions are active in Android Settings.",
+                            info.getSSID(), info.getLinkSpeed(), info.getFrequency()));
+                } else {
+                    sb.append("[!] No cached broadcast scan results returned by driver.\nCheck Location permissions or retry in 5 seconds.");
+                }
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return "ERR: Wi-Fi scan failed: " + e.getMessage();
+        }
+    }
+
+    private int convertFrequencyToChannel(int freq) {
+        if (freq >= 2412 && freq <= 2484) {
+            return (freq - 2412) / 5 + 1;
+        } else if (freq >= 5170 && freq <= 5825) {
+            return (freq - 5170) / 5 + 34;
+        }
+        return 0;
+    }
+
+    @JavascriptInterface
+    public String getWifiInfo() {
+        try {
+            Context ctx = mActivity.getApplicationContext();
+            WifiManager wifiManager = (WifiManager) ctx.getSystemService(Context.WIFI_SERVICE);
+            if (wifiManager == null) return "WifiManager unavailable";
+            WifiInfo info = wifiManager.getConnectionInfo();
+            if (info == null || info.getNetworkId() == -1) {
+                return "wlan0: Interface active, but not associated with an AP.";
+            }
+            return String.format(Locale.US,
+                    "wlan0: IEEE 802.11  ESSID: %s\n" +
+                    "       Mode: Managed  Frequency: %.3f GHz  Access Point: %s\n" +
+                    "       Bit Rate: %d Mb/s   Tx-Power: 20 dBm\n" +
+                    "       Signal level: %d dBm   Link Quality: %d%%\n" +
+                    "       IPv4: %s",
+                    info.getSSID(),
+                    info.getFrequency() / 1000.0,
+                    info.getBSSID(),
+                    info.getLinkSpeed(),
+                    info.getRssi(),
+                    Math.min(100, Math.max(0, 2 * (info.getRssi() + 100))),
+                    getDeviceIpAddress());
+        } catch (Exception e) {
+            return "ERR: " + e.getMessage();
+        }
+    }
+
+    @JavascriptInterface
+    public String getNetworkInterfacesInfo() {
+        try {
+            StringBuilder sb = new StringBuilder();
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            if (interfaces != null) {
+                for (NetworkInterface iface : Collections.list(interfaces)) {
+                    byte[] mac = iface.getHardwareAddress();
+                    String macStr = "";
+                    if (mac != null) {
+                        StringBuilder mb = new StringBuilder();
+                        for (int i = 0; i < mac.length; i++) {
+                            mb.append(String.format(Locale.US, "%02X%s", mac[i], (i < mac.length - 1) ? ":" : ""));
+                        }
+                        macStr = mb.toString();
+                    }
+
+                    sb.append(String.format(Locale.US, "%-10s: flags=%d<%s>  mtu %d\n",
+                            iface.getName(),
+                            iface.isUp() ? 4163 : 4098,
+                            (iface.isUp() ? "UP," : "") + (iface.isLoopback() ? "LOOPBACK," : "") + "RUNNING",
+                            iface.getMTU()));
+
+                    Enumeration<InetAddress> addrs = iface.getInetAddresses();
+                    while (addrs.hasMoreElements()) {
+                        InetAddress addr = addrs.nextElement();
+                        if (addr instanceof Inet4Address) {
+                            sb.append(String.format(Locale.US, "        inet %s  netmask 255.255.255.0\n", addr.getHostAddress()));
+                        } else {
+                            sb.append(String.format(Locale.US, "        inet6 %s\n", addr.getHostAddress()));
+                        }
+                    }
+                    if (!macStr.isEmpty()) {
+                        sb.append(String.format(Locale.US, "        ether %s  txqueuelen 1000  (Ethernet)\n", macStr));
+                    }
+                    sb.append("\n");
+                }
+            }
+            return sb.toString().trim();
+        } catch (Exception e) {
+            return "ERR: " + e.getMessage();
+        }
+    }
+
+    @JavascriptInterface
     public String runShellCommand(String cmd) {
         if (cmd == null || cmd.trim().isEmpty()) return "ERR: empty command";
+        String trimmed = cmd.trim();
+        String lower = trimmed.toLowerCase(Locale.US);
+
+        // 1. Direct hardware wireless / network queries
+        if (lower.equals("wifi scan") || lower.equals("iwlist scan") || lower.equals("wifiscan") ||
+            lower.equals("airodump-ng") || lower.equals("nmcli dev wifi") || lower.startsWith("iwlist ") ||
+            lower.equals("iw dev wlan0 scan") || lower.equals("wifi-scan") || lower.equals("scan")) {
+            return scanWifiNetworks();
+        }
+
+        if (lower.equals("wifi") || lower.equals("wifi status") || lower.equals("wifi info") ||
+            lower.equals("iwconfig") || lower.equals("iw dev")) {
+            return getWifiInfo();
+        }
+
+        if (lower.equals("ifconfig") || lower.equals("ip a") || lower.equals("ip addr") || lower.equals("netstat -i")) {
+            return getNetworkInterfacesInfo();
+        }
+
+        if (lower.equals("wifi on") || lower.equals("wifi enable")) {
+            try {
+                WifiManager wm = (WifiManager) mActivity.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                if (wm != null) {
+                    wm.setWifiEnabled(true);
+                    return "[*] Wi-Fi hardware interface enabled.";
+                }
+            } catch (Exception e) { return "ERR: " + e.getMessage(); }
+        }
+
+        if (lower.equals("wifi off") || lower.equals("wifi disable")) {
+            try {
+                WifiManager wm = (WifiManager) mActivity.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                if (wm != null) {
+                    wm.setWifiEnabled(false);
+                    return "[*] Wi-Fi hardware interface disabled.";
+                }
+            } catch (Exception e) { return "ERR: " + e.getMessage(); }
+        }
+
+        if (lower.equals("battery") || lower.equals("power")) {
+            return String.format(Locale.US, "Battery Level: %d%%\nCharging: %s", getBatteryLevel(), isDeviceCharging() ? "YES" : "NO");
+        }
+
+        if (lower.equals("torch on") || lower.equals("flashlight on")) {
+            toggleFlashlight(true);
+            return "[*] Flashlight turned ON.";
+        }
+        if (lower.equals("torch off") || lower.equals("flashlight off")) {
+            toggleFlashlight(false);
+            return "[*] Flashlight turned OFF.";
+        }
+
+        // 2. Real process execution capturing both STDOUT and STDERR
         try {
-            Process process = Runtime.getRuntime().exec(new String[]{"sh", "-c", cmd});
+            ProcessBuilder pb = new ProcessBuilder("sh", "-c", trimmed);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             StringBuilder sb = new StringBuilder();
             String line;
-            while ((line = reader.readLine()) != null) {
+            int count = 0;
+            while ((line = reader.readLine()) != null && count < 3000) {
                 sb.append(line).append("\n");
+                count++;
             }
             process.waitFor();
             String res = sb.toString().trim();
-            return res.isEmpty() ? "OK" : res;
+            if (res.isEmpty()) {
+                int exitCode = process.exitValue();
+                return exitCode == 0 ? "Command completed successfully (exit code 0)." : "Process exited with code " + exitCode;
+            }
+            return res;
         } catch (Exception e) {
             return "ERR: " + e.getMessage();
         }

@@ -3,159 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Agentic Essence — Autonomous Assistant</title>
+    <title>AgenticEssence • Holographic Cyberdeck</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-container">
-        <!-- TOP APP BAR -->
-        <header class="app-header">
-            <div class="header-left">
-                <div class="status-pulse active" id="swarmPulse"></div>
-                <div class="header-brand">
-                    <span class="brand-title">Agentic<span class="accent">AI</span></span>
-                    <span class="brand-sub" id="swarmSubTitle">Tri-Agent Swarm</span>
-                </div>
-            </div>
-            <div class="header-right">
-                <span class="badge-pill" id="batteryBadge">🔋 --%</span>
-                <button class="header-icon-btn" id="ttsBtn" title="Toggle Voice Feedback">🔊</button>
-                <button class="header-icon-btn" id="settingsBtn" title="Settings">⚙️</button>
-            </div>
-        </header>
+<div class="holographic-universe">
+    <!-- Alive Animated Background: Multi-colored Neon Particle Cybermesh & Plasma Nebula -->
+    <canvas id="holo-canvas"></canvas>
+    <div class="plasma-nebula-glow"></div>
+    <div class="cyber-grid-overlay"></div>
 
-        <!-- AGENTS STATUS STRIP -->
-        <div class="agents-strip">
-            <div class="agent-pill active" id="pillTuring">
-                <span class="agent-avatar turing">🧠</span>
-                <span class="agent-label">Turing</span>
-                <span class="agent-role">Plan</span>
+    <!-- Free-Floating Holographic HUD Top Bar -->
+    <header class="holo-hud-header">
+        <button id="open-drawer-btn" class="hud-glyph-btn" onclick="openDrawer()" title="Holo Routing & Settings">
+            <span class="glyph-bar"></span>
+            <span class="glyph-bar short"></span>
+            <span class="glyph-bar"></span>
+        </button>
+
+        <div class="hud-brand-node">
+            <div class="quantum-qbit-holo">
+                <div class="qbit-core"></div>
+                <div class="orbit ring-cyan"><div class="electron cyan"></div></div>
+                <div class="orbit ring-magenta"><div class="electron magenta"></div></div>
+                <div class="orbit ring-violet"><div class="electron violet"></div></div>
             </div>
-            <div class="agent-pill" id="pillKnuth">
-                <span class="agent-avatar knuth">⚡</span>
-                <span class="agent-label">Knuth</span>
-                <span class="agent-role">Exec</span>
-            </div>
-            <div class="agent-pill" id="pillLovelace">
-                <span class="agent-avatar lovelace">🔬</span>
-                <span class="agent-label">Lovelace</span>
-                <span class="agent-role">QA</span>
+            <div class="hud-title-cluster">
+                <span class="hud-title-main">AGENTIC ESSENCE</span>
+                <span class="hud-subtitle">QUANTUM SYNTHESIZER // ONLINE</span>
             </div>
         </div>
 
-        <!-- QUICK ACTION CHIPS -->
-        <div class="action-chips-wrapper">
-            <div class="action-chips">
-                <button class="chip" onclick="quickPrompt('Call ')">📞 Call</button>
-                <button class="chip" onclick="quickPrompt('Text ')">💬 Text</button>
-                <button class="chip" onclick="quickPrompt('Set alarm for ')">⏰ Alarm</button>
-                <button class="chip" onclick="quickPrompt('Open ')">📱 Open App</button>
-                <button class="chip" onclick="toggleTorch()">🔦 Torch</button>
-                <button class="chip" onclick="triggerHaptic()">📳 Vibe</button>
-                <button class="chip" onclick="quickPrompt('Navigate to ')">🧭 Navigate</button>
-                <button class="chip" onclick="quickPrompt('What can you do on my phone?')">❓ Help</button>
-            </div>
-        </div>
-
-        <!-- MAIN CHAT STREAM -->
-        <main class="chat-viewport" id="chatViewport">
-            <!-- Welcome message -->
-            <div class="msg-group agent-msg">
-                <div class="msg-avatar turing-bg">🧠</div>
-                <div class="msg-bubble">
-                    <div class="msg-sender"><span class="name turing-color">Alan Turing</span> <span class="badge-role">Commander</span></div>
-                    <div class="msg-text">
-                        Welcome! I am your autonomous on-device AI assistant. I can directly control your phone:
-                        <div class="features-list">
-                            <div>📞 <strong>Phone Calls</strong> — "Call Mom", "Call 555-0199"</div>
-                            <div>💬 <strong>SMS &amp; Texting</strong> — "Text Sarah I'm on my way"</div>
-                            <div>⏰ <strong>Alarms &amp; Timers</strong> — "Set alarm for 7:30 AM"</div>
-                            <div>📱 <strong>App Launcher</strong> — "Open YouTube / WhatsApp / Spotify"</div>
-                            <div>🧭 <strong>Navigation</strong> — "Navigate to Central Park"</div>
-                            <div>🔦 <strong>Hardware</strong> — Torch, Haptics, Volume, Battery</div>
-                        </div>
-                        Speak or type any command to begin!
-                    </div>
-                    <div class="msg-time">Just now</div>
-                </div>
-            </div>
-        </main>
-
-        <!-- TYPING INDICATOR -->
-        <div class="typing-indicator-bar" id="typingIndicator" style="display:none;">
-            <div class="typing-dots">
-                <span></span><span></span><span></span>
-            </div>
-            <span class="typing-text" id="typingText">Turing is analyzing directive...</span>
-        </div>
-
-        <!-- INPUT BAR -->
-        <footer class="chat-input-bar">
-            <button class="icon-action-btn mic-btn" id="micBtn" title="Voice Input">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <div class="hud-quick-nodes">
+            <button class="hud-pill-btn neon-cyan" onclick="execQuick('wifi scan')" title="Hardware Wi-Fi Scan">
+                <span class="pill-icon">📡</span><span class="pill-text">WIFI</span>
             </button>
-            <textarea id="chatInput" placeholder="Message or command (e.g. Call Mom)..." rows="1"></textarea>
-            <button class="send-btn" id="sendBtn" title="Send Directive">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            <button class="hud-pill-btn neon-violet" onclick="execQuick('ifconfig')" title="Network Interfaces">
+                <span class="pill-icon">🌐</span><span class="pill-text">NET</span>
             </button>
-        </footer>
+            <button class="hud-pill-btn neon-gold" onclick="clearCanvas()" title="Purge HUD Canvas">
+                <span class="pill-icon">🧹</span>
+            </button>
+        </div>
+    </header>
 
-        <!-- SETTINGS MODAL -->
-        <div class="modal-overlay" id="settingsModal">
-            <div class="modal-card">
-                <div class="modal-header">
-                    <h3>⚡ Swarm &amp; Phone Settings</h3>
-                    <button class="modal-close" onclick="closeSettings()">✕</button>
-                </div>
-                <div class="modal-body">
-                    <label class="setting-label">AI Reasoning Provider</label>
-                    <select id="providerSelect" class="cyber-select" onchange="handleProviderChange()">
-                        <option value="pollinations">Pollinations AI (Keyless • 100% Free &amp; Built-in)</option>
-                        <option value="openrouter">OpenRouter API</option>
-                        <option value="ollama">Local Ollama (http://localhost:11434)</option>
-                        <option value="custom">Custom OpenAI-Compatible Endpoint</option>
-                        <option value="deterministic">Deterministic On-Device Fast Router</option>
-                    </select>
+    <!-- Persona Stream Hologram Selector (Free-Floating) -->
+    <nav class="persona-holo-bar">
+        <button class="persona-stream-btn active" data-persona="swarm" onclick="switchPersona('swarm')">
+            <span class="persona-dot cyan"></span>✦ SWARM
+        </button>
+        <button class="persona-stream-btn" data-persona="turing" onclick="switchPersona('turing')">
+            <span class="persona-dot magenta"></span>🧠 TURING
+        </button>
+        <button class="persona-stream-btn" data-persona="knuth" onclick="switchPersona('knuth')">
+            <span class="persona-dot gold"></span>⚡ KNUTH
+        </button>
+        <button class="persona-stream-btn" data-persona="lovelace" onclick="switchPersona('lovelace')">
+            <span class="persona-dot emerald"></span>🔬 LOVELACE
+        </button>
+    </nav>
 
-                    <div id="apiKeySection" style="display:none;">
-                        <label class="setting-label">API Key</label>
-                        <input type="password" id="apiKeyInput" class="cyber-input" placeholder="sk-or-..." />
-                    </div>
+    <!-- Translucent Glass Engine Drawer -->
+    <aside class="holo-drawer" id="settings-panel">
+        <div class="holo-drawer-head">
+            <div class="drawer-title-holo">
+                <span class="bracket">[</span> ROUTING &amp; SETTINGS <span class="bracket">]</span>
+            </div>
+            <button class="holo-close-btn" onclick="closeDrawer()">✕</button>
+        </div>
+        <div class="drawer-subhint">Swipe left anywhere to dismiss</div>
 
-                    <div id="customEndpointSection" style="display:none;">
-                        <label class="setting-label">Custom API Endpoint URL</label>
-                        <input type="text" id="customUrlInput" class="cyber-input" placeholder="http://192.168.1.50:11434/v1" />
-                    </div>
+        <!-- AI Inference Routing -->
+        <div class="drawer-block">
+            <label class="drawer-label">INFERENCE ENGINE</label>
+            <select id="providerSelect" class="holo-input" onchange="onProviderChange()">
+                <option value="gemini">Google Gemini 3.1 (Free)</option>
+                <option value="groq">Groq LPU (Ultra-Fast)</option>
+                <option value="openrouter">OpenRouter Multi-Model</option>
+                <option value="ollama">Ollama Local Cyberdeck</option>
+            </select>
+        </div>
 
-                    <label class="setting-label">Model Selection</label>
-                    <input type="text" id="modelInput" class="cyber-input" value="openai" placeholder="e.g. openai, mistral, qwen" />
+        <div class="drawer-block" id="apiKeyGroup">
+            <label class="drawer-label" id="apiKeyLabel">GEMINI API KEY</label>
+            <input type="password" id="apiKeyInput" class="holo-input" placeholder="Enter API Key..." />
+            <span class="drawer-micro-hint">Default: gemini-3.1-flash-lite</span>
+        </div>
 
-                    <div class="switches-list">
-                        <label class="switch-item">
-                            <span>Voice Text-To-Speech (TTS)</span>
-                            <input type="checkbox" id="ttsToggle" checked>
-                        </label>
-                        <label class="switch-item">
-                            <span>Haptic Vibrations on Actions</span>
-                            <input type="checkbox" id="hapticsToggle" checked>
-                        </label>
-                        <label class="switch-item">
-                            <span>Keep Screen Awake</span>
-                            <input type="checkbox" id="screenWakeToggle" checked>
-                        </label>
-                    </div>
+        <div class="drawer-block">
+            <label class="drawer-label">MODEL TARGET</label>
+            <input type="text" id="modelInput" class="holo-input" value="gemini-3.1-flash-lite" />
+        </div>
 
-                    <div class="modal-actions">
-                        <button class="btn-clear-chat" onclick="clearChat()">Clear Chat</button>
-                        <button class="btn-save" onclick="saveSettings()">Save &amp; Apply</button>
-                    </div>
-                </div>
+        <!-- Hardware Controls -->
+        <div class="drawer-block">
+            <label class="drawer-label">HARDWARE BRIDGE APIS</label>
+            <div class="hw-holo-matrix">
+                <button onclick="execQuick('wifi scan')" class="hw-matrix-btn cyan">📡 Scan Wi-Fi</button>
+                <button onclick="execQuick('ifconfig')" class="hw-matrix-btn violet">🌐 Ifconfig</button>
+                <button onclick="toggleDeviceTorch()" class="hw-matrix-btn gold">🔦 Torch</button>
+                <button onclick="vibrateDevice()" class="hw-matrix-btn magenta">📳 Haptic Pulse</button>
+                <button onclick="execQuick('battery')" class="hw-matrix-btn emerald">🔋 Battery</button>
+                <button onclick="execQuick('ps -A')" class="hw-matrix-btn cyan">⚡ Shell Ps</button>
             </div>
         </div>
+
+        <!-- Saved Toolbox Section -->
+        <div class="drawer-block" id="toolsModal">
+            <div class="toolbox-head">
+                <label class="drawer-label">STORED WIDGETS (<span id="toolCountBadge">0</span>)</label>
+            </div>
+            <div id="savedToolsList" class="saved-holo-list">
+                <div class="empty-holo-text">No stored widgets. Synthesize any tool to save.</div>
+            </div>
+        </div>
+
+        <button onclick="saveSettings()" class="holo-action-btn">CONFIRM CONFIGURATION</button>
+    </aside>
+
+    <!-- Free-Floating Agent Canvas (No Boxes, Seamless Stream) -->
+    <main class="holo-canvas-feed" id="output-feed" data-id="chatContainer">
+        <!-- Initial Free-Floating Holographic Intro Node -->
+        <div class="free-node intro-node">
+            <div class="holo-node-tag">
+                <span class="tag-pulse"></span>
+                <span class="tag-title">SYSTEM // QUANTUM KERNEL READY</span>
+            </div>
+            <div class="free-node-text">
+                Autonomous agentic intelligence online. Hardware bridge active. 
+                Ask anything or synthesize live interactive tools on demand.
+            </div>
+        </div>
+
+        <!-- Live Status Node -->
+        <div class="free-node status-node">
+            <div class="holo-node-tag neon-magenta">
+                <span class="tag-pulse magenta"></span>
+                <span class="tag-title">GEMINI-3.1 // SYNTHESIZER STANDBY</span>
+            </div>
+            <div class="free-node-text">
+                Tap any prompt below or speak to deploy live interactive widgets:
+            </div>
+        </div>
+    </main>
+
+    <!-- Free-Floating Neon Command Chips -->
+    <div class="floating-chip-cloud" id="quick-chips">
+        <button class="holo-chip chip-cyan" onclick="execQuick('wifi scan')">📡 wifi scan</button>
+        <button class="holo-chip chip-magenta" onclick="execQuick('Synthesize Android Command Center to control phone')">📱 command center</button>
+        <button class="holo-chip chip-emerald" onclick="execQuick('Build an interactive calculator')">🧮 calculator</button>
+        <button class="holo-chip chip-gold" onclick="execQuick('Spawn Kali Linux terminal command line')">💻 kali terminal</button>
+        <button class="holo-chip chip-violet" onclick="execQuick('ifconfig')">🌐 ifconfig</button>
+        <button class="holo-chip chip-cyan" onclick="execQuick('Spawn calendar')">📅 calendar</button>
     </div>
 
-    <script src="app.js"></script>
+    <!-- Free-Floating Glassmorphic Command Nebula -->
+    <footer class="holo-command-nebula">
+        <button id="micBtn" class="nebula-voice-btn" onclick="triggerVoiceInput()" title="Vocal Command">
+            <span class="voice-wave"></span>
+            🎙️
+        </button>
+        <div class="nebula-input-wrapper">
+            <input type="text" id="omni-input" name="messageInput" placeholder="Command agent, run shell, or build tool..." autocomplete="off" />
+            <div class="input-glow-line"></div>
+        </div>
+        <button id="execute-btn" name="sendBtn" class="nebula-exec-btn" onclick="sendMessage()">
+            <span class="exec-text">RUN</span>
+            <span class="exec-arrow">›</span>
+        </button>
+    </footer>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>

@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.View;
 import android.webkit.ConsoleMessage;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
@@ -50,6 +51,7 @@ public class MainActivity extends Activity {
 
         mWebView = (WebView) findViewById(R.id.webview);
         mWebView.setBackgroundColor(Color.parseColor("#0B0C10"));
+        mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
 
         WebSettings settings = mWebView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -60,8 +62,9 @@ public class MainActivity extends Activity {
         settings.setAllowFileAccessFromFileURLs(true);
         settings.setAllowUniversalAccessFromFileURLs(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
-        settings.setUseWideViewPort(true);
-        settings.setLoadWithOverviewMode(true);
+        settings.setTextZoom(100); // 100% native font scale
+        settings.setUseWideViewPort(false); // Eliminates blur: renders at native 1:1 device pixels
+        settings.setLoadWithOverviewMode(false); // Eliminates overview downsampling blur
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
         settings.setSupportZoom(false);
