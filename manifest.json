@@ -1,19 +1,19 @@
 {
   "name": "Agentic Essence",
   "short_name": "Agentic",
-  "description": "Autonomous AI, Untethered. Fully local Tri-Agent orchestration console.",
+  "description": "Autonomous AI, Untethered. Local-first Tri-Agent AI orchestration console with hybrid cloud/local LLM routing.",
+  "version": "2.5.0",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0B0C10",
   "theme_color": "#66FCF1",
   "orientation": "portrait-primary",
-  "icons": [],
   "categories": ["productivity", "utilities", "developer"],
   "shortcuts": [
     {
-      "name": "Get Started",
-      "url": "/#pricing",
-      "description": "Download or buy a license"
+      "name": "Download",
+      "url": "/#download",
+      "description": "Download the app or APK"
     },
     {
       "name": "Capabilities",
@@ -23,7 +23,12 @@
     {
       "name": "Agents",
       "url": "/#agents",
-      "description": "Meet Turing, Knuth, and Lovelace"
+      "description": "Meet the Planner, Builder, and Auditor"
+    },
+    {
+      "name": "Contact",
+      "url": "/#contact",
+      "description": "Get in touch"
     }
   ]
 }

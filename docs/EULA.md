@@ -11,7 +11,7 @@ By downloading, installing, or using the Software, you agree to be bound by the 
 
 ## 2. Grant of License
 - **Base Edition:** Granted as a free, non-exclusive, revocable license for personal, educational, and evaluation purposes.
-- **Pro Edition (Hardware-Locked):** Upon purchase of a valid license key, you are granted a perpetual, non-exclusive, non-transferable license to execute the Pro Edition features (including Kali WSL Bridge, Android ADB Automation, and AST Code Patching) on the specific hardware device (HWID) licensed.
+- **Pro Edition (Hardware-Locked):** Upon purchase of a valid license key, you are granted a perpetual, non-exclusive, non-transferable license to execute the Pro Edition features (including the full Tri-Agent swarm, embedded Kali Linux VM pane, and complete offline model routing) on the specific hardware device (HWID) licensed.
 
 ---
 
@@ -23,7 +23,7 @@ By downloading, installing, or using the Software, you agree to be bound by the 
 ---
 
 ## 4. Responsible Use & Security Tools
-The Software contains tools for penetration testing, ADB automation, and system administration (e.g., Kali Linux bridge, nmap automation). 
+The Software contains tools for system administration, automation, and security testing (e.g., an embedded Kali Linux VM pane and Android Shizuku/ADB automation). 
 - You agree to use these tools **only** on hardware, networks, and systems that you own or for which you have explicit, authorized written permission to test.
 - The developers of Agentic Essence assume no liability for misuse, damages, or unauthorized activities performed using the Software.
 

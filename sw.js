@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agentic-essence-v1';
+const CACHE_NAME = 'agentic-essence-2.5.0';
 const ASSETS = [
   '/',
   '/index.html',
