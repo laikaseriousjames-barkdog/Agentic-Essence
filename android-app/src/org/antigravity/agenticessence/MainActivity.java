@@ -33,20 +33,22 @@ public class MainActivity extends Activity {
 
         // Request all runtime permissions on Android 6.0+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            String[] permissions = {
-                android.Manifest.permission.CALL_PHONE,
-                android.Manifest.permission.SEND_SMS,
-                android.Manifest.permission.READ_SMS,
-                android.Manifest.permission.READ_CONTACTS,
-                android.Manifest.permission.CAMERA,
-                android.Manifest.permission.RECORD_AUDIO,
-                android.Manifest.permission.MODIFY_AUDIO_SETTINGS,
-                android.Manifest.permission.VIBRATE,
-                android.Manifest.permission.WAKE_LOCK,
-                android.Manifest.permission.ACCESS_FINE_LOCATION,
-                android.Manifest.permission.ACCESS_COARSE_LOCATION
-            };
-            requestPermissions(permissions, PERMISSION_REQUEST_CODE);
+            java.util.List<String> permList = new java.util.ArrayList<>();
+            permList.add(android.Manifest.permission.CALL_PHONE);
+            permList.add(android.Manifest.permission.SEND_SMS);
+            permList.add(android.Manifest.permission.READ_SMS);
+            permList.add(android.Manifest.permission.READ_CONTACTS);
+            permList.add(android.Manifest.permission.CAMERA);
+            permList.add(android.Manifest.permission.RECORD_AUDIO);
+            permList.add(android.Manifest.permission.MODIFY_AUDIO_SETTINGS);
+            permList.add(android.Manifest.permission.VIBRATE);
+            permList.add(android.Manifest.permission.WAKE_LOCK);
+            permList.add(android.Manifest.permission.ACCESS_FINE_LOCATION);
+            permList.add(android.Manifest.permission.ACCESS_COARSE_LOCATION);
+            if (Build.VERSION.SDK_INT >= 33) {
+                permList.add("android.permission.POST_NOTIFICATIONS");
+            }
+            requestPermissions(permList.toArray(new String[0]), PERMISSION_REQUEST_CODE);
         }
 
         mWebView = (WebView) findViewById(R.id.webview);

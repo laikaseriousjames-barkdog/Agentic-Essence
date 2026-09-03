@@ -30,6 +30,19 @@ def test_manifest_structure():
     assert main_activity is not None, "MainActivity not defined in manifest"
     assert main_activity.attrib.get("{http://schemas.android.com/apk/res/android}exported") == "true"
 
+    # Check uses-sdk compatibility
+    uses_sdk = root.find("uses-sdk")
+    assert uses_sdk is not None, "<uses-sdk> tag missing in AndroidManifest.xml"
+    assert uses_sdk.attrib.get("{http://schemas.android.com/apk/res/android}minSdkVersion") == "21"
+    assert uses_sdk.attrib.get("{http://schemas.android.com/apk/res/android}targetSdkVersion") == "34"
+
+    # Check tablet supports-screens
+    supports_screens = root.find("supports-screens")
+    assert supports_screens is not None, "<supports-screens> tag missing in AndroidManifest.xml"
+    assert supports_screens.attrib.get("{http://schemas.android.com/apk/res/android}largeScreens") == "true"
+    assert supports_screens.attrib.get("{http://schemas.android.com/apk/res/android}xlargeScreens") == "true"
+    assert supports_screens.attrib.get("{http://schemas.android.com/apk/res/android}anyDensity") == "true"
+
     # Check telephony, SMS, contacts, alarm, and hardware permissions
     permissions = [elem.attrib.get("{http://schemas.android.com/apk/res/android}name") for elem in root.findall("uses-permission")]
     assert "android.permission.CALL_PHONE" in permissions

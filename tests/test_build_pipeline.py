@@ -25,6 +25,10 @@ def test_apk_badging():
     stdout = res.stdout
     assert "package: name='org.antigravity.agenticessence'" in stdout
     assert "application-label:'Agentic Essence'" in stdout
+    assert "sdkVersion:'21'" in stdout
+    assert "targetSdkVersion:'34'" in stdout
+    assert "supports-screens: 'small' 'normal' 'large' 'xlarge'" in stdout
+    assert "supports-any-density: 'true'" in stdout
     assert "uses-permission: name='android.permission.INTERNET'" in stdout
     assert "uses-permission: name='android.permission.CALL_PHONE'" in stdout
     assert "uses-permission: name='android.permission.SEND_SMS'" in stdout

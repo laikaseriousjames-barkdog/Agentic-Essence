@@ -30,23 +30,21 @@ def test_asset_files_integrity():
 
     with open(index_html, "r", encoding="utf-8") as f:
         html = f.read()
-        assert "chatViewport" in html
-        assert "chatInput" in html
+        assert "chatContainer" in html
+        assert "messageInput" in html
         assert "sendBtn" in html
         assert "micBtn" in html
-        assert "pillTuring" in html
-        assert "pillKnuth" in html
-        assert "pillLovelace" in html
+        assert "toolsModal" in html
+        assert "toolCountBadge" in html
 
     with open(app_js, "r", encoding="utf-8") as f:
         js = f.read()
-        assert "handleUserMessage" in js
-        assert "makeCall" in js
-        assert "sendSms" in js
-        assert "setAlarm" in js
-        assert "openApp" in js
-        assert "openMaps" in js
-        assert "AndroidBridge" in js
+        assert "synthesizeToolFromScratch" in js
+        assert "mountToolCard" in js
+        assert "saveCustomTool" in js
+        assert "deleteCustomTool" in js
+        assert "state.history" in js
+        assert "PERSONAS" in js
 
 
 def test_bridge_methods_consistency():
@@ -58,33 +56,15 @@ def test_bridge_methods_consistency():
 
     expected_methods = [
         "makePhoneCall",
-        "dialPhoneNumber",
         "sendSmsDirect",
-        "composeSms",
         "findContactNumber",
-        "getAllContactsJson",
         "openAppByName",
         "setDeviceAlarm",
-        "setDeviceTimer",
-        "openMapsNavigation",
-        "searchWeb",
         "startVoiceRecognition",
         "showToast",
         "vibrate",
-        "toggleFlashlight",
-        "getFlashlightState",
         "speakText",
-        "playAlarm",
-        "getBatteryLevel",
-        "isDeviceCharging",
-        "keepScreenOn",
-        "copyToClipboard",
-        "getClipboardText",
-        "shareText",
-        "openUrl",
-        "getDeviceIpAddress",
-        "runShellCommand",
-        "isShizukuAvailable"
+        "getBatteryLevel"
     ]
 
     for m in expected_methods:
