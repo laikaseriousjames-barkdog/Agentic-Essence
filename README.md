@@ -9,9 +9,9 @@
 
 Agentic Essence Mobile is a high-performance Android cyberdeck application bringing the full Tri-Agent autonomous orchestration swarm to your mobile device:
 
-- 🧠 **Alan Turing (The Commander)**: High-level reasoning, strategy formulation, recursive task queue management.
-- ⚙️ **Donald Knuth (The Builder)**: Concrete execution payload synthesis, AST codebase transformation, script and tool actions.
-- 🔬 **Ada Lovelace (The Tester)**: QA validation, PyTest suites, vulnerability checks, Shizuku/ADB automation verification.
+- 🧠 **Planner (The Commander)**: High-level reasoning, strategy formulation, recursive task queue management.
+- ⚙️ **Builder (The Developer)**: Concrete execution payload synthesis, script and tool actions.
+- 🔬 **Auditor (The Tester)**: Validation, QA checks, and Shizuku/ADB automation verification.
 
 ---
 
@@ -47,7 +47,16 @@ Output APK will be generated at `android-app/bin/AgenticEssence-Android.apk`.
 
 ---
 
-## 🌐 Website & Releases
+## 🌐 Website & Downloads
 
-- **Website**: [https://agentic-essence.com/](https://agentic-essence.com/)
+All downloads are served from the official website so you always get the latest build:
+
+- **Website**: [https://laikaseriousjames-barkdog.github.io/Agentic-Essence/](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/)
 - **Repository**: [https://github.com/laikaseriousjames-barkdog/Agentic-Essence](https://github.com/laikaseriousjames-barkdog/Agentic-Essence)
+
+---
+
+## 📧 Contact & Support
+
+- **Email**: [laikaseriousjames@gmail.com](mailto:laikaseriousjames@gmail.com)
+- **Website**: [https://agentic-essence.com/](https://agentic-essence.com/)

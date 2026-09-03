@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 set -e
 
 echo "=== Building Agentic Essence Android Cyberdeck APK ==="
@@ -77,11 +77,12 @@ echo "Step 8: Verifying APK signature..."
 apksigner verify "$OUT_APK"
 
 # Distribute to destinations
-mkdir -p /root/repos/Angetic-Essence/downloads /root/Downloads
-cp "$OUT_APK" /root/repos/Angetic-Essence/downloads/AgenticEssence-Android.apk
-cp "$OUT_APK" /root/repos/Angetic-Essence/downloads/AngeticEssence-Android.apk
+mkdir -p /root/repos/Agentic-Essence/downloads /root/Downloads
+cp "$OUT_APK" /root/repos/Agentic-Essence/downloads/AgenticEssence-Android.apk
+cp "$OUT_APK" /root/repos/Agentic-Essence/downloads/AgenticEssence-Android.apk
 cp "$OUT_APK" /root/Downloads/AgenticEssence-Android.apk
 cp "$OUT_APK" /root/AgenticEssence-Android.apk
 
 echo "=== SUCCESS! Agentic Essence APK built and verified ==="
 ls -lh "$OUT_APK"
+

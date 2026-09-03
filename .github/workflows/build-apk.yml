@@ -1,4 +1,4 @@
-name: Build Android APK
+﻿name: Build Android APK
 
 on:
   push:
@@ -53,8 +53,9 @@ jobs:
           git clone --branch gh-pages https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git /tmp/gh-pages-repo
           mkdir -p /tmp/gh-pages-repo/downloads
           cp android-app/bin/AgenticEssence-Android.apk /tmp/gh-pages-repo/downloads/AgenticEssence-Android.apk
-          cp android-app/bin/AgenticEssence-Android.apk /tmp/gh-pages-repo/downloads/AngeticEssence-Android.apk
+          cp android-app/bin/AgenticEssence-Android.apk /tmp/gh-pages-repo/downloads/AgenticEssence-Android.apk
           cd /tmp/gh-pages-repo
           git add downloads/
           git commit -m "Auto-publish latest Agentic Essence Android APK build" || echo "no changes"
           git push
+
