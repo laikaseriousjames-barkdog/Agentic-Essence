@@ -54,6 +54,7 @@
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
+    <uses-permission android:name="com.termux.permission.RUN_COMMAND" />
 
     <!-- Features (Non-required for 100% tablet, phone, and foldable compatibility) -->
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
@@ -71,6 +72,8 @@
 
     <!-- Queries for installed apps on Android 11+ (API 30+) -->
     <queries>
+        <package android:name="com.termux" />
+        <package android:name="com.termux.x11" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
         </intent>

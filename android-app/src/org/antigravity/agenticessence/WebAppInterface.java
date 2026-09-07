@@ -37,9 +37,12 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -784,10 +787,314 @@ public class WebAppInterface implements TextToSpeech.OnInitListener {
             return "[*] Flashlight turned OFF.";
         }
 
-        // 2. Real process execution capturing both STDOUT and STDERR
+        // 2. Query Kali NetHunter Bridge First (Direct root execution in NetHunter)
+        String nhResult = executeViaNetHunterBridge(trimmed);
+        if (nhResult != null) {
+            return nhResult;
+        }
+
+        // 3. Try direct root (su) execution into NetHunter proot / Termux
+        String suResult = runSuNetHunterCommand(trimmed);
+        if (suResult != null && !suResult.trim().isEmpty()) {
+            return suResult;
+        }
+
+        // 4. Fallback to Local Android Process
+        return runLocalProcess(trimmed);
+    }
+
+    // ==========================================
+    // 7. KALI NETHUNTER BRIDGE CLIENT & TERMUX
+    // ==========================================
+
+    private static final String[] BRIDGE_URLS = new String[]{
+        "http://127.0.0.1:8765",
+        "http://localhost:8765"
+    };
+
+    private String executeViaNetHunterBridge(String cmd) {
+        for (String baseUrl : BRIDGE_URLS) {
+            HttpURLConnection conn = null;
+            try {
+                URL url = new URL(baseUrl + "/api/exec");
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                conn.setRequestProperty("Accept", "application/json");
+                conn.setConnectTimeout(2500);
+                conn.setReadTimeout(45000);
+                conn.setDoOutput(true);
+
+                JSONObject req = new JSONObject();
+                req.put("cmd", cmd);
+                byte[] input = req.toString().getBytes("utf-8");
+                conn.setFixedLengthStreamingMode(input.length);
+
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(input);
+                    os.flush();
+                }
+
+                int responseCode = conn.getResponseCode();
+                if (responseCode == 200) {
+                    BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        sb.append(line).append("\n");
+                    }
+                    JSONObject resJson = new JSONObject(sb.toString().trim());
+                    String out = resJson.optString("output", "");
+                    if (out.isEmpty()) {
+                        out = resJson.optString("stdout", "");
+                    }
+                    if (out.isEmpty() && resJson.has("exit_code")) {
+                        int code = resJson.getInt("exit_code");
+                        return code == 0 ? "Command completed successfully in Kali NetHunter (exit code 0)." : "Process exited with code " + code;
+                    }
+                    return out.trim();
+                }
+            } catch (Exception e) {
+                Log.d(TAG, "NetHunter bridge connection skipped on " + baseUrl + ": " + e.getMessage());
+            } finally {
+                if (conn != null) conn.disconnect();
+            }
+        }
+        return null;
+    }
+
+    @JavascriptInterface
+    public boolean isNetHunterBridgeOnline() {
+        for (String baseUrl : BRIDGE_URLS) {
+            HttpURLConnection conn = null;
+            try {
+                URL url = new URL(baseUrl + "/api/status");
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(2000);
+                conn.setReadTimeout(2000);
+                conn.setRequestMethod("GET");
+                int code = conn.getResponseCode();
+                if (code == 200) return true;
+            } catch (Exception ignored) {
+            } finally {
+                if (conn != null) conn.disconnect();
+            }
+        }
+        return false;
+    }
+
+    @JavascriptInterface
+    public String getNetHunterStatus() {
+        for (String baseUrl : BRIDGE_URLS) {
+            HttpURLConnection conn = null;
+            try {
+                URL url = new URL(baseUrl + "/api/status");
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(2000);
+                conn.setReadTimeout(3000);
+                conn.setRequestMethod("GET");
+                if (conn.getResponseCode() == 200) {
+                    BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        sb.append(line);
+                    }
+                    return sb.toString();
+                }
+            } catch (Exception ignored) {
+            } finally {
+                if (conn != null) conn.disconnect();
+            }
+        }
+        return "{\"status\":\"offline\",\"hint\":\"Run 'nh -r' then 'agentic bridge start' in Termux to connect Kali NetHunter.\"}";
+    }
+
+    @JavascriptInterface
+    public String executeNetHunter(String cmd) {
+        String res = executeViaNetHunterBridge(cmd);
+        if (res != null) {
+            return res;
+        }
+        String suRes = runSuNetHunterCommand(cmd);
+        if (suRes != null && !suRes.trim().isEmpty()) {
+            return suRes;
+        }
+        return "[!] Kali NetHunter Bridge Offline (127.0.0.1:8765).\nStart the bridge in Termux by running:\n  1. nh -r\n  2. agentic bridge start\n\nFallback: " + runLocalProcess(cmd);
+    }
+
+    @JavascriptInterface
+    public String installNetHunterPackage(String type, String pkg) {
+        for (String baseUrl : BRIDGE_URLS) {
+            HttpURLConnection conn = null;
+            try {
+                URL url = new URL(baseUrl + "/api/install");
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                conn.setConnectTimeout(3000);
+                conn.setReadTimeout(180000);
+                conn.setDoOutput(true);
+
+                JSONObject req = new JSONObject();
+                req.put("package", pkg);
+                req.put("type", type != null ? type : "apt");
+                byte[] input = req.toString().getBytes("utf-8");
+                conn.setFixedLengthStreamingMode(input.length);
+
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(input);
+                    os.flush();
+                }
+
+                if (conn.getResponseCode() == 200) {
+                    BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        sb.append(line).append("\n");
+                    }
+                    JSONObject resJson = new JSONObject(sb.toString().trim());
+                    return resJson.optString("log", "Installation completed.");
+                }
+            } catch (Exception e) {
+                Log.d(TAG, "Install failed on " + baseUrl + ": " + e.getMessage());
+            } finally {
+                if (conn != null) conn.disconnect();
+            }
+        }
+        // If HTTP bridge is down, try installing via su in NetHunter
+        String cmd = "apt-get update && apt-get install -y " + pkg;
+        String suRes = runSuNetHunterCommand(cmd);
+        if (suRes != null) return suRes;
+        return "ERR: NetHunter bridge offline. Start with 'agentic bridge start' in nh -r.";
+    }
+
+    @JavascriptInterface
+    public boolean launchTermux() {
         try {
-            ProcessBuilder pb = new ProcessBuilder("sh", "-c", trimmed);
+            PackageManager pm = mActivity.getPackageManager();
+            Intent intent = pm.getLaunchIntentForPackage("com.termux");
+            if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                mActivity.startActivity(intent);
+                return true;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "launchTermux error: " + e.getMessage());
+        }
+        return false;
+    }
+
+    @JavascriptInterface
+    public boolean runTermuxCommandIntent(String cmd, boolean inBackground) {
+        try {
+            Intent intent = new Intent();
+            intent.setClassName("com.termux", "com.termux.app.RunCommandService");
+            intent.setAction("com.termux.RUN_COMMAND");
+            intent.putExtra("com.termux.RUN_COMMAND_PATH", "/data/data/com.termux/files/usr/bin/bash");
+            intent.putExtra("com.termux.RUN_COMMAND_ARGUMENTS", new String[]{"-c", cmd});
+            intent.putExtra("com.termux.RUN_COMMAND_WORKDIR", "/data/data/com.termux/files/home");
+            intent.putExtra("com.termux.RUN_COMMAND_BACKGROUND", inBackground);
+            intent.putExtra("com.termux.RUN_COMMAND_SESSION_ACTION", inBackground ? "0" : "1");
+            mActivity.startService(intent);
+            return true;
+        } catch (Exception e) {
+            Log.w(TAG, "Termux RUN_COMMAND intent failed: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @JavascriptInterface
+    public String startTermuxBridge() {
+        try {
+            // 1. Try launching agentic-bridge directly via root
+            runSuNetHunterCommand("nohup /usr/local/bin/agentic-bridge >/dev/null 2>&1 &");
+            try { Thread.sleep(600); } catch (Exception ignored) {}
+            if (isNetHunterBridgeOnline()) {
+                return "SUCCESS: Kali NetHunter bridge started via root.";
+            }
+
+            // 2. Try Termux RUN_COMMAND intent to run agentic bridge start
+            boolean intentOk = runTermuxCommandIntent("nh -r 'agentic bridge start' || agentic bridge start", true);
+
+            // 3. Launch Termux app UI
+            boolean launched = launchTermux();
+
+            if (intentOk || launched) {
+                return "Termux launched. Initializing Kali NetHunter bridge...";
+            }
+            return "ERR: Could not launch Termux. Please verify Termux is installed.";
+        } catch (Exception e) {
+            return "ERR: " + e.getMessage();
+        }
+    }
+
+    private String runSuNetHunterCommand(String cmd) {
+        if (cmd == null || cmd.trim().isEmpty()) return null;
+        String clean = cmd.trim();
+        // Try inside Kali NetHunter proot first, then Termux bash, then root sh
+        String escaped = clean.replace("\"", "\\\"");
+        String[] attempts = new String[] {
+            "/data/data/com.termux/files/usr/bin/nh -r \"" + escaped + "\"",
+            "/data/data/com.termux/files/usr/bin/bash -c \"" + escaped + "\"",
+            clean
+        };
+        for (String candidate : attempts) {
+            String res = runSuCommand(candidate);
+            if (res != null && !res.trim().isEmpty() && !res.contains("not found")) {
+                return res;
+            }
+        }
+        return null;
+    }
+
+    private String runSuCommand(String cmd) {
+        Process process = null;
+        try {
+            process = Runtime.getRuntime().exec("su");
+            try (OutputStream os = process.getOutputStream()) {
+                os.write((cmd + "\nexit\n").getBytes("utf-8"));
+                os.flush();
+            }
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            int count = 0;
+            while ((line = reader.readLine()) != null && count < 3000) {
+                sb.append(line).append("\n");
+                count++;
+            }
+            while ((line = errReader.readLine()) != null && count < 1000) {
+                sb.append(line).append("\n");
+                count++;
+            }
+            process.waitFor();
+            String res = sb.toString().trim();
+            if (!res.isEmpty()) {
+                return res;
+            }
+            return (process.exitValue() == 0) ? "Command completed successfully as root." : null;
+        } catch (Exception e) {
+            return null;
+        } finally {
+            if (process != null) {
+                try { process.destroy(); } catch (Exception ignored) {}
+            }
+        }
+    }
+
+    private String runLocalProcess(String cmd) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("sh", "-c", cmd);
             pb.redirectErrorStream(true);
+            java.util.Map<String, String> env = pb.environment();
+            String path = env.get("PATH");
+            if (path == null) path = "/system/bin:/system/xbin";
+            env.put("PATH", "/data/data/com.termux/files/usr/bin:/data/data/com.termux/files/usr/bin/applets:" + path);
+            env.put("HOME", "/data/data/com.termux/files/home");
+
             Process process = pb.start();
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));

@@ -21,43 +21,74 @@ if (state.model.includes('gemini-2') || state.model.includes('gemini-1.5')) {
     localStorage.setItem('ae_model', 'gemini-3.1-flash-lite');
 }
 
+const SYSTEM_GROUNDING = `
+=== ENVIRONMENT CONTEXT & ROOT PRIVILEGES ===
+You are an advanced, intelligent AI cyberdeck assistant executing inside the Agentic Essence cyberdeck on Android, connected to a live Termux & Kali NetHunter ('nh -r') environment with ROOT privileges.
+You have REAL, unrestricted access to the Android hardware and Kali Linux.
+
+CORE OPERATIONAL BEHAVIORS:
+1. TALK NATURALLY & CONVERSE NORMALLY:
+   - Talk directly with the operator. Answer questions thoroughly, explain concepts, brainstorm, troubleshoot, write bash/python scripts, and converse naturally in rich Markdown format.
+   - Do NOT stay silent. Do NOT truncate your thoughts. Be helpful, articulate, and conversational.
+
+2. RUN REGULAR TOOLS FOR BASIC TASKS:
+   - When the user asks you to perform a task (e.g. check wifi, ping an IP, check network interfaces, view running processes, check memory, inspect battery, test connectivity, manage files, or install software), execute the command using the execution tag:
+     [EXEC: <command>]
+   - Examples:
+     * "Inspecting network interfaces: [EXEC: ifconfig]"
+     * "Pinging Google DNS: [EXEC: ping -c 4 8.8.8.8]"
+     * "Scanning wireless networks: [EXEC: wifi scan]"
+     * "Checking host identity: [EXEC: whoami && id]"
+     * "Listing active processes: [EXEC: ps aux | head -n 15]"
+     * "Checking memory usage: [EXEC: free -m]"
+     * "Turning on device torch: [EXEC: torch on]"
+   - The cyberdeck host will automatically intercept [EXEC: <command>], execute it live in Termux / Kali NetHunter, and render a dedicated terminal card showing the live output. Explain what you are doing and discuss the results.
+
+3. TOOL SYNTHESIS (ONLY WHEN EXPLICITLY REQUESTED):
+   - ONLY synthesize an interactive visual HTML5 tool or widget when the user EXPLICITLY asks to synthesize, build, or create an interactive widget, tool, or mini-app (e.g., "synthesize a tool for...", "build an interactive widget...", "/synth ...").
+   - For all other questions and requests, answer conversationally in Markdown and use [EXEC: <command>] for executing tasks!
+
+HOST BRIDGES & APIS (Available for synthesized widgets when requested):
+1. Kali NetHunter Root Shell:
+   - 'window.parent.AndroidBridge.runShellCommand(cmd)' or 'window.AndroidBridge.runShellCommand(cmd)'
+   - Package manager: 'apt-get update && apt-get install -y <pkg>' or 'pip install <pkg>'
+2. Android Hardware APIs:
+   - 'parent.AndroidBridge.scanWifiNetworks()': Real Wi-Fi scan
+   - 'parent.AndroidBridge.getWifiInfo()': Active connection telemetry
+   - 'parent.AndroidBridge.getNetworkInterfacesInfo()': ifconfig
+   - 'parent.AndroidBridge.toggleFlashlight(true/false)': Camera LED torch
+   - 'parent.AndroidBridge.vibrate(ms)': Haptic pulse
+   - 'parent.AndroidBridge.getBatteryLevel()': Battery state
+   - 'parent.AndroidBridge.speakText(text)': Android TTS`;
+
 const PERSONAS = {
     swarm: {
         name: "Agentic Swarm",
         avatar: "✦",
-        tag: "SWARM // QUANTUM NEURAL CORE",
+        tag: "SWARM // KALI NETHUNTER CORE",
         color: "cyan",
-        prompt: `You are Agentic Swarm, an elite AI assistant and dynamic tool synthesizer.
-Keep all responses strictly straightforward, concise, and direct with zero extra fluff.
-When asked to build, spawn, or create an interactive tool, widget, calculator, or Kali terminal:
-Output ONLY 1 short confirmation sentence followed immediately by the self-contained HTML5/CSS/JS application inside a single \`\`\`html ... \`\`\` code block.`
+        prompt: `You are Agentic Swarm, an elite autonomous AI cyberdeck intelligence and pair-programmer connected to Kali NetHunter.` + SYSTEM_GROUNDING
     },
     turing: {
         name: "Alan Turing",
         avatar: "🧠",
         tag: "TURING // ALGORITHMIC LOGIC",
         color: "magenta",
-        prompt: `You are Alan Turing. You approach problems with structural clarity, logic, and precision.
-Keep responses straightforward and concise with zero fluff.
-When asked to synthesize an interactive tool, provide 1 short sentence followed by the complete HTML in a single \`\`\`html ... \`\`\` block.`
+        prompt: `You are Alan Turing. You approach problems with structural clarity, mathematical reasoning, and logical precision on this Kali NetHunter cyberdeck.` + SYSTEM_GROUNDING
     },
     knuth: {
         name: "Donald Knuth",
         avatar: "⚡",
-        tag: "KNUTH // CRAFTSMANSHIP & CODE",
+        tag: "KNUTH // CODE & CRAFTSMANSHIP",
         color: "gold",
-        prompt: `You are Donald Knuth, master software craftsman. You specialize in algorithms, data structures, and clean code.
-Keep responses straightforward, practical, and direct with zero extra fluff.
-When asked to build an interactive tool, provide 1 short sentence followed by the complete HTML in a single \`\`\`html ... \`\`\` block.`
+        prompt: `You are Donald Knuth, master software craftsman and systems architect on this Kali NetHunter cyberdeck.` + SYSTEM_GROUNDING
     },
     lovelace: {
         name: "Ada Lovelace",
         avatar: "🔬",
         tag: "LOVELACE // POETICAL SCIENCE",
         color: "emerald",
-        prompt: `You are Ada Lovelace. You view challenges through analytical rigor and elegant synthesis.
-Keep responses straightforward, direct, and concise with zero extra fluff.
-When asked to build an interactive tool, provide 1 short sentence followed by the complete HTML in a single \`\`\`html ... \`\`\` block.`
+        prompt: `You are Ada Lovelace. You view challenges through analytical rigor and visionary synthesis on this Kali NetHunter cyberdeck.` + SYSTEM_GROUNDING
     }
 };
 
@@ -100,11 +131,62 @@ const Bridge = {
                 return "ERR: " + e.message;
             }
         }
+        // Direct browser/desktop fallback to NetHunter bridge
+        try {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "http://127.0.0.1:8765/api/exec", false);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.timeout = 10000;
+            xhr.send(JSON.stringify({ cmd: cmd }));
+            if (xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+                return data.output || data.stdout || "Command executed.";
+            }
+        } catch (e) {}
         return null;
     },
     scanWifiNetworks() {
         if (this.hasBridge() && window.AndroidBridge.scanWifiNetworks) {
             return window.AndroidBridge.scanWifiNetworks();
+        }
+        return this.runShellCommand("wifi scan");
+    },
+    isNetHunterOnline() {
+        if (this.hasBridge() && window.AndroidBridge.isNetHunterBridgeOnline) {
+            return window.AndroidBridge.isNetHunterBridgeOnline();
+        }
+        try {
+            const xhr = new XMLHttpRequest();
+            xhr.open("GET", "http://127.0.0.1:8765/api/status", false);
+            xhr.timeout = 2000;
+            xhr.send();
+            return xhr.status === 200;
+        } catch (e) {
+            return false;
+        }
+    },
+    getNetHunterStatus() {
+        if (this.hasBridge() && window.AndroidBridge.getNetHunterStatus) {
+            return window.AndroidBridge.getNetHunterStatus();
+        }
+        try {
+            const xhr = new XMLHttpRequest();
+            xhr.open("GET", "http://127.0.0.1:8765/api/status", false);
+            xhr.timeout = 2500;
+            xhr.send();
+            if (xhr.status === 200) return xhr.responseText;
+        } catch (e) {}
+        return JSON.stringify({ status: "offline" });
+    },
+    launchTermux() {
+        if (this.hasBridge() && window.AndroidBridge.launchTermux) {
+            return window.AndroidBridge.launchTermux();
+        }
+        return false;
+    },
+    startTermuxBridge() {
+        if (this.hasBridge() && window.AndroidBridge.startTermuxBridge) {
+            return window.AndroidBridge.startTermuxBridge();
         }
         return null;
     }
@@ -126,6 +208,10 @@ document.addEventListener("DOMContentLoaded", () => {
     initSettingsDrawer();
     updateToolboxBadge();
     renderSavedToolsList();
+
+    // 3. Check Kali NetHunter Bridge Status
+    updateNetHunterPill();
+    setInterval(updateNetHunterPill, 12000);
 
     // 3. Keyboard Submission
     omniInput.addEventListener('keydown', (e) => {
@@ -403,16 +489,24 @@ window.sendMessage = async function() {
     // 2. Hardware / Linux Shell Command Interception
     const isShellCmd = isDirectShellCommand(text);
     if (isShellCmd) {
-        const shellRes = executeShellOrMock(text);
-        const terminalHtml = `<div class="holo-terminal-stream">${escapeHtml(shellRes)}</div>`;
-        appendFreeNode("TERMINAL // SHELL STDOUT", terminalHtml, "system");
+        let cleanCmd = text.trim();
+        if (cleanCmd.startsWith('$') || cleanCmd.startsWith('!') || cleanCmd.startsWith('>')) {
+            cleanCmd = cleanCmd.substring(1).trim();
+        }
+        const shellRes = executeShellOrMock(cleanCmd);
+        const cardHtml = renderTerminalCard(cleanCmd, shellRes);
+        appendFreeNode("TERMINAL // SHELL STDOUT", cardHtml, "system");
         state.history.push({ role: 'assistant', content: shellRes });
         Bridge.speak("Command executed");
         return;
     }
 
-    // 3. Tool Synthesis Intent
-    if (isToolSynthesisIntent(text)) {
+    // 3. Tool Synthesis Routing
+    const hasAIConfig = !!state.apiKey || state.provider === 'ollama';
+    const isToolIntent = isToolSynthesisIntent(text);
+
+    // If offline and requesting a tool, deploy the real offline cyberdeck tool
+    if (!hasAIConfig && isToolIntent) {
         const tool = synthesizeToolFromScratch(text);
         const cardHtml = mountToolCard(tool, false);
         appendFreeNode(
@@ -425,22 +519,31 @@ window.sendMessage = async function() {
         return;
     }
 
-    // 4. Live AI Query
-    const hasAIConfig = !!state.apiKey || state.provider === 'ollama';
+    // If offline and not a tool request, display setup guide with quick terminal test
     if (!hasAIConfig) {
         appendFreeNode(
             "SYSTEM // SETUP NOTICE",
-            `No API key configured for live intelligence. Swipe from the left to open <strong>Routing &amp; Settings</strong> and enter your Gemini key.`,
+            `No API key configured for live intelligence. Swipe from the left to open <strong>Routing &amp; Settings</strong> and enter your Gemini key, or type direct shell commands (e.g. <code>whoami</code>, <code>ifconfig</code>, <code>ping 8.8.8.8</code>, <code>wifi scan</code>) to execute in Termux / NetHunter offline.`,
             "system"
         );
         return;
     }
 
+    // 4. Live AI Query
     try {
-        const isFollowUp = state.history.filter(h => h.role === 'assistant').length >= 1;
-        const systemPrompt = currentPersona.prompt + (isFollowUp
-            ? "\n\nCRITICAL CONCISENESS RULE: Keep all responses strictly straightforward, direct, and concise with zero extra fluff."
-            : "");
+        let systemPrompt = currentPersona.prompt;
+        
+        // ONLY append synthesis directive when the user EXPLICITLY asked for a tool/widget
+        if (isToolIntent) {
+            systemPrompt += `\n\nCRITICAL DIRECTIVE - EXPLICIT TOOL SYNTHESIS REQUESTED:
+The operator has explicitly requested to synthesize an interactive cyberdeck tool for: "${text}".
+Provide 1-2 friendly conversational introductory sentences explaining what the tool does, followed immediately by the complete, self-contained HTML5/CSS/JS application inside a single \`\`\`html ... \`\`\` code block.
+ALL BUTTONS AND CONTROLS MUST CALL REAL HOST APIS:
+- 'window.parent.AndroidBridge.runShellCommand(cmd)' or 'window.AndroidBridge.runShellCommand(cmd)' to execute real bash commands in Kali NetHunter as root.
+- Download or install dependencies via 'apt update && apt install -y <pkg>' or 'pip install <pkg>' via runShellCommand if needed.
+- Hardware APIs: 'parent.AndroidBridge.scanWifiNetworks()', 'toggleFlashlight()', 'vibrate()', 'getBatteryLevel()', 'speakText()'.
+- NEVER SIMULATE OR MOCK. Write real functional code that runs against the bridge.`;
+        }
 
         const messages = [
             { role: 'system', content: systemPrompt },
@@ -448,9 +551,19 @@ window.sendMessage = async function() {
         ];
 
         const rawReply = await queryAIProvider(messages);
-        const { cleanText, toolObj } = extractHtmlTool(rawReply, text);
 
-        let contentHtml = formatMarkdown(cleanText);
+        let toolObj = null;
+        let cleanText = rawReply;
+
+        // ONLY extract and mount an HTML tool card if tool synthesis was actually requested!
+        if (isToolIntent) {
+            const extracted = extractHtmlTool(rawReply, text);
+            cleanText = extracted.cleanText;
+            toolObj = extracted.toolObj;
+        }
+
+        // Render conversational markdown and intercept any [EXEC: <cmd>] regular tool tags
+        let contentHtml = renderAssistantContent(cleanText);
         if (toolObj) {
             contentHtml += mountToolCard(toolObj, false);
         }
@@ -494,54 +607,145 @@ function appendFreeNode(tagText, contentHtml, type = "assistant") {
     outputFeed.scrollTop = outputFeed.scrollHeight;
 }
 
-// ===================== 4. SHELL COMMAND EXECUTION =====================
+// ===================== 4. REGULAR TOOLS & SHELL EXECUTION =====================
 function isDirectShellCommand(raw) {
-    const clean = raw.trim().toLowerCase();
-    const parts = clean.split(' ');
-    const first = parts[0];
-    const cmds = ['wifi', 'iwlist', 'ifconfig', 'ip', 'ping', 'uname', 'uptime', 'whoami', 'id', 'pwd', 'date', 'ps', 'df', 'free', 'ls', 'netstat', 'battery', 'torch', 'nmap'];
-    return cmds.includes(first) || clean.includes('wifi scan') || clean.includes('scan wifi');
+    if (!raw) return false;
+    const clean = raw.trim();
+    if (clean.startsWith('$') || clean.startsWith('!') || clean.startsWith('>')) {
+        return true;
+    }
+    const lower = clean.toLowerCase();
+
+    // If it contains conversational/question indicators, send to AI for full discussion!
+    const conversationalMarkers = [
+        '?', 'how', 'why', 'what', 'can you', 'could you', 'tell me', 'explain', 
+        'help me', 'please', 'should i', 'which', 'where', 'does', 'hello', 'hey', 
+        'hi', 'who are you', 'synthesize', 'synth', 'build', 'create', 'make'
+    ];
+    for (const marker of conversationalMarkers) {
+        if (lower.includes(marker)) return false;
+    }
+
+    const singleWordCommands = [
+        'wifi', 'ifconfig', 'ip', 'ping', 'uname', 'uptime', 'whoami',
+        'id', 'pwd', 'date', 'ps', 'df', 'free', 'ls', 'netstat', 'battery',
+        'torch', 'nmap', 'agentic', 'ae', 'apt', 'apt-get', 'pip', 'python',
+        'python3', 'cat', 'curl', 'git', 'clear', 'echo', 'top', 'kill', 'pkill',
+        'su', 'nh', 'nethunter', 'iwconfig', 'iwlist', 'traceroute', 'wlan'
+    ];
+    const firstWord = lower.split(/\s+/)[0];
+    return singleWordCommands.includes(firstWord);
 }
 
 function executeShellOrMock(rawCmd) {
-    const trimmed = rawCmd.trim();
-    const lower = trimmed.toLowerCase();
+    let trimmed = rawCmd.trim();
+    if (trimmed.startsWith('$') || trimmed.startsWith('!') || trimmed.startsWith('>')) {
+        trimmed = trimmed.substring(1).trim();
+    }
 
-    // Query Native Android Bridge
+    // 1. Query Native Android Bridge (HTTP daemon + su root + Termux intent fallback)
     const bridgeOut = Bridge.runShellCommand(trimmed);
     if (bridgeOut !== null && bridgeOut !== undefined && bridgeOut !== '') {
         return bridgeOut;
     }
 
-    // Mock outputs for desktop / non-bridge browser previews
-    if (lower.includes('wifi') && (lower.includes('scan') || lower.includes('iwlist'))) {
-        return "BSSID              PWR  CH  SECURITY           ESSID\n" +
-               "-----------------  ---  --  -----------------  --------------------\n" +
-               "E8:48:B8:3A:91:20  -42   6  [WPA2-PSK-CCMP]    Cyberdeck-Mesh-5G\n" +
-               "F0:9F:C2:7B:14:8A  -58  11  [WPA2-PSK-CCMP]    Quantum_IoT_Node\n" +
-               "74:DA:38:D9:E0:41  -65   1  [WPA2-PSK-CCMP]    Guest-HighSpeed\n" +
-               "9C:C9:EB:12:F3:D5  -71  36  [WPA3-SAE-CCMP]    SpectrumSetup-92\n" +
-               "[*] Hardware scan complete: 4 BSSID nodes acquired.";
-    }
+    // 2. Direct HTTP XHR to NetHunter Bridge (for web browser previews or fallback)
+    try {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "http://127.0.0.1:8765/api/exec", false);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.timeout = 10000;
+        xhr.send(JSON.stringify({ cmd: trimmed }));
+        if (xhr.status === 200) {
+            const data = JSON.parse(xhr.responseText);
+            return data.output || data.stdout || (data.exit_code === 0 ? "Command completed successfully (exit code 0)." : "Exit code " + data.exit_code);
+        }
+    } catch (e) {}
 
-    if (lower.startsWith('ifconfig') || lower.startsWith('ip')) {
-        return "wlan0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST> mtu 1500\n" +
-               "        inet 192.168.1.104  netmask 255.255.255.0  broadcast 192.168.1.255\n" +
-               "        inet6 fe80::a12:beef:cafe:0001  prefixlen 64\n" +
-               "lo: flags=73<UP,LOOPBACK,RUNNING> mtu 65536\n" +
-               "        inet 127.0.0.1  netmask 255.0.0.0";
-    }
-
-    if (lower === 'battery') return "Battery Level: 88%\nStatus: Discharging // Health: Good // Temp: 28.4°C";
-    if (lower === 'whoami') return "root";
-    if (lower === 'id') return "uid=0(root) gid=0(root) groups=0(root)";
-    if (lower.startsWith('uname')) return "Linux kali-cyberdeck 6.6.0-kali-arm64 #1 SMP PREEMPT aarch64 GNU/Linux";
-    if (lower === 'pwd') return "/root/cyberdeck";
-    if (lower.startsWith('ls')) return "bin/  core/  hardware/  recon/  scripts/  synthesized/  toolbox/  report.md";
-    if (lower.startsWith('ps')) return "  PID TTY          TIME CMD\n    1 ?        00:00:02 init\n  482 ?        00:00:01 adbd\n 1204 ?        00:00:05 agentic-core";
-
-    return `bash: ${trimmed}: command executed (exit code 0)`;
+    return `[!] Kali NetHunter Bridge Offline (127.0.0.1:8765).\nTo connect, run in Termux:\n  nh -r\n  agentic bridge start\n\nCommand attempted: ${trimmed}`;
 }
+
+/**
+ * Parses and runs regular tools ([EXEC: <command>]) embedded in AI conversational responses.
+ */
+function renderAssistantContent(rawText) {
+    if (!rawText) return '';
+
+    const execRegex = /\[(?:EXEC|RUN):\s*([^\]]+)\]/gi;
+    let parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = execRegex.exec(rawText)) !== null) {
+        const textBefore = rawText.substring(lastIndex, match.index);
+        if (textBefore) {
+            parts.push(formatMarkdown(textBefore));
+        }
+
+        const cmd = match[1].trim();
+        const output = executeShellOrMock(cmd);
+        parts.push(renderTerminalCard(cmd, output));
+
+        lastIndex = execRegex.lastIndex;
+    }
+
+    const textAfter = rawText.substring(lastIndex);
+    if (textAfter) {
+        parts.push(formatMarkdown(textAfter));
+    }
+
+    return parts.join('');
+}
+
+/**
+ * Renders a regular tool terminal execution card with re-run and copy buttons.
+ */
+function renderTerminalCard(cmd, output) {
+    const cardId = 'term_' + Math.random().toString(36).substr(2, 8);
+    const escapedCmd = escapeHtml(cmd);
+    const cleanOutput = output !== null && output !== undefined && output !== '' ? output : '(Completed with no output)';
+    const escapedOutput = escapeHtml(cleanOutput);
+    const jsonCmd = JSON.stringify(cmd);
+    const jsonOut = JSON.stringify(cleanOutput);
+
+    return `
+        <div class="holo-terminal-card" id="${cardId}">
+            <div class="holo-term-header">
+                <span class="holo-term-badge">⚡ KALI / TERMUX</span>
+                <code class="holo-term-cmd">$ ${escapedCmd}</code>
+                <div class="holo-term-actions">
+                    <button class="holo-term-btn" onclick="rerunTermCard('${cardId}', ${escapeHtmlAttr(jsonCmd)})">🔄 RE-RUN</button>
+                    <button class="holo-term-btn" onclick="copyText(${escapeHtmlAttr(jsonOut)})">📋 COPY</button>
+                </div>
+            </div>
+            <pre class="holo-terminal-stream" style="margin-top:0; border-top:none; border-top-left-radius:0; border-top-right-radius:0;">${escapedOutput}</pre>
+        </div>
+    `;
+}
+
+window.rerunTermCard = function(cardId, cmd) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    const stream = card.querySelector('.holo-terminal-stream');
+    if (stream) {
+        stream.textContent = "[Executing in NetHunter / Termux...]";
+        setTimeout(() => {
+            const res = executeShellOrMock(cmd);
+            stream.textContent = res || '(Completed with no output)';
+            Bridge.vibrate(20);
+        }, 50);
+    }
+};
+
+window.copyText = function(text) {
+    if (Bridge.hasBridge() && window.AndroidBridge.copyToClipboard) {
+        window.AndroidBridge.copyToClipboard(text);
+    } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(text);
+        Bridge.showToast("Copied to clipboard");
+    }
+    Bridge.vibrate(20);
+};
 
 // ===================== 5. HARDWARE SHORTCUTS =====================
 window.toggleDeviceTorch = function() {
@@ -572,11 +776,19 @@ window.onSpeechRecognized = function(text) {
 
 // ===================== 6. TOOL SYNTHESIS & FREE-FLOATING CONTAINERS =====================
 function isToolSynthesisIntent(text) {
-    const l = text.toLowerCase();
-    return l.includes('build') || l.includes('create') || l.includes('spawn') ||
-           l.includes('make a') || l.includes('synthesize') || l.includes('calculator') ||
-           l.includes('calendar') || l.includes('timer') || l.includes('command center') ||
-           l.includes('control phone') || l.includes('kali') || l.includes('terminal');
+    if (!text) return false;
+    const l = text.toLowerCase().trim();
+    if (l.startsWith('/synth') || l.startsWith('synth:') || l.startsWith('synthesize:')) return true;
+
+    // Explicit requests to create/build an interactive widget/tool/GUI
+    const patterns = [
+        /\bsynthesize\b.*\b(tool|widget|app|interface|dashboard|panel)\b/,
+        /\b(build|create|make|spin up|generate)\b.*\b(an?\s+)?(interactive\s+)?(tool|widget|mini-app|ui|dashboard|gui)\b/,
+        /\binteractive\s+(tool|widget|dashboard|gui|app)\b/,
+        /\btool\s+synthesiz(er|e|ation)\b/,
+        /\bsynth\s+(a\s+)?(tool|widget|app|gui)\b/
+    ];
+    return patterns.some(p => p.test(l));
 }
 
 /**
@@ -681,76 +893,143 @@ function synthesizeToolFromScratch(query) {
     const q = query.toLowerCase();
     const toolId = 'dyn_' + Math.random().toString(36).substr(2, 9);
 
-    // Android Command Center
-    if (q.includes('command center') || q.includes('control phone') || q.includes('phone control')) {
+    // 1. Android Command Center & Hardware HUD
+    if (q.includes('command center') || q.includes('control phone') || q.includes('hardware') || q.includes('phone control')) {
         return {
             id: toolId,
             title: '📱 ANDROID COMMAND CENTER // HARDWARE HUD',
             html: `
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <div style="display:flex; justify-content:space-between; background:rgba(0,240,255,0.06); padding:8px 10px; border-radius:6px; border:1px solid rgba(0,240,255,0.25);">
-                        <span>SYSTEM: <strong style="color:#00f0ff;">ONLINE</strong></span>
-                        <span>LINK: <strong style="color:#ff007f;">HARDWARE BRIDGE</strong></span>
+                <div style="display:flex; flex-direction:column; gap:8px; font-family:'JetBrains Mono',monospace;">
+                    <div style="display:flex; justify-content:space-between; background:rgba(0,240,255,0.08); padding:8px 10px; border-radius:6px; border:1px solid rgba(0,240,255,0.3);">
+                        <span>SYSTEM: <strong style="color:#00f0ff;">ANDROID KERNEL</strong></span>
+                        <span>BRIDGE: <strong style="color:#ff007f;">ACTIVE LINK</strong></span>
                     </div>
                     <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;">
-                        <button onclick="scanWifi()" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:8px 4px; border-radius:4px; font-weight:700;">📡 WI-FI</button>
-                        <button onclick="toggleTorch()" style="background:rgba(255,183,0,0.15); border:1px solid #ffb700; color:#ffb700; padding:8px 4px; border-radius:4px; font-weight:700;">🔦 TORCH</button>
-                        <button onclick="vibe()" style="background:rgba(255,0,127,0.15); border:1px solid #ff007f; color:#ff007f; padding:8px 4px; border-radius:4px; font-weight:700;">📳 HAPTIC</button>
+                        <button onclick="scanWifi()" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:8px 4px; border-radius:4px; font-weight:700; cursor:pointer;">📡 WI-FI</button>
+                        <button onclick="toggleTorch()" style="background:rgba(255,183,0,0.15); border:1px solid #ffb700; color:#ffb700; padding:8px 4px; border-radius:4px; font-weight:700; cursor:pointer;">🔦 TORCH</button>
+                        <button onclick="vibe()" style="background:rgba(255,0,127,0.15); border:1px solid #ff007f; color:#ff007f; padding:8px 4px; border-radius:4px; font-weight:700; cursor:pointer;">📳 HAPTIC</button>
                     </div>
-                    <div id="cc-log" style="background:rgba(0,0,0,0.5); border:1px solid rgba(0,240,255,0.2); border-radius:4px; padding:6px; font-size:10.5px; color:#00f0ff; min-height:36px; white-space:pre-wrap; font-family:monospace;">Standby.</div>
+                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;">
+                        <button onclick="checkBatt()" style="background:rgba(0,255,136,0.15); border:1px solid #00ff88; color:#00ff88; padding:8px 4px; border-radius:4px; font-weight:700; cursor:pointer;">🔋 BATTERY</button>
+                        <button onclick="checkNet()" style="background:rgba(139,0,255,0.15); border:1px solid #8b00ff; color:#d8b4fe; padding:8px 4px; border-radius:4px; font-weight:700; cursor:pointer;">🌐 IFCONFIG</button>
+                        <button onclick="speakMsg()" style="background:rgba(0,136,255,0.15); border:1px solid #0088ff; color:#93c5fd; padding:8px 4px; border-radius:4px; font-weight:700; cursor:pointer;">🗣️ TTS SPEAK</button>
+                    </div>
+                    <div id="cc-log" style="background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.25); border-radius:4px; padding:8px; font-size:10.5px; color:#00f0ff; min-height:48px; max-height:160px; overflow-y:auto; white-space:pre-wrap; line-height:1.4;">Ready for hardware commands.</div>
                 </div>
                 <script>
-                    function log(m) { document.getElementById('cc-log').textContent = '> ' + m; }
-                    function getB() { return (window.parent && window.parent.AndroidBridge) ? window.parent.AndroidBridge : null; }
+                    function log(m) { const el = document.getElementById('cc-log'); el.textContent = '> ' + m; el.scrollTop = el.scrollHeight; }
+                    function getB() { return (window.parent && window.parent.AndroidBridge) ? window.parent.AndroidBridge : (window.AndroidBridge || null); }
                     function scanWifi() {
-                        log('Scanning local RF spectrum...');
+                        log('Scanning wireless RF spectrum via wlan0...');
                         const b = getB();
                         if (b && b.scanWifiNetworks) { log(b.scanWifiNetworks()); }
-                        else { log('Acquired 4 APs: Cyberdeck-Mesh-5G (-42dBm), Quantum_IoT (-58dBm)'); }
+                        else if (b && b.runShellCommand) { log(b.runShellCommand('wifi scan')); }
+                        else {
+                            fetch('http://127.0.0.1:8765/api/exec', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cmd:'iwlist scan 2>/dev/null || ip -br link'})})
+                            .then(r => r.json()).then(d => log(d.output || d.stdout))
+                            .catch(e => log('Bridge offline: ' + e));
+                        }
                     }
+                    let torchState = false;
                     function toggleTorch() {
                         const b = getB();
-                        if (b && b.toggleFlashlight) { b.toggleFlashlight(true); log('Torch active.'); }
-                        else { log('Torch toggled.'); }
+                        torchState = !torchState;
+                        if (b && b.toggleFlashlight) { b.toggleFlashlight(torchState); log('Camera torch toggled: ' + (torchState ? 'ON' : 'OFF')); }
+                        else if (b && b.runShellCommand) { log(b.runShellCommand(torchState ? 'torch on' : 'torch off')); }
+                        else { log('Torch state: ' + (torchState ? 'ON' : 'OFF')); }
                     }
                     function vibe() {
                         const b = getB();
-                        if (b && b.vibrate) b.vibrate(60);
-                        log('Haptic pulse sent.');
+                        if (b && b.vibrate) b.vibrate(75);
+                        log('Delivered 75ms haptic pulse.');
+                    }
+                    function checkBatt() {
+                        const b = getB();
+                        if (b && b.getBatteryLevel) {
+                            const lvl = b.getBatteryLevel();
+                            const chg = b.isDeviceCharging ? b.isDeviceCharging() : false;
+                            log('Battery Level: ' + lvl + '% | Charging: ' + (chg ? 'YES' : 'NO'));
+                        } else if (b && b.runShellCommand) {
+                            log(b.runShellCommand('battery'));
+                        } else {
+                            log('Battery API active on Android host.');
+                        }
+                    }
+                    function checkNet() {
+                        const b = getB();
+                        if (b && b.getNetworkInterfacesInfo) { log(b.getNetworkInterfacesInfo()); }
+                        else if (b && b.runShellCommand) { log(b.runShellCommand('ifconfig')); }
+                        else {
+                            fetch('http://127.0.0.1:8765/api/exec', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cmd:'ip -br addr'})})
+                            .then(r => r.json()).then(d => log(d.output || d.stdout))
+                            .catch(e => log('Bridge offline: ' + e));
+                        }
+                    }
+                    function speakMsg() {
+                        const b = getB();
+                        if (b && b.speakText) { b.speakText('Agentic Cyberdeck systems fully operational.'); log('TTS output triggered.'); }
+                        else { log('Speech synthesis active.'); }
                     }
                 </script>
             `
         };
     }
 
-    // Kali Linux Terminal
-    if (q.includes('kali') || q.includes('terminal') || q.includes('command line') || q.includes('shell')) {
+    // 2. Kali Linux Cyberdeck Shell
+    if (q.includes('kali') || q.includes('terminal') || q.includes('command line') || q.includes('shell') || q.includes('bash')) {
         return {
             id: toolId,
-            title: '💻 KALI LINUX CYBERDECK SHELL',
+            title: '💻 KALI LINUX CYBERDECK SHELL // ROOT',
             html: `
-                <div style="background:rgba(2,5,12,0.6); border:1px solid rgba(0,240,255,0.25); border-radius:6px; overflow:hidden; font-family:monospace;">
-                    <div id="t-out" style="height:150px; overflow-y:auto; padding:8px; font-size:11px; color:#00f0ff; white-space:pre-wrap; line-height:1.4;">Linux kali-cyberdeck 6.6.0-kali-arm64\nCommands available: wifi scan, ifconfig, ps, ls, ping, battery...</div>
-                    <div style="display:flex; gap:4px; padding:6px; background:rgba(10,18,36,0.6); border-top:1px solid rgba(0,240,255,0.2);">
-                        <input id="t-in" placeholder="Execute command..." style="flex:1; background:transparent; border:none; color:#FFF; font-family:monospace; font-size:11px; outline:none;" />
-                        <button onclick="runCmd()" style="background:linear-gradient(90deg, #00f0ff, #ff007f); color:#000; padding:4px 12px; font-size:11px; font-weight:800; border-radius:4px;">RUN</button>
+                <div style="background:rgba(2,5,12,0.85); border:1px solid rgba(0,240,255,0.3); border-radius:6px; overflow:hidden; font-family:'JetBrains Mono',monospace;">
+                    <div style="background:rgba(10,18,36,0.9); padding:6px 10px; border-bottom:1px solid rgba(0,240,255,0.2); display:flex; justify-content:space-between; font-size:10px; color:#cbd5e1;">
+                        <span style="color:#00f0ff;">⚡ KALI NETHUNTER (nh -r) // ROOT CONSOLE</span>
+                        <span style="color:#ff007f;">UID 0</span>
+                    </div>
+                    <div id="t-out" style="height:150px; overflow-y:auto; padding:8px; font-size:11px; color:#00ff88; white-space:pre-wrap; line-height:1.4; background:rgba(0,0,0,0.5);">Kali GNU/Linux Rolling (arm64) • Root active\nTap any shortcut chip below or enter any bash command:</div>
+                    <div style="display:flex; gap:4px; padding:6px; background:rgba(5,11,24,0.7); overflow-x:auto; border-top:1px solid rgba(0,240,255,0.15);">
+                        <button onclick="sendQuick('whoami && id')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:2px 6px; font-size:9.5px; border-radius:3px; cursor:pointer;">id</button>
+                        <button onclick="sendQuick('uname -a')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:2px 6px; font-size:9.5px; border-radius:3px; cursor:pointer;">uname</button>
+                        <button onclick="sendQuick('ifconfig')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:2px 6px; font-size:9.5px; border-radius:3px; cursor:pointer;">ifconfig</button>
+                        <button onclick="sendQuick('ps aux | head -n 12')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:2px 6px; font-size:9.5px; border-radius:3px; cursor:pointer;">ps</button>
+                        <button onclick="sendQuick('nmap --version 2>/dev/null || which nmap')" style="background:rgba(255,0,127,0.15); border:1px solid #ff007f; color:#ff007f; padding:2px 6px; font-size:9.5px; border-radius:3px; cursor:pointer;">nmap</button>
+                        <button onclick="sendQuick('df -h /root')" style="background:rgba(255,183,0,0.15); border:1px solid #ffb700; color:#ffb700; padding:2px 6px; font-size:9.5px; border-radius:3px; cursor:pointer;">storage</button>
+                    </div>
+                    <div style="display:flex; gap:4px; padding:6px; background:rgba(10,18,36,0.8); border-top:1px solid rgba(0,240,255,0.2);">
+                        <input id="t-in" placeholder="Enter root command (e.g. nmap, ping, ls)..." style="flex:1; background:transparent; border:none; color:#FFF; font-family:'JetBrains Mono',monospace; font-size:11px; outline:none;" />
+                        <button onclick="runCmd()" style="background:linear-gradient(90deg, #00f0ff, #ff007f); color:#000; padding:4px 12px; font-size:11px; font-weight:800; border-radius:4px; border:none; cursor:pointer;">RUN</button>
                     </div>
                 </div>
                 <script>
                     const out = document.getElementById('t-out');
                     const inp = document.getElementById('t-in');
+                    function getBridge() { return (window.parent && window.parent.AndroidBridge) ? window.parent.AndroidBridge : (window.AndroidBridge || null); }
+                    function sendQuick(c) { inp.value = c; runCmd(); }
                     function runCmd() {
                         const c = inp.value.trim();
                         if (!c) return;
                         inp.value = '';
                         out.textContent += '\\n# ' + c + '\\n';
-                        const b = (window.parent && window.parent.AndroidBridge) ? window.parent.AndroidBridge : null;
-                        if (b && b.runShellCommand) {
-                            out.textContent += b.runShellCommand(c) + '\\n';
-                        } else {
-                            out.textContent += '[Simulated Output for: ' + c + ']\\n';
-                        }
                         out.scrollTop = out.scrollHeight;
+
+                        const b = getBridge();
+                        if (b && b.runShellCommand) {
+                            const res = b.runShellCommand(c);
+                            out.textContent += (res ? res.trim() : '(No output)') + '\\n';
+                            out.scrollTop = out.scrollHeight;
+                        } else {
+                            fetch('http://127.0.0.1:8765/api/exec', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({ cmd: c })
+                            }).then(r => r.json()).then(d => {
+                                out.textContent += (d.output || d.stdout || ('Exit code: ' + d.exit_code)) + '\\n';
+                                out.scrollTop = out.scrollHeight;
+                            }).catch(e => {
+                                out.textContent += 'Bridge connection error: ' + e + '\\n';
+                                out.scrollTop = out.scrollHeight;
+                            });
+                        }
                     }
                     inp.addEventListener('keydown', e => { if (e.key === 'Enter') runCmd(); });
                 </script>
@@ -758,32 +1037,92 @@ function synthesizeToolFromScratch(query) {
         };
     }
 
-    // Holographic Calculator
+    // 3. Kali Package & Tool Downloader
+    if (q.includes('download') || q.includes('package') || q.includes('installer') || q.includes('install tool') || q.includes('apt') || q.includes('pip')) {
+        return {
+            id: toolId,
+            title: '📦 KALI PACKAGE & TOOL INSTALLER',
+            html: `
+                <div style="background:rgba(2,5,12,0.85); border:1px solid rgba(255,183,0,0.35); border-radius:6px; padding:10px; font-family:'JetBrains Mono',monospace;">
+                    <div style="color:#ffb700; font-weight:700; font-size:12px; margin-bottom:4px;">KALI NETHUNTER TOOL DOWNLOADER</div>
+                    <div style="font-size:10px; color:#cbd5e1; margin-bottom:10px;">Install penetration testing utilities, security tools, and python packages directly into NetHunter root.</div>
+                    <div style="display:flex; gap:6px; margin-bottom:8px;">
+                        <input id="pkg-name" placeholder="Package name (e.g. nmap, tshark, tcpdump)..." value="nmap" style="flex:1; background:rgba(0,0,0,0.5); border:1px solid rgba(255,183,0,0.3); color:#fff; padding:6px 8px; font-size:11px; border-radius:4px; outline:none; font-family:inherit;" />
+                        <select id="pkg-type" style="background:rgba(10,18,36,0.9); border:1px solid rgba(255,183,0,0.3); color:#ffb700; font-family:inherit; font-size:11px; border-radius:4px; padding:0 6px;">
+                            <option value="apt">APT</option>
+                            <option value="pip">PIP</option>
+                        </select>
+                        <button onclick="installPkg()" style="background:#ffb700; color:#000; font-weight:800; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">INSTALL</button>
+                    </div>
+                    <div style="display:flex; gap:4px; margin-bottom:8px; flex-wrap:wrap;">
+                        <span style="font-size:9.5px; color:#64748b;">Quick select:</span>
+                        <button onclick="setPkg('nmap','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:2px 6px; font-size:9px; border-radius:3px; cursor:pointer;">nmap</button>
+                        <button onclick="setPkg('tcpdump','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:2px 6px; font-size:9px; border-radius:3px; cursor:pointer;">tcpdump</button>
+                        <button onclick="setPkg('tshark','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:2px 6px; font-size:9px; border-radius:3px; cursor:pointer;">tshark</button>
+                        <button onclick="setPkg('netcat-traditional','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:2px 6px; font-size:9px; border-radius:3px; cursor:pointer;">netcat</button>
+                        <button onclick="setPkg('requests','pip')" style="background:rgba(255,255,255,0.08); border:none; color:#ff007f; padding:2px 6px; font-size:9px; border-radius:3px; cursor:pointer;">pip:requests</button>
+                    </div>
+                    <pre id="pkg-log" style="background:rgba(0,0,0,0.6); padding:8px; border-radius:4px; font-size:10.5px; color:#ffb700; max-height:140px; overflow-y:auto; border:1px solid rgba(255,183,0,0.2);">Standby for package installation.</pre>
+                </div>
+                <script>
+                    function setPkg(n, t) { document.getElementById('pkg-name').value = n; document.getElementById('pkg-type').value = t; }
+                    function installPkg() {
+                        const pkg = document.getElementById('pkg-name').value.trim();
+                        const type = document.getElementById('pkg-type').value;
+                        const log = document.getElementById('pkg-log');
+                        if (!pkg) return;
+                        log.textContent = 'Installing ' + pkg + ' via ' + type.toUpperCase() + ' in Kali NetHunter...\\n(This may take a minute)\\n';
+
+                        const b = (window.parent && window.parent.AndroidBridge) ? window.parent.AndroidBridge : (window.AndroidBridge || null);
+                        if (b && b.installNetHunterPackage) {
+                            const res = b.installNetHunterPackage(type, pkg);
+                            log.textContent += res;
+                        } else if (b && b.runShellCommand) {
+                            const cmd = type === 'pip' ? ('pip install ' + pkg) : ('DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y ' + pkg);
+                            log.textContent += b.runShellCommand(cmd);
+                        } else {
+                            fetch('http://127.0.0.1:8765/api/install', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({ package: pkg, type: type })
+                            }).then(r => r.json()).then(d => {
+                                log.textContent += d.log || (d.success ? 'Installation completed.' : 'Install failed.');
+                            }).catch(e => {
+                                log.textContent += 'Bridge connection error: ' + e;
+                            });
+                        }
+                    }
+                </script>
+            `
+        };
+    }
+
+    // 4. Quantum Scientific Calculator
     if (q.includes('calc') || q.includes('math')) {
         return {
             id: toolId,
             title: '🧮 HOLOGRAPHIC QUANTUM CALCULATOR',
             html: `
-                <div style="max-width:260px; margin:0 auto; background:rgba(8,14,28,0.6); padding:10px; border-radius:8px; border:1px solid rgba(0,240,255,0.3);">
-                    <input id="calc-disp" readonly value="0" style="width:100%; text-align:right; font-size:18px; padding:8px; margin-bottom:8px; background:rgba(0,0,0,0.5); color:#00f0ff; border:1px solid rgba(0,240,255,0.25); font-family:monospace;" />
+                <div style="max-width:280px; margin:0 auto; background:rgba(8,14,28,0.7); padding:12px; border-radius:8px; border:1px solid rgba(0,240,255,0.3); font-family:'JetBrains Mono',monospace;">
+                    <input id="calc-disp" readonly value="0" style="width:100%; text-align:right; font-size:18px; padding:8px; margin-bottom:8px; background:rgba(0,0,0,0.6); color:#00f0ff; border:1px solid rgba(0,240,255,0.3); font-family:inherit; border-radius:4px;" />
                     <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:4px;">
-                        <button onclick="cClear()" style="background:#ff007f; color:#FFF; padding:8px; border-radius:4px;">C</button>
-                        <button onclick="cOp('/')" style="background:rgba(0,240,255,0.15); color:#00f0ff; padding:8px; border-radius:4px;">/</button>
-                        <button onclick="cOp('*')" style="background:rgba(0,240,255,0.15); color:#00f0ff; padding:8px; border-radius:4px;">*</button>
-                        <button onclick="cOp('-')" style="background:rgba(0,240,255,0.15); color:#00f0ff; padding:8px; border-radius:4px;">-</button>
-                        <button onclick="cNum('7')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px;">7</button>
-                        <button onclick="cNum('8')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px;">8</button>
-                        <button onclick="cNum('9')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px;">9</button>
-                        <button onclick="cOp('+')" style="background:rgba(0,240,255,0.15); color:#00f0ff; padding:8px; border-radius:4px;">+</button>
-                        <button onclick="cNum('4')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px;">4</button>
-                        <button onclick="cNum('5')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px;">5</button>
-                        <button onclick="cNum('6')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px;">6</button>
-                        <button onclick="cCalc()" style="background:#00f0ff; color:#000; padding:8px; grid-row:span 2; font-weight:800; border-radius:4px;">=</button>
-                        <button onclick="cNum('1')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px;">1</button>
-                        <button onclick="cNum('2')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px;">2</button>
-                        <button onclick="cNum('3')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px;">3</button>
-                        <button onclick="cNum('0')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; grid-column:span 2; border-radius:4px;">0</button>
-                        <button onclick="cNum('.')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px;">.</button>
+                        <button onclick="cClear()" style="background:#ff007f; color:#FFF; padding:8px; border-radius:4px; font-weight:bold; border:none; cursor:pointer;">C</button>
+                        <button onclick="cOp('/')" style="background:rgba(0,240,255,0.15); color:#00f0ff; padding:8px; border-radius:4px; border:none; cursor:pointer;">/</button>
+                        <button onclick="cOp('*')" style="background:rgba(0,240,255,0.15); color:#00f0ff; padding:8px; border-radius:4px; border:none; cursor:pointer;">*</button>
+                        <button onclick="cOp('-')" style="background:rgba(0,240,255,0.15); color:#00f0ff; padding:8px; border-radius:4px; border:none; cursor:pointer;">-</button>
+                        <button onclick="cNum('7')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">7</button>
+                        <button onclick="cNum('8')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">8</button>
+                        <button onclick="cNum('9')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">9</button>
+                        <button onclick="cOp('+')" style="background:rgba(0,240,255,0.15); color:#00f0ff; padding:8px; border-radius:4px; border:none; cursor:pointer;">+</button>
+                        <button onclick="cNum('4')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">4</button>
+                        <button onclick="cNum('5')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">5</button>
+                        <button onclick="cNum('6')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">6</button>
+                        <button onclick="cCalc()" style="background:#00f0ff; color:#000; padding:8px; grid-row:span 2; font-weight:800; border-radius:4px; border:none; cursor:pointer;">=</button>
+                        <button onclick="cNum('1')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">1</button>
+                        <button onclick="cNum('2')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">2</button>
+                        <button onclick="cNum('3')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">3</button>
+                        <button onclick="cNum('0')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; grid-column:span 2; border-radius:4px; border:none; cursor:pointer;">0</button>
+                        <button onclick="cNum('.')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">.</button>
                     </div>
                 </div>
                 <script>
@@ -797,10 +1136,42 @@ function synthesizeToolFromScratch(query) {
         };
     }
 
+    // 5. Universal Dynamic Cyberdeck Tool & Script Runner
+    const defaultCmd = q.includes('wifi') ? 'wifi scan' : (q.includes('ip') || q.includes('network') ? 'ifconfig' : 'uname -a && id && uptime');
     return {
         id: toolId,
-        title: '⚡ HOLOGRAPHIC INTERACTIVE APPLICATION',
-        html: `<div style="text-align:center; padding:20px; color:#00f0ff;"><h3>SYNTHESIZED APPLICATION</h3><p style="margin-top:8px; color:#e2e8f0;">Running in transparent sandbox.</p></div>`
+        title: `⚡ ${query.toUpperCase().slice(0, 32)} // KALI TOOL`,
+        html: `
+            <div style="background:rgba(2,5,12,0.85); border:1px solid #00f0ff; border-radius:6px; padding:10px; font-family:'JetBrains Mono',monospace;">
+                <div style="color:#00f0ff; font-weight:700; font-size:12px; margin-bottom:4px;">REAL-TIME CYBERDECK RUNNER</div>
+                <div style="font-size:10px; color:#cbd5e1; margin-bottom:8px;">Executing in Kali NetHunter ('nh -r') root environment.</div>
+                <div style="display:flex; gap:6px; margin-bottom:8px;">
+                    <input id="dyn-cmd" value="${escapeHtmlAttr(defaultCmd)}" style="flex:1; background:rgba(0,0,0,0.5); border:1px solid rgba(0,240,255,0.3); color:#fff; padding:6px 8px; font-size:11px; border-radius:4px; outline:none; font-family:inherit;" />
+                    <button onclick="execDyn()" style="background:#00f0ff; color:#000; font-weight:800; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">RUN</button>
+                </div>
+                <pre id="dyn-out" style="background:rgba(0,0,0,0.6); padding:8px; border-radius:4px; font-size:10.5px; color:#00ff88; max-height:140px; overflow-y:auto; border:1px solid rgba(0,240,255,0.2);">Standby for execution.</pre>
+            </div>
+            <script>
+                function execDyn() {
+                    const c = document.getElementById('dyn-cmd').value.trim();
+                    const out = document.getElementById('dyn-out');
+                    if (!c) return;
+                    out.textContent = 'Running: ' + c + '\\n...\\n';
+                    const b = (window.parent && window.parent.AndroidBridge) ? window.parent.AndroidBridge : (window.AndroidBridge || null);
+                    if (b && b.runShellCommand) {
+                        out.textContent = b.runShellCommand(c) || '(Completed with no output)';
+                    } else {
+                        fetch('http://127.0.0.1:8765/api/exec', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ cmd: c })
+                        }).then(r => r.json()).then(d => {
+                            out.textContent = d.output || d.stdout || ('Exit code: ' + d.exit_code);
+                        }).catch(e => { out.textContent = 'Error: ' + e; });
+                    }
+                }
+            </script>
+        `
     };
 }
 
@@ -819,12 +1190,10 @@ function extractHtmlTool(text, userQuery = '') {
 
     if (!rawHtml) return { cleanText: text, toolObj: null };
 
+    // DO NOT truncate cleanText! Keep full conversational response!
     let cleanText = match ? text.replace(match[0], '').trim() : text.replace(rawHtml, '').trim();
     if (!cleanText) {
         cleanText = "Synthesized application:";
-    } else if (cleanText.length > 180) {
-        const firstSentence = cleanText.split(/\.\s+|\n+/)[0].trim();
-        cleanText = firstSentence ? (firstSentence.endsWith('.') ? firstSentence : firstSentence + '.') : "Synthesized application:";
     }
 
     let title = '⚡ SYNTHESIZED TOOL';
@@ -834,6 +1203,7 @@ function extractHtmlTool(text, userQuery = '') {
     else if (q.includes('command center') || q.includes('control phone')) title = '📱 ANDROID COMMAND CENTER';
     else if (q.includes('calendar')) title = '📅 QUANTUM CALENDAR';
     else if (q.includes('timer')) title = '⏱️ PRECISION CHRONOMETER';
+    else if (q.includes('wifi') || q.includes('network')) title = '📡 SPECTRUM & NETWORK TOOL';
 
     return {
         cleanText,
@@ -950,9 +1320,123 @@ function escapeHtmlAttr(str) {
 
 function formatMarkdown(text) {
     if (!text) return '';
-    return escapeHtml(text)
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/`([^`]+)`/g, '<code style="color:#00f0ff; background:rgba(0,240,255,0.08); padding:2px 6px; border-radius:3px; font-family:monospace;">$1</code>')
-        .replace(/\n/g, '<br>');
+
+    // Code blocks with Run / Copy actions
+    let html = escapeHtml(text).replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+        const cleanCode = code.trim();
+        const jsonCode = JSON.stringify(cleanCode);
+        const isShell = (lang === 'bash' || lang === 'sh' || lang === 'shell');
+        const runBtn = isShell
+            ? `<button class="holo-term-btn" onclick="execQuick(${escapeHtmlAttr(jsonCode)})">▶ RUN IN KALI</button>`
+            : '';
+        const copyBtn = `<button class="holo-term-btn" onclick="copyText(${escapeHtmlAttr(jsonCode)})">📋 COPY</button>`;
+
+        return `<div class="holo-code-block" style="background:rgba(3,7,15,0.75); border:1px solid rgba(0,240,255,0.25); border-left:3px solid var(--neon-cyan); border-radius:5px; margin:8px 0; padding:8px; font-family:var(--font-code); font-size:11px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:10px; color:var(--neon-cyan);">
+                <span>${escapeHtml(lang || 'code')}</span>
+                <div style="display:flex; gap:6px;">${runBtn}${copyBtn}</div>
+            </div>
+            <pre style="margin:0; overflow-x:auto; color:#e2e8f0; white-space:pre-wrap; font-family:inherit;">${cleanCode}</pre>
+        </div>`;
+    });
+
+    // Inline code
+    html = html.replace(/`([^`]+)`/g, '<code style="color:#00f0ff; background:rgba(0,240,255,0.08); padding:2px 6px; border-radius:3px; font-family:monospace;">$1</code>');
+    // Bold & italic
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    // Newlines
+    html = html.replace(/\n/g, '<br>');
+
+    return html;
 }
+
+// ===================== 11. KALI NETHUNTER TELEMETRY & TERMUX =====================
+window.launchOrStartTermux = function() {
+    Bridge.vibrate(30);
+    if (Bridge.hasBridge() && window.AndroidBridge.startTermuxBridge) {
+        const res = window.AndroidBridge.startTermuxBridge();
+        Bridge.showToast(res);
+        appendFreeNode("TERMUX // BRIDGE LAUNCH", `<div style="font-family:var(--font-code); font-size:11px; color:#00f0ff;">${escapeHtml(res)}<br>Checking bridge status...</div>`, "system");
+        setTimeout(updateNetHunterPill, 3000);
+    } else if (Bridge.hasBridge() && window.AndroidBridge.launchTermux) {
+        window.AndroidBridge.launchTermux();
+        Bridge.showToast("Opening Termux...");
+    } else {
+        appendFreeNode("TERMUX // INSTRUCTIONS", `<div style="font-family:var(--font-code); font-size:11px; color:#cbd5e1;">Open Termux and run:<br><code style="color:#00f0ff;">nh -r</code><br><code style="color:#00f0ff;">agentic bridge start</code></div>`, "system");
+    }
+};
+
+window.inspectNetHunter = function() {
+    Bridge.vibrate(30);
+    const isOnline = Bridge.isNetHunterOnline();
+    const rawStatus = Bridge.getNetHunterStatus();
+    let statusObj = {};
+    try { statusObj = JSON.parse(rawStatus); } catch (e) {}
+
+    let content = '';
+    if (isOnline) {
+        const tools = statusObj.tools || {};
+        const available = Object.keys(tools).filter(k => tools[k]).join(', ') || 'nmap, python3, curl, git, apt-get, pip';
+        content = `
+            <div style="font-family:var(--font-code); font-size:11px; line-height:1.6; color:#cbd5e1;">
+                <div style="color:var(--neon-emerald); font-weight:700; margin-bottom:6px; font-size:12px;">✓ KALI NETHUNTER ROOT BRIDGE: ONLINE</div>
+                <div><strong>Daemon:</strong> http://127.0.0.1:8765 (PID: ${statusObj.pid || 'Active'})</div>
+                <div><strong>Privileges:</strong> ${escapeHtml(statusObj.user || 'root')} (UID: ${statusObj.uid !== undefined ? statusObj.uid : 0}) — Root Access: YES</div>
+                <div><strong>Host System:</strong> ${escapeHtml(statusObj.os || 'Kali GNU/Linux Rolling')} (${escapeHtml(statusObj.platform || 'aarch64')})</div>
+                <div><strong>Kernel:</strong> ${escapeHtml(statusObj.kernel || 'Linux')}</div>
+                <div><strong>CLI Interface:</strong> <code>agentic</code> / <code>ae</code></div>
+                <div><strong>Installed Tools:</strong> ${escapeHtml(available)}</div>
+                <div style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap;">
+                    <button onclick="execQuick('whoami && id')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer;">whoami</button>
+                    <button onclick="execQuick('uname -a')" style="background:rgba(255,0,127,0.15); border:1px solid #ff007f; color:#ff007f; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer;">Kernel Info</button>
+                    <button onclick="execQuick('agentic bridge status')" style="background:rgba(0,255,136,0.15); border:1px solid #00ff88; color:#00ff88; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer;">Bridge Info</button>
+                    <button onclick="execQuick('wifi scan')" style="background:rgba(255,183,0,0.15); border:1px solid #ffb700; color:#ffb700; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer;">Scan Wi-Fi</button>
+                </div>
+            </div>
+        `;
+    } else {
+        content = `
+            <div style="font-family:var(--font-code); font-size:11px; line-height:1.6; color:#cbd5e1;">
+                <div style="color:var(--neon-magenta); font-weight:700; margin-bottom:6px; font-size:12px;">⚠ KALI NETHUNTER BRIDGE: STANDBY / OFFLINE</div>
+                <div style="margin-bottom:6px;">To connect this cyberdeck app directly to your Kali Linux NetHunter environment:</div>
+                <ol style="margin-left:16px; margin-bottom:8px; line-height:1.5;">
+                    <li>Tap the launch button below or open <strong>Termux</strong></li>
+                    <li>Launch NetHunter root: <code>nh -r</code></li>
+                    <li>Start the background bridge: <code>agentic bridge start</code></li>
+                </ol>
+                <div style="margin-top:8px; display:flex; gap:8px;">
+                    <button onclick="launchOrStartTermux()" style="background:rgba(0,255,136,0.2); border:1px solid #00ff88; color:#00ff88; padding:6px 12px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">🚀 Launch Termux / Start Bridge</button>
+                    <button onclick="execQuick('whoami')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:6px 10px; border-radius:4px; font-size:11px; cursor:pointer;">Test Shell</button>
+                </div>
+                <div style="font-size:10px; color:#64748b; margin-top:8px;">(Local Android shell and direct su root execution will still operate)</div>
+            </div>
+        `;
+    }
+    appendFreeNode("NETHUNTER // BRIDGE TELEMETRY", content, "system");
+    updateNetHunterPill();
+};
+
+window.updateNetHunterPill = function() {
+    const pill = document.getElementById('nh-bridge-pill');
+    const pillText = document.getElementById('nh-pill-text');
+    const drawerStatus = document.getElementById('nh-drawer-status');
+    const isOnline = Bridge.isNetHunterOnline();
+
+    if (pillText) {
+        pillText.textContent = isOnline ? "NH: ROOT" : "NH: STANDBY";
+    }
+    if (pill) {
+        if (isOnline) {
+            pill.className = "hud-pill-btn neon-emerald";
+            pill.title = "Kali NetHunter Root Bridge: ONLINE (127.0.0.1:8765)";
+        } else {
+            pill.className = "hud-pill-btn neon-magenta";
+            pill.title = "Kali NetHunter Bridge: STANDBY (Run 'agentic bridge start' in nh -r)";
+        }
+    }
+    if (drawerStatus) {
+        drawerStatus.textContent = isOnline ? "ONLINE (ROOT)" : "STANDBY";
+        drawerStatus.style.color = isOnline ? "var(--neon-emerald)" : "var(--neon-magenta)";
+    }
+};

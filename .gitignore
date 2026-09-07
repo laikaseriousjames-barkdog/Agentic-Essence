@@ -1,23 +1,20 @@
-# Ignore build artifacts
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Build artifacts
 *.class
 *.dex
-*.apk
 *.idsig
-bin/
-obj/
-.pytest_cache/
-__pycache__/
-*.pyc
-.DS_Store
+**/obj/
+**/bin/unaligned.apk
+**/bin/unsigned.apk
+.gradle/
+build/
 
-# Track essential project sources
-!.gitignore
-!README.md
-!requirements.txt
-!.github/
-!.github/**
-!android-app/
-!android-app/**
-!tests/
-!tests/**
-!build_apk.sh
+# OS files
+.DS_Store
+Thumbs.db
+

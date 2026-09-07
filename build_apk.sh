@@ -77,5 +77,17 @@ apksigner sign --ks "$KEYSTORE" \
 echo "Step 8: Verifying APK signature..."
 apksigner verify "$OUT_APK"
 
+# Step 9: Distribute locally and to downloads
+if [ -d "$SCRIPT_DIR/downloads" ]; then
+    cp "$OUT_APK" "$SCRIPT_DIR/downloads/AgenticEssence-Android.apk"
+    cp "$OUT_APK" "$SCRIPT_DIR/downloads/AngeticEssence-Android.apk" 2>/dev/null || true
+fi
+if [ -w "/root" ]; then
+    mkdir -p /root/Downloads
+    cp "$OUT_APK" /root/Downloads/AgenticEssence-Android.apk 2>/dev/null || true
+    cp "$OUT_APK" /root/AgenticEssence-Android.apk 2>/dev/null || true
+fi
+
 echo "=== SUCCESS! Agentic Essence APK built and verified at $OUT_APK ==="
 ls -lh "$OUT_APK"
+

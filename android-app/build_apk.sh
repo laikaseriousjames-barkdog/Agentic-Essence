@@ -1,12 +1,13 @@
-﻿#!/bin/bash
+#!/bin/bash
 set -e
 
-echo "=== Building Agentic Essence Android Cyberdeck APK ==="
-
-APP_DIR="/root/agentic-essence-android"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$SCRIPT_DIR/android-app"
 SDK_DIR="/root/android-sdk"
 KEYSTORE="/root/debug.keystore"
 OUT_APK="$APP_DIR/bin/AgenticEssence-Android.apk"
+
+echo "=== Building Agentic Essence Android Cyberdeck APK ==="
 
 mkdir -p "$APP_DIR/bin" "$APP_DIR/obj" "$APP_DIR/assets/www"
 
@@ -50,7 +51,7 @@ aapt package -f \
 echo "Step 5: Adding classes.dex to APK package..."
 cd "$APP_DIR/bin"
 aapt add unaligned.apk classes.dex
-cd /root
+cd "$SCRIPT_DIR"
 
 # Step 6: Zipalign APK
 echo "Step 6: Zipaligning APK package..."
@@ -76,13 +77,17 @@ apksigner sign --ks "$KEYSTORE" \
 echo "Step 8: Verifying APK signature..."
 apksigner verify "$OUT_APK"
 
-# Distribute to destinations
-mkdir -p /root/repos/Agentic-Essence/downloads /root/Downloads
-cp "$OUT_APK" /root/repos/Agentic-Essence/downloads/AgenticEssence-Android.apk
-cp "$OUT_APK" /root/repos/Agentic-Essence/downloads/AgenticEssence-Android.apk
-cp "$OUT_APK" /root/Downloads/AgenticEssence-Android.apk
-cp "$OUT_APK" /root/AgenticEssence-Android.apk
+# Step 9: Distribute locally and to downloads
+if [ -d "$SCRIPT_DIR/downloads" ]; then
+    cp "$OUT_APK" "$SCRIPT_DIR/downloads/AgenticEssence-Android.apk"
+    cp "$OUT_APK" "$SCRIPT_DIR/downloads/AngeticEssence-Android.apk" 2>/dev/null || true
+fi
+if [ -w "/root" ]; then
+    mkdir -p /root/Downloads
+    cp "$OUT_APK" /root/Downloads/AgenticEssence-Android.apk 2>/dev/null || true
+    cp "$OUT_APK" /root/AgenticEssence-Android.apk 2>/dev/null || true
+fi
 
-echo "=== SUCCESS! Agentic Essence APK built and verified ==="
+echo "=== SUCCESS! Agentic Essence APK built and verified at $OUT_APK ==="
 ls -lh "$OUT_APK"
 

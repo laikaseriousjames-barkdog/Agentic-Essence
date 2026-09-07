@@ -264,6 +264,8 @@ body, html {
 }
 
 .hud-pill-btn.neon-cyan { border-color: rgba(0, 240, 255, 0.4); color: var(--neon-cyan); }
+.hud-pill-btn.neon-magenta { border-color: rgba(255, 0, 127, 0.4); color: var(--neon-magenta); }
+.hud-pill-btn.neon-emerald { border-color: rgba(0, 255, 136, 0.4); color: var(--neon-emerald); }
 .hud-pill-btn.neon-violet { border-color: rgba(139, 0, 255, 0.4); color: #c084fc; }
 .hud-pill-btn.neon-gold { border-color: rgba(255, 183, 0, 0.4); color: var(--neon-gold); }
 
@@ -429,7 +431,70 @@ body, html {
     word-break: break-word;
 }
 
-/* Free-floating Holographic Shell Output */
+/* Free-floating Holographic Shell Output & Terminal Cards */
+.holo-terminal-card {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    background: rgba(4, 9, 18, 0.75);
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    border-left: 3px solid var(--neon-cyan);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+.holo-term-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: rgba(0, 240, 255, 0.08);
+    padding: 6px 10px;
+    border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+}
+
+.holo-term-badge {
+    font-family: var(--font-code);
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--neon-cyan);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.holo-term-cmd {
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    color: #fff;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.holo-term-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.holo-term-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    color: #e2e8f0;
+    font-family: var(--font-code);
+    font-size: 0.62rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.holo-term-btn:hover {
+    background: rgba(0, 240, 255, 0.25);
+    color: #fff;
+    border-color: var(--neon-cyan);
+}
+
 .holo-terminal-stream {
     margin-top: 5px;
     background: rgba(3, 7, 15, 0.65);

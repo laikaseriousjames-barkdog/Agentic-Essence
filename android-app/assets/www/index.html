@@ -37,6 +37,9 @@
         </div>
 
         <div class="hud-quick-nodes">
+            <button id="nh-bridge-pill" class="hud-pill-btn neon-magenta" onclick="inspectNetHunter()" title="Kali NetHunter Root Bridge (127.0.0.1:8765)">
+                <span class="pill-icon">🐉</span><span id="nh-pill-text" class="pill-text">NH: CHECK</span>
+            </button>
             <button class="hud-pill-btn neon-cyan" onclick="execQuick('wifi scan')" title="Hardware Wi-Fi Scan">
                 <span class="pill-icon">📡</span><span class="pill-text">WIFI</span>
             </button>
@@ -97,6 +100,26 @@
             <input type="text" id="modelInput" class="holo-input" value="gemini-3.1-flash-lite" />
         </div>
 
+        <!-- Kali NetHunter Root Bridge Section -->
+        <div class="drawer-block">
+            <label class="drawer-label">KALI NETHUNTER ROOT BRIDGE</label>
+            <div style="background:rgba(255,0,127,0.08); border:1px solid rgba(255,0,127,0.35); border-radius:6px; padding:10px; margin-bottom:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-family:var(--font-code); font-size:11px; color:#fff;">DAEMON (127.0.0.1:8765):</span>
+                    <span id="nh-drawer-status" style="font-family:var(--font-code); font-weight:700; color:#00ff88;">ONLINE</span>
+                </div>
+                <div style="font-size:10px; color:var(--text-dim); margin-bottom:8px; line-height:1.4;">
+                    Full root execution in Termux Kali NetHunter (<code>nh -r</code>).
+                    CLI binary available: <code>agentic</code> / <code>ae</code>.
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                    <button onclick="inspectNetHunter()" class="hw-matrix-btn magenta" style="font-size:10px; padding:6px 4px;">🐉 Test Bridge</button>
+                    <button onclick="execQuick('agentic bridge status')" class="hw-matrix-btn cyan" style="font-size:10px; padding:6px 4px;">⚡ Check CLI</button>
+                    <button onclick="launchOrStartTermux()" class="hw-matrix-btn emerald" style="font-size:10px; padding:6px 4px; grid-column:span 2;">🚀 Launch Termux / Start Bridge</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Hardware Controls -->
         <div class="drawer-block">
             <label class="drawer-label">HARDWARE BRIDGE APIS</label>
@@ -106,7 +129,7 @@
                 <button onclick="toggleDeviceTorch()" class="hw-matrix-btn gold">🔦 Torch</button>
                 <button onclick="vibrateDevice()" class="hw-matrix-btn magenta">📳 Haptic Pulse</button>
                 <button onclick="execQuick('battery')" class="hw-matrix-btn emerald">🔋 Battery</button>
-                <button onclick="execQuick('ps -A')" class="hw-matrix-btn cyan">⚡ Shell Ps</button>
+                <button onclick="execQuick('whoami && id')" class="hw-matrix-btn cyan">⚡ Shell Id</button>
             </div>
         </div>
 
@@ -132,8 +155,8 @@
                 <span class="tag-title">SYSTEM // QUANTUM KERNEL READY</span>
             </div>
             <div class="free-node-text">
-                Autonomous agentic intelligence online. Hardware bridge active. 
-                Ask anything or synthesize live interactive tools on demand.
+                Autonomous agentic intelligence online. Connected to Termux and Kali NetHunter root.
+                Talk freely with the assistant, execute real Linux &amp; Android commands, or synthesize custom tools on demand using <code>/synth</code>.
             </div>
         </div>
 
@@ -141,22 +164,22 @@
         <div class="free-node status-node">
             <div class="holo-node-tag neon-magenta">
                 <span class="tag-pulse magenta"></span>
-                <span class="tag-title">GEMINI-3.1 // SYNTHESIZER STANDBY</span>
+                <span class="tag-title">NETHUNTER &bull; ROOT // READY</span>
             </div>
             <div class="free-node-text">
-                Tap any prompt below or speak to deploy live interactive widgets:
+                Ask a question, run basic shell tasks, or tap any quick chip below:
             </div>
         </div>
     </main>
 
     <!-- Free-Floating Neon Command Chips -->
     <div class="floating-chip-cloud" id="quick-chips">
-        <button class="holo-chip chip-cyan" onclick="execQuick('wifi scan')">📡 wifi scan</button>
-        <button class="holo-chip chip-magenta" onclick="execQuick('Synthesize Android Command Center to control phone')">📱 command center</button>
-        <button class="holo-chip chip-emerald" onclick="execQuick('Build an interactive calculator')">🧮 calculator</button>
-        <button class="holo-chip chip-gold" onclick="execQuick('Spawn Kali Linux terminal command line')">💻 kali terminal</button>
-        <button class="holo-chip chip-violet" onclick="execQuick('ifconfig')">🌐 ifconfig</button>
-        <button class="holo-chip chip-cyan" onclick="execQuick('Spawn calendar')">📅 calendar</button>
+        <button class="holo-chip chip-magenta" onclick="inspectNetHunter()">🐉 NetHunter Status</button>
+        <button class="holo-chip chip-cyan" onclick="execQuick('wifi scan')">📡 Wi-Fi Scan</button>
+        <button class="holo-chip chip-emerald" onclick="execQuick('whoami && uname -a')">⚡ Host Identity</button>
+        <button class="holo-chip chip-gold" onclick="execQuick('ifconfig')">🌐 Net Interfaces</button>
+        <button class="holo-chip chip-violet" onclick="execQuick('ping -c 3 8.8.8.8')">📶 Ping Test</button>
+        <button class="holo-chip chip-cyan" onclick="execQuick('/synth Wi-Fi signal analyzer')">🧮 Synth Tool</button>
     </div>
 
     <!-- Free-Floating Glassmorphic Command Nebula -->
