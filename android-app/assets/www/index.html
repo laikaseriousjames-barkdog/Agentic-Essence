@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AgenticEssence • Holographic Cyberdeck</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="holographic-universe">
+    <!-- Alive Animated Background: Multi-colored Neon Particle Cybermesh & Plasma Nebula -->
+    <canvas id="holo-canvas"></canvas>
+    <div class="plasma-nebula-glow"></div>
+    <div class="cyber-grid-overlay"></div>
+
+    <!-- Free-Floating Holographic HUD Top Bar -->
+    <header class="holo-hud-header">
+        <button id="open-drawer-btn" class="hud-glyph-btn" onclick="openDrawer()" title="Holo Routing & Settings">
+            <span class="glyph-bar"></span>
+            <span class="glyph-bar short"></span>
+            <span class="glyph-bar"></span>
+        </button>
+
+        <div class="hud-brand-node">
+            <div class="quantum-qbit-holo">
+                <div class="qbit-core"></div>
+                <div class="orbit ring-cyan"><div class="electron cyan"></div></div>
+                <div class="orbit ring-magenta"><div class="electron magenta"></div></div>
+                <div class="orbit ring-violet"><div class="electron violet"></div></div>
+            </div>
+            <div class="hud-title-cluster">
+                <span class="hud-title-main">AGENTIC ESSENCE</span>
+                <span class="hud-subtitle">QUANTUM SYNTHESIZER // ONLINE</span>
+            </div>
+        </div>
+
+        <div class="hud-quick-nodes">
+            <button id="nh-bridge-pill" class="hud-pill-btn neon-magenta" onclick="inspectNetHunter()" title="Kali NetHunter Root Bridge (127.0.0.1:8765)">
+                <span class="pill-icon">🐉</span><span id="nh-pill-text" class="pill-text">NH: CHECK</span>
+            </button>
+            <button class="hud-pill-btn neon-cyan" onclick="execQuick('wifi scan')" title="Hardware Wi-Fi Scan">
+                <span class="pill-icon">📡</span><span class="pill-text">WIFI</span>
+            </button>
+            <button class="hud-pill-btn neon-violet" onclick="execQuick('ifconfig')" title="Network Interfaces">
+                <span class="pill-icon">🌐</span><span class="pill-text">NET</span>
+            </button>
+            <button class="hud-pill-btn neon-gold" onclick="clearCanvas()" title="Purge HUD Canvas">
+                <span class="pill-icon">🧹</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Persona Stream Hologram Selector (Free-Floating) -->
+    <nav class="persona-holo-bar">
+        <button class="persona-stream-btn active" data-persona="swarm" onclick="switchPersona('swarm')">
+            <span class="persona-dot cyan"></span>✦ SWARM
+        </button>
+        <button class="persona-stream-btn" data-persona="turing" onclick="switchPersona('turing')">
+            <span class="persona-dot magenta"></span>🧠 TURING
+        </button>
+        <button class="persona-stream-btn" data-persona="knuth" onclick="switchPersona('knuth')">
+            <span class="persona-dot gold"></span>⚡ KNUTH
+        </button>
+        <button class="persona-stream-btn" data-persona="lovelace" onclick="switchPersona('lovelace')">
+            <span class="persona-dot emerald"></span>🔬 LOVELACE
+        </button>
+    </nav>
+
+    <!-- Translucent Glass Engine Drawer -->
+    <aside class="holo-drawer" id="settings-panel">
+        <div class="holo-drawer-head">
+            <div class="drawer-title-holo">
+                <span class="bracket">[</span> ROUTING &amp; SETTINGS <span class="bracket">]</span>
+            </div>
+            <button class="holo-close-btn" onclick="closeDrawer()">✕</button>
+        </div>
+        <div class="drawer-subhint">Swipe left anywhere to dismiss</div>
+
+        <!-- AI Inference Routing -->
+        <div class="drawer-block">
+            <label class="drawer-label">INFERENCE ENGINE</label>
+            <select id="providerSelect" class="holo-input" onchange="onProviderChange()">
+                <option value="gemini">Google Gemini 3.1 (Free)</option>
+                <option value="groq">Groq LPU (Ultra-Fast)</option>
+                <option value="openrouter">OpenRouter Multi-Model</option>
+                <option value="ollama">Ollama Local Cyberdeck</option>
+            </select>
+        </div>
+
+        <div class="drawer-block" id="apiKeyGroup">
+            <label class="drawer-label" id="apiKeyLabel">GEMINI API KEY</label>
+            <input type="password" id="apiKeyInput" class="holo-input" placeholder="Enter API Key..." />
+            <span class="drawer-micro-hint">Default: gemini-3.1-flash-lite</span>
+        </div>
+
+        <div class="drawer-block">
+            <label class="drawer-label">MODEL TARGET</label>
+            <input type="text" id="modelInput" class="holo-input" value="gemini-3.1-flash-lite" />
+        </div>
+
+        <!-- Kali NetHunter Root Bridge Section -->
+        <div class="drawer-block">
+            <label class="drawer-label">KALI NETHUNTER ROOT BRIDGE</label>
+            <div style="background:rgba(255,0,127,0.08); border:1px solid rgba(255,0,127,0.35); border-radius:6px; padding:10px; margin-bottom:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-family:var(--font-code); font-size:11px; color:#fff;">DAEMON (127.0.0.1:8765):</span>
+                    <span id="nh-drawer-status" style="font-family:var(--font-code); font-weight:700; color:#00ff88;">ONLINE</span>
+                </div>
+                <div style="font-size:10px; color:var(--text-dim); margin-bottom:8px; line-height:1.4;">
+                    Full root execution in Termux Kali NetHunter (<code>nh -r</code>).
+                    CLI binary available: <code>agentic</code> / <code>ae</code>.
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                    <button onclick="inspectNetHunter()" class="hw-matrix-btn magenta" style="font-size:10px; padding:6px 4px;">🐉 Test Bridge</button>
+                    <button onclick="execQuick('agentic bridge status')" class="hw-matrix-btn cyan" style="font-size:10px; padding:6px 4px;">⚡ Check CLI</button>
+                    <button onclick="launchOrStartTermux()" class="hw-matrix-btn emerald" style="font-size:10px; padding:6px 4px; grid-column:span 2;">🚀 Launch Termux / Start Bridge</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hardware Controls -->
+        <div class="drawer-block">
+            <label class="drawer-label">HARDWARE BRIDGE APIS</label>
+            <div class="hw-holo-matrix">
+                <button onclick="execQuick('wifi scan')" class="hw-matrix-btn cyan">📡 Scan Wi-Fi</button>
+                <button onclick="execQuick('ifconfig')" class="hw-matrix-btn violet">🌐 Ifconfig</button>
+                <button onclick="toggleDeviceTorch()" class="hw-matrix-btn gold">🔦 Torch</button>
+                <button onclick="vibrateDevice()" class="hw-matrix-btn magenta">📳 Haptic Pulse</button>
+                <button onclick="execQuick('battery')" class="hw-matrix-btn emerald">🔋 Battery</button>
+                <button onclick="execQuick('whoami && id')" class="hw-matrix-btn cyan">⚡ Shell Id</button>
+            </div>
+        </div>
+
+        <!-- Saved Toolbox Section -->
+        <div class="drawer-block" id="toolsModal">
+            <div class="toolbox-head">
+                <label class="drawer-label">STORED WIDGETS (<span id="toolCountBadge">0</span>)</label>
+            </div>
+            <div id="savedToolsList" class="saved-holo-list">
+                <div class="empty-holo-text">No stored widgets. Synthesize any tool to save.</div>
+            </div>
+        </div>
+
+        <button onclick="saveSettings()" class="holo-action-btn">CONFIRM CONFIGURATION</button>
+    </aside>
+
+    <!-- Free-Floating Agent Canvas (No Boxes, Seamless Stream) -->
+    <main class="holo-canvas-feed" id="output-feed" data-id="chatContainer">
+        <!-- Initial Free-Floating Holographic Intro Node -->
+        <div class="free-node intro-node">
+            <div class="holo-node-tag">
+                <span class="tag-pulse"></span>
+                <span class="tag-title">SYSTEM // QUANTUM KERNEL READY</span>
+            </div>
+            <div class="free-node-text">
+                Autonomous agentic intelligence online. Connected to Termux and Kali NetHunter root.
+                Talk freely with the assistant, execute real Linux &amp; Android commands, or synthesize custom tools on demand using <code>/synth</code>.
+            </div>
+        </div>
+
+        <!-- Live Status Node -->
+        <div class="free-node status-node">
+            <div class="holo-node-tag neon-magenta">
+                <span class="tag-pulse magenta"></span>
+                <span class="tag-title">NETHUNTER &bull; ROOT // READY</span>
+            </div>
+            <div class="free-node-text">
+                Ask a question, run basic shell tasks, or tap any quick chip below:
+            </div>
+        </div>
+    </main>
+
+    <!-- Free-Floating Neon Command Chips -->
+    <div class="floating-chip-cloud" id="quick-chips">
+        <button class="holo-chip chip-magenta" onclick="inspectNetHunter()">🐉 NetHunter Status</button>
+        <button class="holo-chip chip-cyan" onclick="execQuick('wifi scan')">📡 Wi-Fi Scan</button>
+        <button class="holo-chip chip-emerald" onclick="execQuick('whoami && uname -a')">⚡ Host Identity</button>
+        <button class="holo-chip chip-gold" onclick="execQuick('ifconfig')">🌐 Net Interfaces</button>
+        <button class="holo-chip chip-violet" onclick="execQuick('ping -c 3 8.8.8.8')">📶 Ping Test</button>
+        <button class="holo-chip chip-cyan" onclick="execQuick('/synth Wi-Fi signal analyzer')">🧮 Synth Tool</button>
+    </div>
+
+    <!-- Free-Floating Glassmorphic Command Nebula -->
+    <footer class="holo-command-nebula">
+        <button id="micBtn" class="nebula-voice-btn" onclick="triggerVoiceInput()" title="Vocal Command">
+            <span class="voice-wave"></span>
+            🎙️
+        </button>
+        <div class="nebula-input-wrapper">
+            <input type="text" id="omni-input" name="messageInput" placeholder="Command agent, run shell, or build tool..." autocomplete="off" />
+            <div class="input-glow-line"></div>
+        </div>
+        <button id="execute-btn" name="sendBtn" class="nebula-exec-btn" onclick="sendMessage()">
+            <span class="exec-text">RUN</span>
+            <span class="exec-arrow">›</span>
+        </button>
+    </footer>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

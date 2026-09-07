@@ -1,9 +1,20 @@
-# Ignore everything
-*
-# Except for the README and gitignore
-!.gitignore
-!README.md
-!core/
-!website/
-!website/**
-website/downloads/
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Build artifacts
+*.class
+*.dex
+*.idsig
+**/obj/
+**/bin/unaligned.apk
+**/bin/unsigned.apk
+.gradle/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
