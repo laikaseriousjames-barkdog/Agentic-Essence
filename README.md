@@ -98,6 +98,23 @@ The license is HWID-locked to your machine and works fully offline after activat
 
 ---
 
+## 📱 Android Source Code & Development
+
+The complete, editable source code for the Android application (including the Cyberdeck UI, Native Java Bridges, Jetpack Compose Kotlin architecture, and automated APK build pipeline) is available in this repository:
+
+👉 [**View Full Android Source Code & Build Pipeline (master branch)**](https://github.com/laikaseriousjames-barkdog/Agentic-Essence/tree/master)  
+👉 [**View Dedicated Android Branch (android-app branch)**](https://github.com/laikaseriousjames-barkdog/Agentic-Essence/tree/android-app)
+
+To clone and edit the source code locally:
+```bash
+git clone https://github.com/laikaseriousjames-barkdog/Agentic-Essence.git
+cd Agentic-Essence
+git checkout master
+./build_apk.sh
+```
+
+---
+
 ## Repository Structure
 
 ```
