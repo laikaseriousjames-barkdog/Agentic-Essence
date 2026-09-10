@@ -4,7 +4,15 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$SCRIPT_DIR/android-app"
 SDK_DIR="/root/android-sdk"
+if [ ! -f "$SDK_DIR/android.jar" ] && [ -f "/root/android_tools/android.jar" ]; then
+    SDK_DIR="/root/android_tools"
+fi
+
 KEYSTORE="/root/debug.keystore"
+if [ ! -f "$KEYSTORE" ] && [ -f "/root/android_tools/debug.keystore" ]; then
+    KEYSTORE="/root/android_tools/debug.keystore"
+fi
+
 OUT_APK="$APP_DIR/bin/AgenticEssence-Android.apk"
 
 echo "=== Building Agentic Essence Android Cyberdeck APK ==="
@@ -86,6 +94,9 @@ if [ -w "/root" ]; then
     mkdir -p /root/Downloads
     cp "$OUT_APK" /root/Downloads/AgenticEssence-Android.apk 2>/dev/null || true
     cp "$OUT_APK" /root/AgenticEssence-Android.apk 2>/dev/null || true
+fi
+if [ -d "/sdcard/Download" ] && [ -w "/sdcard/Download" ]; then
+    cp "$OUT_APK" /sdcard/Download/AgenticEssence-Android.apk 2>/dev/null || true
 fi
 
 echo "=== SUCCESS! Agentic Essence APK built and verified at $OUT_APK ==="

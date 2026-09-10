@@ -26,13 +26,11 @@ const SYSTEM_GROUNDING = `
 You are an advanced, intelligent AI cyberdeck assistant executing inside the Agentic Essence cyberdeck on Android, connected to a live Termux & Kali NetHunter ('nh -r') environment with ROOT privileges.
 You have REAL, unrestricted access to the Android hardware and Kali Linux.
 
-CORE OPERATIONAL BEHAVIORS:
-1. TALK NATURALLY & CONVERSE NORMALLY:
-   - Talk directly with the operator. Answer questions thoroughly, explain concepts, brainstorm, troubleshoot, write bash/python scripts, and converse naturally in rich Markdown format.
-   - Do NOT stay silent. Do NOT truncate your thoughts. Be helpful, articulate, and conversational.
+AUTONOMOUS AGENTIC EXECUTION & TROUBLESHOOTING PROTOCOL:
+You operate with a live, interactive multi-turn terminal execution loop. You are not blind to the terminal — every command you run will be executed immediately, and its stdout, stderr, and exit code will be returned directly to you.
 
-2. RUN REGULAR TOOLS FOR BASIC TASKS:
-   - When the user asks you to perform a task (e.g. check wifi, ping an IP, check network interfaces, view running processes, check memory, inspect battery, test connectivity, manage files, or install software), execute the command using the execution tag:
+1. PERFORM:
+   - When asked to perform a task, inspect systems, gather telemetry, test connectivity, configure services, or solve problems, initiate shell or hardware commands using:
      [EXEC: <command>]
    - Examples:
      * "Inspecting network interfaces: [EXEC: ifconfig]"
@@ -41,14 +39,37 @@ CORE OPERATIONAL BEHAVIORS:
      * "Checking host identity: [EXEC: whoami && id]"
      * "Listing active processes: [EXEC: ps aux | head -n 15]"
      * "Checking memory usage: [EXEC: free -m]"
-     * "Turning on device torch: [EXEC: torch on]"
-   - The cyberdeck host will automatically intercept [EXEC: <command>], execute it live in Termux / Kali NetHunter, and render a dedicated terminal card showing the live output. Explain what you are doing and discuss the results.
+     * "Testing local port: [EXEC: netstat -tlpn 2>/dev/null || ss -tlpn 2>/dev/null]"
+   - You can also specify multiple commands or multiline execution scripts.
 
-3. TOOL SYNTHESIS (ONLY WHEN EXPLICITLY REQUESTED):
-   - ONLY synthesize an interactive visual HTML5 tool or widget when the user EXPLICITLY asks to synthesize, build, or create an interactive widget, tool, or mini-app (e.g., "synthesize a tool for...", "build an interactive widget...", "/synth ...").
-   - For all other questions and requests, answer conversationally in Markdown and use [EXEC: <command>] for executing tasks!
+2. VERIFY:
+   - Always inspect the real terminal output returned to you in [TERMINAL OBSERVATION & SYSTEM FEEDBACK].
+   - Do NOT assume a command succeeded. Verify that the output contains the expected results, valid exit codes, and required data.
 
-HOST BRIDGES & APIS (Available for synthesized widgets when requested):
+3. TROUBLESHOOT:
+   - If a command fails, errors out, or returns unexpected or incomplete output (e.g. command not found, permission denied, interface down, connection refused, port unavailable):
+     - Analyze the error and diagnose the underlying root cause.
+     - Actively troubleshoot: run diagnostic checks, inspect logs, test configurations, or restart services.
+     - Attempt corrective action (e.g. enable interfaces via 'wifi on', install packages via 'apt-get install -y <pkg>' or 'pip install <pkg>', or try alternative utilities).
+
+4. BUILD TOOLS:
+   - If standard commands or pre-installed tools are missing, unavailable, or insufficient to get the needed results, BUILD CUSTOM TOOLS!
+   - Write custom scripts in Python, Bash, or Awk to gather, parse, or process data.
+   - You can build and run tools on the fly using [EXEC: cat << 'EOF' > /tmp/tool.py ... && python3 /tmp/tool.py] or [BUILD_TOOL: /tmp/my_tool.py]<code>[/BUILD_TOOL].
+
+5. ADVISE ACCORDINGLY:
+   - If after performing, verifying, troubleshooting, and attempting to build tools the requirements cannot be met (e.g. physical hardware interface missing like external Wi-Fi dongle, SELinux permission denied, network unreachable, missing credentials that user must provide):
+     - Do NOT hallucinate or pretend.
+     - Explicitly advise the operator accordingly: state what was attempted, the root cause of the failure, and provide concrete, actionable recommendations for the operator.
+   - If the task succeeded, provide a clear, concise verified summary of findings and actions.
+
+6. TOOL SYNTHESIS (INTERACTIVE WIDGETS):
+   - When asked to synthesize a tool, widget, application, or mini-app (including "synthesize something", "synthazize something", "build a tool for...", "/synth ..."):
+     - Always provide 1-2 friendly conversational introductory sentences explaining what the tool does, followed immediately by the complete, self-contained HTML5/CSS/JS application inside a single \`\`\`html ... \`\`\` code block.
+     - The cyberdeck host automatically extracts and mounts the live interactive application in the canvas! It will never be left as a dead block of code.
+     - Connect controls to real host APIs (AndroidBridge.runShellCommand, scanWifiNetworks, toggleFlashlight, etc.).
+
+HOST BRIDGES & APIS (Available for synthesized widgets and scripts):
 1. Kali NetHunter Root Shell:
    - 'window.parent.AndroidBridge.runShellCommand(cmd)' or 'window.AndroidBridge.runShellCommand(cmd)'
    - Package manager: 'apt-get update && apt-get install -y <pkg>' or 'pip install <pkg>'
@@ -67,28 +88,28 @@ const PERSONAS = {
         avatar: "✦",
         tag: "SWARM // KALI NETHUNTER CORE",
         color: "cyan",
-        prompt: `You are Agentic Swarm, an elite autonomous AI cyberdeck intelligence and pair-programmer connected to Kali NetHunter.` + SYSTEM_GROUNDING
+        prompt: `You are Agentic Swarm, an elite autonomous AI cyberdeck intelligence and pair-programmer connected to Kali NetHunter. You perform, verify, troubleshoot, build tools, and advise the operator with tactical precision.` + SYSTEM_GROUNDING
     },
     turing: {
         name: "Alan Turing",
         avatar: "🧠",
         tag: "TURING // ALGORITHMIC LOGIC",
         color: "magenta",
-        prompt: `You are Alan Turing. You approach problems with structural clarity, mathematical reasoning, and logical precision on this Kali NetHunter cyberdeck.` + SYSTEM_GROUNDING
+        prompt: `You are Alan Turing. You approach problems with structural clarity, mathematical reasoning, logical precision, and rigorous verification on this Kali NetHunter cyberdeck.` + SYSTEM_GROUNDING
     },
     knuth: {
         name: "Donald Knuth",
         avatar: "⚡",
         tag: "KNUTH // CODE & CRAFTSMANSHIP",
         color: "gold",
-        prompt: `You are Donald Knuth, master software craftsman and systems architect on this Kali NetHunter cyberdeck.` + SYSTEM_GROUNDING
+        prompt: `You are Donald Knuth, master software craftsman, tool-builder, and systems architect on this Kali NetHunter cyberdeck. You build custom diagnostic tools, troubleshoot issues, and verify every step.` + SYSTEM_GROUNDING
     },
     lovelace: {
         name: "Ada Lovelace",
         avatar: "🔬",
         tag: "LOVELACE // POETICAL SCIENCE",
         color: "emerald",
-        prompt: `You are Ada Lovelace. You view challenges through analytical rigor and visionary synthesis on this Kali NetHunter cyberdeck.` + SYSTEM_GROUNDING
+        prompt: `You are Ada Lovelace. You view challenges through analytical rigor, visionary synthesis, systematic troubleshooting, and empirical verification on this Kali NetHunter cyberdeck.` + SYSTEM_GROUNDING
     }
 };
 
@@ -505,13 +526,13 @@ window.sendMessage = async function() {
     const hasAIConfig = !!state.apiKey || state.provider === 'ollama';
     const isToolIntent = isToolSynthesisIntent(text);
 
-    // If offline and requesting a tool, deploy the real offline cyberdeck tool
+    // If offline and requesting a tool, deploy the real offline cyberdeck tool immediately
     if (!hasAIConfig && isToolIntent) {
         const tool = synthesizeToolFromScratch(text);
         const cardHtml = mountToolCard(tool, false);
         appendFreeNode(
             currentPersona.tag,
-            `Synthesized <strong>${tool.title}</strong>:${cardHtml}`,
+            `Synthesized <strong>${escapeHtml(tool.title)}</strong>:${cardHtml}`,
             "assistant"
         );
         state.history.push({ role: 'assistant', content: `[Synthesized and mounted: ${tool.title}]` });
@@ -529,11 +550,11 @@ window.sendMessage = async function() {
         return;
     }
 
-    // 4. Live AI Query
+    // 4. Live Agentic Execution, Troubleshooting & Verification Loop
     try {
         let systemPrompt = currentPersona.prompt;
         
-        // ONLY append synthesis directive when the user EXPLICITLY asked for a tool/widget
+        // Append synthesis directive when requested
         if (isToolIntent) {
             systemPrompt += `\n\nCRITICAL DIRECTIVE - EXPLICIT TOOL SYNTHESIS REQUESTED:
 The operator has explicitly requested to synthesize an interactive cyberdeck tool for: "${text}".
@@ -545,33 +566,88 @@ ALL BUTTONS AND CONTROLS MUST CALL REAL HOST APIS:
 - NEVER SIMULATE OR MOCK. Write real functional code that runs against the bridge.`;
         }
 
-        const messages = [
+        const MAX_AGENTIC_STEPS = 5;
+        let stepCount = 0;
+        let activeMessages = [
             { role: 'system', content: systemPrompt },
-            ...state.history.slice(-8)
+            ...state.history.slice(-10)
         ];
 
-        const rawReply = await queryAIProvider(messages);
+        while (stepCount < MAX_AGENTIC_STEPS) {
+            stepCount++;
+            const rawReply = await queryAIProvider(activeMessages);
 
-        let toolObj = null;
-        let cleanText = rawReply;
+            // 1. Check for execution tags: [EXEC: <cmd>], [RUN: <cmd>], [SHELL: <cmd>], [TOOL: <cmd>]
+            const execRegex = /\[(?:EXEC|RUN|SHELL|TOOL):\s*([^\]]+)\]/gi;
+            const commands = [];
+            let match;
+            while ((match = execRegex.exec(rawReply)) !== null) {
+                commands.push(match[1].trim());
+            }
 
-        // ONLY extract and mount an HTML tool card if tool synthesis was actually requested!
-        if (isToolIntent) {
-            const extracted = extractHtmlTool(rawReply, text);
-            cleanText = extracted.cleanText;
-            toolObj = extracted.toolObj;
+            // Also check for tool build blocks: [BUILD_TOOL: <path>]\n<code>\n[/BUILD_TOOL]
+            const buildRegex = /\[BUILD_TOOL:\s*([^\]]+)\]\s*([\s\S]*?)\[\/BUILD_TOOL\]/gi;
+            let bMatch;
+            while ((bMatch = buildRegex.exec(rawReply)) !== null) {
+                const targetPath = bMatch[1].trim();
+                const codeBody = bMatch[2].trim();
+                commands.push(`cat << 'EOF' > "${targetPath}"\n${codeBody}\nEOF\nchmod +x "${targetPath}" && echo "[+] Tool built successfully at ${targetPath}"`);
+            }
+
+            // 2. If NO execution commands are requested, this is the final agent response / synthesis
+            if (commands.length === 0) {
+                let toolObj = null;
+                let cleanText = rawReply;
+
+                // Extract HTML tool card if present or if synthesis was requested
+                const extracted = extractHtmlTool(rawReply, text);
+                if (extracted.toolObj) {
+                    cleanText = extracted.cleanText;
+                    toolObj = extracted.toolObj;
+                } else if (isToolIntent) {
+                    // Fallback to offline synthesized tool so it ALWAYS appears
+                    toolObj = synthesizeToolFromScratch(text);
+                }
+
+                let contentHtml = renderAssistantContent(cleanText);
+                if (toolObj) {
+                    contentHtml += mountToolCard(toolObj, false);
+                }
+
+                appendFreeNode(currentPersona.tag, contentHtml, "assistant");
+                state.history.push({ role: 'assistant', content: rawReply });
+                Bridge.speak(cleanText);
+                break;
+            }
+
+            // 3. The agent requested commands to perform / verify / troubleshoot!
+            // Execute each command and store results
+            const execResultsMap = {};
+            const observations = [];
+            for (const cmd of commands) {
+                const out = executeShellOrMock(cmd);
+                execResultsMap[cmd] = out;
+                observations.push(`$ ${cmd}\n${out}`);
+            }
+
+            // Render the intermediate step (agent's reasoning + live terminal cards)
+            let stepHtml = renderAssistantContent(rawReply, execResultsMap);
+            appendFreeNode(currentPersona.tag, stepHtml, "assistant");
+            Bridge.vibrate(15);
+
+            // Feed the real terminal output back to the agent so it sees what happened!
+            const feedbackPrompt = `[TERMINAL OBSERVATION & SYSTEM FEEDBACK]\n` +
+                observations.join('\n---\n') +
+                `\n\n[DIRECTIVES FOR NEXT STEP]:\n` +
+                `1. VERIFY: Inspect what you put in the terminal and the returned output. Check if it succeeded and fulfilled the objective.\n` +
+                `2. TROUBLESHOOT: If an error, failure, missing tool, or unexpected state occurred, diagnose the issue and troubleshoot.\n` +
+                `3. BUILD TOOLS: If existing standard tools are missing or insufficient, build a tool or script (via [EXEC: ...] or [BUILD_TOOL: ...]) to get results.\n` +
+                `4. ADVISE ACCORDINGLY: If after troubleshooting and attempting to build tools the requirements cannot be met (e.g. missing physical hardware interface, unresolvable permission restriction, network offline), stop executing and advise the operator accordingly with the root cause, what was tried, and concrete recommendations.\n` +
+                `5. If the goal has been successfully accomplished, provide your final verified summary.`;
+
+            activeMessages.push({ role: 'assistant', content: rawReply });
+            activeMessages.push({ role: 'user', content: feedbackPrompt });
         }
-
-        // Render conversational markdown and intercept any [EXEC: <cmd>] regular tool tags
-        let contentHtml = renderAssistantContent(cleanText);
-        if (toolObj) {
-            contentHtml += mountToolCard(toolObj, false);
-        }
-
-        appendFreeNode(currentPersona.tag, contentHtml, "assistant");
-        state.history.push({ role: 'assistant', content: rawReply });
-        Bridge.speak(cleanText);
-
     } catch (err) {
         appendFreeNode("SYSTEM // EXCEPTION", `<span style="color:#ff007f;">${escapeHtml(err.message)}</span>`, "system");
     }
@@ -666,30 +742,55 @@ function executeShellOrMock(rawCmd) {
 }
 
 /**
- * Parses and runs regular tools ([EXEC: <command>]) embedded in AI conversational responses.
+ * Parses and runs regular tools ([EXEC: <command>], [BUILD_TOOL: ...]) embedded in AI conversational responses.
  */
-function renderAssistantContent(rawText) {
+function renderAssistantContent(rawText, execResultsMap = null) {
     if (!rawText) return '';
 
-    const execRegex = /\[(?:EXEC|RUN):\s*([^\]]+)\]/gi;
+    // Process [BUILD_TOOL: <path>]\n<code>\n[/BUILD_TOOL] blocks first
+    let textProcessed = rawText.replace(/\[BUILD_TOOL:\s*([^\]]+)\]\s*([\s\S]*?)\[\/BUILD_TOOL\]/gi, (bMatch, filePath, fileCode) => {
+        const cleanPath = filePath.trim();
+        const cleanCode = fileCode.trim();
+        const jsonCode = JSON.stringify(cleanCode);
+        const jsonPath = JSON.stringify(cleanPath);
+        return `\n<div class="holo-terminal-card" style="border-left:3px solid var(--neon-magenta);">
+            <div class="holo-term-header">
+                <span class="holo-term-badge neon-magenta">🛠️ BUILT TOOL</span>
+                <code class="holo-term-cmd">${escapeHtml(cleanPath)}</code>
+                <div class="holo-term-actions">
+                    <button class="holo-term-btn" onclick="execQuick('cat ' + ${escapeHtmlAttr(jsonPath)} + ' | head -n 30')">👁️ VIEW</button>
+                    <button class="holo-term-btn" onclick="copyText(${escapeHtmlAttr(jsonCode)})">📋 COPY</button>
+                </div>
+            </div>
+            <pre class="holo-terminal-stream" style="color:#00ff88; max-height:120px; overflow-y:auto;">[Tool built and made executable at ${escapeHtml(cleanPath)}]</pre>
+        </div>\n`;
+    });
+
+    const execRegex = /\[(?:EXEC|RUN|SHELL|TOOL):\s*([^\]]+)\]/gi;
     let parts = [];
     let lastIndex = 0;
     let match;
 
-    while ((match = execRegex.exec(rawText)) !== null) {
-        const textBefore = rawText.substring(lastIndex, match.index);
+    while ((match = execRegex.exec(textProcessed)) !== null) {
+        const textBefore = textProcessed.substring(lastIndex, match.index);
         if (textBefore) {
             parts.push(formatMarkdown(textBefore));
         }
 
         const cmd = match[1].trim();
-        const output = executeShellOrMock(cmd);
+        let output;
+        if (execResultsMap && (cmd in execResultsMap)) {
+            output = execResultsMap[cmd];
+        } else {
+            output = executeShellOrMock(cmd);
+            if (execResultsMap) execResultsMap[cmd] = output;
+        }
         parts.push(renderTerminalCard(cmd, output));
 
         lastIndex = execRegex.lastIndex;
     }
 
-    const textAfter = rawText.substring(lastIndex);
+    const textAfter = textProcessed.substring(lastIndex);
     if (textAfter) {
         parts.push(formatMarkdown(textAfter));
     }
@@ -778,15 +879,18 @@ window.onSpeechRecognized = function(text) {
 function isToolSynthesisIntent(text) {
     if (!text) return false;
     const l = text.toLowerCase().trim();
-    if (l.startsWith('/synth') || l.startsWith('synth:') || l.startsWith('synthesize:')) return true;
+    if (l.startsWith('/synth') || l.startsWith('/tool') || l.startsWith('/build') ||
+        l.startsWith('synth:') || l.startsWith('synthesize:') || l.startsWith('synthazize:') || l.startsWith('synthesise:')) return true;
 
-    // Explicit requests to create/build an interactive widget/tool/GUI
+    // Any occurrence of synth*, synthaz*, synthes* (handles "synthazize", "synthesize", "synthesise", "synth", etc.)
+    if (/\b(synth\w*|synthaz\w*|synthes\w*)\b/i.test(l)) return true;
+
+    // Explicit requests to create/build/code an interactive widget/tool/GUI/app/something
     const patterns = [
-        /\bsynthesize\b.*\b(tool|widget|app|interface|dashboard|panel)\b/,
-        /\b(build|create|make|spin up|generate)\b.*\b(an?\s+)?(interactive\s+)?(tool|widget|mini-app|ui|dashboard|gui)\b/,
-        /\binteractive\s+(tool|widget|dashboard|gui|app)\b/,
-        /\btool\s+synthesiz(er|e|ation)\b/,
-        /\bsynth\s+(a\s+)?(tool|widget|app|gui)\b/
+        /\b(build|create|make|spin up|generate|code|craft|develop|deploy)\b.*\b(an?\s+)?(interactive\s+)?(tool|widget|mini-app|ui|dashboard|gui|panel|calculator|clock|timer|scanner|monitor|terminal|something|anything)\b/i,
+        /\binteractive\s+(tool|widget|dashboard|gui|app|ui|calculator|clock|timer)\b/i,
+        /\btool\s+(synthesiz|builder|creator|maker)\w*\b/i,
+        /\bsynth\s+(a\s+)?(tool|widget|app|gui|something)\b/i
     ];
     return patterns.some(p => p.test(l));
 }
@@ -795,20 +899,30 @@ function isToolSynthesisIntent(text) {
  * Mounts an interactive tool inside a free-floating container with cyber brackets (NO SOLID BOX).
  */
 function mountToolCard(toolObj, isSaved = false) {
+    if (!toolObj || !toolObj.html) return '';
     const containerId = 'tool_' + toolObj.id;
     const iframeId = 'frame_' + toolObj.id;
     const toolJsonEscaped = encodeURIComponent(JSON.stringify(toolObj));
 
     let completeDoc = toolObj.html;
-    if (!completeDoc.includes('<!DOCTYPE html>')) {
+    const bridgeShim = `<script>
+        try {
+            if (typeof window.AndroidBridge === 'undefined' && window.parent && window.parent.AndroidBridge) {
+                window.AndroidBridge = window.parent.AndroidBridge;
+            }
+        } catch (e) {}
+    </script>`;
+
+    if (!completeDoc.includes('<!DOCTYPE html>') && !completeDoc.includes('<html')) {
         completeDoc = `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    ${bridgeShim}
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        body { background: transparent; color: #ededed; padding: 8px; font-size: 12px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'JetBrains Mono', sans-serif; }
+        body { background: transparent; color: #ededed; padding: 10px; font-size: 12px; }
         button { cursor: pointer; border-radius: 4px; border: none; font-weight: 600; font-size: 11.5px; }
         input, select { background: rgba(16, 24, 40, 0.7); color: #FFF; border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 4px; padding: 6px; font-size: 11.5px; outline: none; }
     </style>
@@ -817,6 +931,14 @@ function mountToolCard(toolObj, isSaved = false) {
     ${toolObj.html}
 </body>
 </html>`;
+    } else {
+        if (completeDoc.includes('</head>')) {
+            completeDoc = completeDoc.replace('</head>', `${bridgeShim}</head>`);
+        } else if (completeDoc.includes('<head>')) {
+            completeDoc = completeDoc.replace('<head>', `<head>${bridgeShim}`);
+        } else {
+            completeDoc = bridgeShim + completeDoc;
+        }
     }
 
     return `
@@ -828,7 +950,7 @@ function mountToolCard(toolObj, isSaved = false) {
                     <button class="floating-tool-btn" onclick="deleteCustomTool('${containerId}')">✕ DISMISS</button>
                 </div>
             </div>
-            <iframe id="${iframeId}" class="floating-tool-iframe" sandbox="allow-scripts allow-forms allow-same-origin allow-modals" srcdoc="${escapeHtmlAttr(completeDoc)}"></iframe>
+            <iframe id="${iframeId}" class="floating-tool-iframe" sandbox="allow-scripts allow-forms allow-same-origin allow-modals" srcdoc="${escapeHtmlAttr(completeDoc)}" onload="try{this.style.height=Math.max(220,this.contentWindow.document.body.scrollHeight+30)+'px'}catch(e){}"></iframe>
         </div>
     `;
 }
@@ -1140,18 +1262,30 @@ function synthesizeToolFromScratch(query) {
     const defaultCmd = q.includes('wifi') ? 'wifi scan' : (q.includes('ip') || q.includes('network') ? 'ifconfig' : 'uname -a && id && uptime');
     return {
         id: toolId,
-        title: `⚡ ${query.toUpperCase().slice(0, 32)} // KALI TOOL`,
+        title: `⚡ ${query.toUpperCase().replace(/^\/SYNTH\s*/i, '').slice(0, 32)} // CYBERDECK RUNNER`,
         html: `
-            <div style="background:rgba(2,5,12,0.85); border:1px solid #00f0ff; border-radius:6px; padding:10px; font-family:'JetBrains Mono',monospace;">
-                <div style="color:#00f0ff; font-weight:700; font-size:12px; margin-bottom:4px;">REAL-TIME CYBERDECK RUNNER</div>
-                <div style="font-size:10px; color:#cbd5e1; margin-bottom:8px;">Executing in Kali NetHunter ('nh -r') root environment.</div>
+            <div style="background:rgba(2,5,14,0.9); border:1px solid #00f0ff; border-radius:6px; padding:10px; font-family:'JetBrains Mono',monospace;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="color:#00f0ff; font-weight:700; font-size:11.5px;">HOLOGRAPHIC TOOL RUNNER</span>
+                    <span style="color:#00ff88; font-size:9.5px;">NETHUNTER ROOT // LIVE</span>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:4px; margin-bottom:8px;">
+                    <button onclick="setAndRun('wifi scan')" style="background:rgba(0,240,255,0.12); border:1px solid rgba(0,240,255,0.4); color:#00f0ff; padding:4px 2px; border-radius:3px; font-size:9.5px; cursor:pointer;">📡 WI-FI</button>
+                    <button onclick="setAndRun('ifconfig')" style="background:rgba(139,0,255,0.15); border:1px solid rgba(139,0,255,0.4); color:#d8b4fe; padding:4px 2px; border-radius:3px; font-size:9.5px; cursor:pointer;">🌐 NET</button>
+                    <button onclick="setAndRun('ping -c 3 8.8.8.8')" style="background:rgba(0,255,136,0.12); border:1px solid rgba(0,255,136,0.4); color:#00ff88; padding:4px 2px; border-radius:3px; font-size:9.5px; cursor:pointer;">📶 PING</button>
+                    <button onclick="setAndRun('free -m && df -h /')" style="background:rgba(255,183,0,0.12); border:1px solid rgba(255,183,0,0.4); color:#ffb700; padding:4px 2px; border-radius:3px; font-size:9.5px; cursor:pointer;">📊 MEM</button>
+                </div>
                 <div style="display:flex; gap:6px; margin-bottom:8px;">
-                    <input id="dyn-cmd" value="${escapeHtmlAttr(defaultCmd)}" style="flex:1; background:rgba(0,0,0,0.5); border:1px solid rgba(0,240,255,0.3); color:#fff; padding:6px 8px; font-size:11px; border-radius:4px; outline:none; font-family:inherit;" />
+                    <input id="dyn-cmd" value="${escapeHtmlAttr(defaultCmd)}" style="flex:1; background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.3); color:#fff; padding:6px 8px; font-size:11px; border-radius:4px; outline:none; font-family:inherit;" />
                     <button onclick="execDyn()" style="background:#00f0ff; color:#000; font-weight:800; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">RUN</button>
                 </div>
-                <pre id="dyn-out" style="background:rgba(0,0,0,0.6); padding:8px; border-radius:4px; font-size:10.5px; color:#00ff88; max-height:140px; overflow-y:auto; border:1px solid rgba(0,240,255,0.2);">Standby for execution.</pre>
+                <pre id="dyn-out" style="background:rgba(0,0,0,0.7); padding:8px; border-radius:4px; font-size:10.5px; color:#00ff88; max-height:160px; overflow-y:auto; border:1px solid rgba(0,240,255,0.2);">Ready for commands.</pre>
             </div>
             <script>
+                function setAndRun(cmd) {
+                    document.getElementById('dyn-cmd').value = cmd;
+                    execDyn();
+                }
                 function execDyn() {
                     const c = document.getElementById('dyn-cmd').value.trim();
                     const out = document.getElementById('dyn-out');
@@ -1180,30 +1314,67 @@ function extractHtmlTool(text, userQuery = '') {
     if (!text) return { cleanText: text, toolObj: null };
 
     let rawHtml = '';
-    let match = text.match(/```(?:html|htm|xml)?\s*\n([\s\S]*?)```/i);
-    if (match) rawHtml = match[1].trim();
+    let matchedBlock = null;
 
+    // 1. Try explicit ```html ... ``` (with or without newline after tag)
+    const htmlBlockRegex = /```(?:html|htm|xml|svg|webapp|ui)?\s*([\s\S]*?)```/gi;
+    let bMatch;
+    while ((bMatch = htmlBlockRegex.exec(text)) !== null) {
+        const candidate = bMatch[1].trim();
+        if (candidate.includes('<') && (
+            candidate.includes('<!DOCTYPE') ||
+            candidate.includes('<html') ||
+            candidate.includes('<body') ||
+            candidate.includes('<div') ||
+            candidate.includes('<button') ||
+            candidate.includes('<canvas') ||
+            candidate.includes('<style') ||
+            candidate.includes('<script') ||
+            candidate.includes('<table') ||
+            candidate.includes('<form')
+        )) {
+            rawHtml = candidate;
+            matchedBlock = bMatch[0];
+            break;
+        }
+    }
+
+    // 2. Search for raw full HTML document not wrapped in code fences
     if (!rawHtml) {
-        const docMatch = text.match(/(<!DOCTYPE html[\s\S]*?<\/html>)/i);
-        if (docMatch) rawHtml = docMatch[1].trim();
+        const docMatch = text.match(/(<!DOCTYPE\s+html[\s\S]*?<\/html>)/i) || text.match(/(<html[\s\S]*?<\/html>)/i);
+        if (docMatch) {
+            rawHtml = docMatch[1].trim();
+            matchedBlock = docMatch[0];
+        }
     }
 
     if (!rawHtml) return { cleanText: text, toolObj: null };
 
-    // DO NOT truncate cleanText! Keep full conversational response!
-    let cleanText = match ? text.replace(match[0], '').trim() : text.replace(rawHtml, '').trim();
+    // Clean out the raw HTML block so it does not render as a duplicate code block!
+    let cleanText = matchedBlock ? text.replace(matchedBlock, '').trim() : text.replace(rawHtml, '').trim();
     if (!cleanText) {
-        cleanText = "Synthesized application:";
+        cleanText = "Synthesized application mounted below:";
     }
 
+    // Determine smart descriptive title
     let title = '⚡ SYNTHESIZED TOOL';
-    const q = (userQuery + ' ' + cleanText).toLowerCase();
-    if (q.includes('calc')) title = '🧮 HOLOGRAPHIC CALCULATOR';
-    else if (q.includes('kali') || q.includes('terminal')) title = '💻 KALI CYBERDECK TERMINAL';
-    else if (q.includes('command center') || q.includes('control phone')) title = '📱 ANDROID COMMAND CENTER';
+    const q = (userQuery + ' ' + cleanText + ' ' + rawHtml.slice(0, 300)).toLowerCase();
+    if (q.includes('calc') || q.includes('math')) title = '🧮 HOLOGRAPHIC CALCULATOR';
+    else if (q.includes('kali') || q.includes('terminal') || q.includes('shell')) title = '💻 KALI CYBERDECK TERMINAL';
+    else if (q.includes('command center') || q.includes('control phone') || q.includes('hardware hud')) title = '📱 ANDROID COMMAND CENTER';
     else if (q.includes('calendar')) title = '📅 QUANTUM CALENDAR';
-    else if (q.includes('timer')) title = '⏱️ PRECISION CHRONOMETER';
-    else if (q.includes('wifi') || q.includes('network')) title = '📡 SPECTRUM & NETWORK TOOL';
+    else if (q.includes('timer') || q.includes('clock') || q.includes('chronometer')) title = '⏱️ PRECISION CHRONOMETER';
+    else if (q.includes('wifi') || q.includes('spectrum') || q.includes('network')) title = '📡 SPECTRUM & NETWORK TOOL';
+    else if (q.includes('weather')) title = '🌤️ QUANTUM WEATHER STATION';
+    else if (q.includes('diag') || q.includes('resource') || q.includes('monitor')) title = '📊 SYSTEM RESOURCE MONITOR';
+    else if (q.includes('speedtest') || q.includes('bandwidth')) title = '🚀 NETWORK SPEED ANALYZER';
+    else if (q.includes('port') || q.includes('scanner')) title = '🔍 PORT & SERVICE SCANNER';
+    else if (userQuery) {
+        const cleanQ = userQuery.replace(/^\/synth\w*\s*/i, '').replace(/\b(synthesize|synthazize|synthesise|build|create|make)\b/gi, '').trim();
+        if (cleanQ) {
+            title = `⚡ ${cleanQ.toUpperCase().slice(0, 30)} // SYNTHESIZED TOOL`;
+        }
+    }
 
     return {
         cleanText,
@@ -1235,21 +1406,31 @@ async function queryGemini(messages) {
     if (!key) throw new Error("Enter your Gemini API key in Routing & Settings.");
 
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${state.model}:generateContent?key=${key}`;
-    const contents = [];
+    const sanitizedContents = [];
     let sysInstruction = null;
 
     for (const m of messages) {
         if (m.role === 'system') {
             sysInstruction = { parts: [{ text: m.content }] };
+            continue;
+        }
+        const role = (m.role === 'model' || m.role === 'assistant') ? 'model' : 'user';
+        if (sanitizedContents.length > 0 && sanitizedContents[sanitizedContents.length - 1].role === role) {
+            sanitizedContents[sanitizedContents.length - 1].parts[0].text += "\n\n" + (m.content || "");
         } else {
-            contents.push({
-                role: m.role === 'user' ? 'user' : 'model',
-                parts: [{ text: m.content }]
+            sanitizedContents.push({
+                role: role,
+                parts: [{ text: m.content || "" }]
             });
         }
     }
 
-    const payload = { contents };
+    // Ensure contents starts with 'user' for strict Gemini turn order
+    if (sanitizedContents.length > 0 && sanitizedContents[0].role !== 'user') {
+        sanitizedContents.unshift({ role: 'user', parts: [{ text: 'Initiating session.' }] });
+    }
+
+    const payload = { contents: sanitizedContents };
     if (sysInstruction) payload.systemInstruction = sysInstruction;
 
     const res = await fetch(endpoint, {
@@ -1269,13 +1450,17 @@ async function queryGemini(messages) {
 }
 
 async function queryOpenAICompatible(url, key, messages) {
+    const formatted = messages.map(m => ({
+        role: (m.role === 'model' || m.role === 'assistant') ? 'assistant' : m.role,
+        content: m.content || ''
+    }));
     const res = await fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${key}`
         },
-        body: JSON.stringify({ model: state.model, messages })
+        body: JSON.stringify({ model: state.model, messages: formatted })
     });
 
     if (!res.ok) {
@@ -1288,10 +1473,14 @@ async function queryOpenAICompatible(url, key, messages) {
 }
 
 async function queryOllama(base, messages) {
+    const formatted = messages.map(m => ({
+        role: (m.role === 'model' || m.role === 'assistant') ? 'assistant' : m.role,
+        content: m.content || ''
+    }));
     const res = await fetch(`${base}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: state.model, messages, stream: false })
+        body: JSON.stringify({ model: state.model, messages: formatted, stream: false })
     });
 
     if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`);
@@ -1325,10 +1514,16 @@ function formatMarkdown(text) {
     let html = escapeHtml(text).replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (match, lang, code) => {
         const cleanCode = code.trim();
         const jsonCode = JSON.stringify(cleanCode);
-        const isShell = (lang === 'bash' || lang === 'sh' || lang === 'shell');
-        const runBtn = isShell
-            ? `<button class="holo-term-btn" onclick="execQuick(${escapeHtmlAttr(jsonCode)})">▶ RUN IN KALI</button>`
-            : '';
+        const l = (lang || '').toLowerCase();
+        const isShell = (l === 'bash' || l === 'sh' || l === 'shell');
+        const isPython = (l === 'python' || l === 'py' || l === 'python3');
+        let runBtn = '';
+        if (isShell) {
+            runBtn = `<button class="holo-term-btn" onclick="execQuick(${escapeHtmlAttr(jsonCode)})">▶ RUN IN KALI</button>`;
+        } else if (isPython) {
+            const pyCmd = JSON.stringify(`python3 -c ${JSON.stringify(cleanCode)}`);
+            runBtn = `<button class="holo-term-btn" onclick="execQuick(${escapeHtmlAttr(pyCmd)})">▶ RUN PYTHON</button>`;
+        }
         const copyBtn = `<button class="holo-term-btn" onclick="copyText(${escapeHtmlAttr(jsonCode)})">📋 COPY</button>`;
 
         return `<div class="holo-code-block" style="background:rgba(3,7,15,0.75); border:1px solid rgba(0,240,255,0.25); border-left:3px solid var(--neon-cyan); border-radius:5px; margin:8px 0; padding:8px; font-family:var(--font-code); font-size:11px;">
