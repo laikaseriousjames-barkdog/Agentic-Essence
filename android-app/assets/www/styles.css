@@ -34,7 +34,7 @@ body, html {
     background-color: #030408;
     color: var(--text-pure);
     font-family: var(--font-body);
-    font-size: 11px;
+    font-size: 15px;
     letter-spacing: 0.2px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -104,16 +104,16 @@ body, html {
 .holo-hud-header {
     position: relative;
     z-index: 25;
-    height: 34px;
+    height: 48px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 10px;
-    background: rgba(4, 7, 15, 0.5);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(0, 240, 255, 0.15);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    padding: 0 12px;
+    background: rgba(4, 7, 15, 0.65);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(0, 240, 255, 0.25);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
     flex-shrink: 0;
 }
 
@@ -121,39 +121,39 @@ body, html {
     background: transparent;
     border: none;
     cursor: pointer;
-    padding: 4px 2px;
+    padding: 6px 4px;
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    width: 18px;
+    gap: 4px;
+    width: 26px;
 }
 
 .glyph-bar {
-    height: 1.5px;
+    height: 2px;
     width: 100%;
     background: var(--neon-cyan);
-    border-radius: 1px;
-    box-shadow: 0 0 4px var(--neon-cyan);
+    border-radius: 2px;
+    box-shadow: 0 0 5px var(--neon-cyan);
     transition: all 0.2s ease;
 }
 
 .glyph-bar.short {
     width: 60%;
     background: var(--neon-magenta);
-    box-shadow: 0 0 4px var(--neon-magenta);
+    box-shadow: 0 0 5px var(--neon-magenta);
 }
 
 .hud-brand-node {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
 }
 
-/* 3D Multi-Ring Quantum Q-Bit (Scaled Down) */
+/* 3D Multi-Ring Quantum Q-Bit */
 .quantum-qbit-holo {
     position: relative;
-    width: 16px;
-    height: 16px;
+    width: 22px;
+    height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -164,11 +164,11 @@ body, html {
 
 .qbit-core {
     position: absolute;
-    width: 4px;
-    height: 4px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: radial-gradient(circle, #ffffff 10%, #00f0ff 70%, #ff007f 100%);
-    box-shadow: 0 0 6px #00f0ff, 0 0 8px rgba(255, 0, 127, 0.8);
+    box-shadow: 0 0 8px #00f0ff, 0 0 10px rgba(255, 0, 127, 0.8);
     animation: qPulse 2.4s infinite ease-in-out;
 }
 
@@ -182,37 +182,37 @@ body, html {
 }
 
 .orbit.ring-cyan {
-    border: 1px solid rgba(0, 240, 255, 0.7);
+    border: 1.5px solid rgba(0, 240, 255, 0.75);
     transform: rotateZ(0deg) rotateX(65deg);
     animation: spin1 2.5s linear infinite;
 }
 
 .orbit.ring-magenta {
-    border: 1px solid rgba(255, 0, 127, 0.7);
+    border: 1.5px solid rgba(255, 0, 127, 0.75);
     transform: rotateZ(60deg) rotateX(65deg);
     animation: spin2 3.1s linear infinite;
 }
 
 .orbit.ring-violet {
-    border: 1px solid rgba(139, 0, 255, 0.7);
+    border: 1.5px solid rgba(139, 0, 255, 0.75);
     transform: rotateZ(120deg) rotateX(65deg);
     animation: spin3 3.7s linear infinite;
 }
 
 .electron {
     position: absolute;
-    width: 2.5px;
-    height: 2.5px;
+    width: 3.5px;
+    height: 3.5px;
     border-radius: 50%;
-    top: -1.25px;
+    top: -1.75px;
     left: 50%;
-    margin-left: -1.25px;
+    margin-left: -1.75px;
     background: #fff;
 }
 
-.electron.cyan { box-shadow: 0 0 4px #00f0ff; }
-.electron.magenta { box-shadow: 0 0 4px #ff007f; }
-.electron.violet { box-shadow: 0 0 4px #8b00ff; }
+.electron.cyan { box-shadow: 0 0 5px #00f0ff; }
+.electron.magenta { box-shadow: 0 0 5px #ff007f; }
+.electron.violet { box-shadow: 0 0 5px #8b00ff; }
 
 @keyframes spin1 { 0% { transform: rotateZ(0deg) rotateX(65deg) rotateZ(0deg); } 100% { transform: rotateZ(0deg) rotateX(65deg) rotateZ(360deg); } }
 @keyframes spin2 { 0% { transform: rotateZ(60deg) rotateX(65deg) rotateZ(0deg); } 100% { transform: rotateZ(60deg) rotateX(65deg) rotateZ(360deg); } }
@@ -226,48 +226,52 @@ body, html {
 
 .hud-title-main {
     font-family: var(--font-hud);
-    font-size: 0.68rem;
+    font-size: 0.95rem;
     font-weight: 800;
     letter-spacing: 1px;
     background: linear-gradient(90deg, #00f0ff 0%, #ff007f 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    line-height: 1.1;
+    line-height: 1.15;
 }
 
 .hud-subtitle {
     font-family: var(--font-code);
-    font-size: 0.48rem;
+    font-size: 0.68rem;
     color: var(--text-muted);
     letter-spacing: 0.8px;
 }
 
 .hud-quick-nodes {
     display: flex;
-    gap: 4px;
+    gap: 6px;
     align-items: center;
 }
 
 .hud-pill-btn {
-    background: rgba(15, 23, 42, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     color: var(--text-pure);
     font-family: var(--font-code);
-    font-size: 0.58rem;
-    padding: 2px 6px;
-    border-radius: 12px;
+    font-size: 0.78rem;
+    padding: 4px 9px;
+    border-radius: 14px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
     transition: all 0.15s ease;
 }
 
-.hud-pill-btn.neon-cyan { border-color: rgba(0, 240, 255, 0.4); color: var(--neon-cyan); }
-.hud-pill-btn.neon-magenta { border-color: rgba(255, 0, 127, 0.4); color: var(--neon-magenta); }
-.hud-pill-btn.neon-emerald { border-color: rgba(0, 255, 136, 0.4); color: var(--neon-emerald); }
-.hud-pill-btn.neon-violet { border-color: rgba(139, 0, 255, 0.4); color: #c084fc; }
-.hud-pill-btn.neon-gold { border-color: rgba(255, 183, 0, 0.4); color: var(--neon-gold); }
+.hud-pill-btn .pill-icon {
+    font-size: 0.9rem;
+}
+
+.hud-pill-btn.neon-cyan { border-color: rgba(0, 240, 255, 0.5); color: var(--neon-cyan); }
+.hud-pill-btn.neon-magenta { border-color: rgba(255, 0, 127, 0.5); color: var(--neon-magenta); }
+.hud-pill-btn.neon-emerald { border-color: rgba(0, 255, 136, 0.5); color: var(--neon-emerald); }
+.hud-pill-btn.neon-violet { border-color: rgba(139, 0, 255, 0.5); color: #c084fc; }
+.hud-pill-btn.neon-gold { border-color: rgba(255, 183, 0, 0.5); color: var(--neon-gold); }
 
 .hud-pill-btn:active {
     transform: scale(0.92);
@@ -279,11 +283,11 @@ body, html {
     position: relative;
     z-index: 20;
     display: flex;
-    gap: 4px;
-    padding: 4px 10px;
-    background: rgba(4, 7, 15, 0.3);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(4, 7, 15, 0.45);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     overflow-x: auto;
     scrollbar-width: none;
     flex-shrink: 0;
@@ -293,37 +297,37 @@ body, html {
 
 .persona-stream-btn {
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     color: var(--text-dim);
     font-family: var(--font-hud);
-    font-size: 0.58rem;
+    font-size: 0.82rem;
     font-weight: 600;
     letter-spacing: 0.6px;
-    padding: 2px 7px;
-    border-radius: 8px;
+    padding: 5px 12px;
+    border-radius: 10px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     white-space: nowrap;
     transition: all 0.15s ease;
 }
 
 .persona-dot {
-    width: 4px;
-    height: 4px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
 }
-.persona-dot.cyan { background: var(--neon-cyan); box-shadow: 0 0 4px var(--neon-cyan); }
-.persona-dot.magenta { background: var(--neon-magenta); box-shadow: 0 0 4px var(--neon-magenta); }
-.persona-dot.gold { background: var(--neon-gold); box-shadow: 0 0 4px var(--neon-gold); }
-.persona-dot.emerald { background: var(--neon-emerald); box-shadow: 0 0 4px var(--neon-emerald); }
+.persona-dot.cyan { background: var(--neon-cyan); box-shadow: 0 0 5px var(--neon-cyan); }
+.persona-dot.magenta { background: var(--neon-magenta); box-shadow: 0 0 5px var(--neon-magenta); }
+.persona-dot.gold { background: var(--neon-gold); box-shadow: 0 0 5px var(--neon-gold); }
+.persona-dot.emerald { background: var(--neon-emerald); box-shadow: 0 0 5px var(--neon-emerald); }
 
 .persona-stream-btn.active {
     color: #fff;
     border-color: var(--neon-cyan);
-    background: rgba(0, 240, 255, 0.12);
-    box-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
+    background: rgba(0, 240, 255, 0.16);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
 }
 
 /* ================= 4. FREE-FLOATING COMPACT HUD STREAM (NO BOXES) ================= */
@@ -332,18 +336,18 @@ body, html {
     position: relative;
     z-index: 10;
     overflow-y: auto;
-    padding: 10px 10px 72px;
+    padding: 12px 12px 115px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 14px;
     scroll-behavior: smooth;
 }
 
 /* Free-floating Holographic Message Node */
 .free-node {
     position: relative;
-    padding: 3px 0 3px 10px;
-    border-left: 2px solid rgba(0, 240, 255, 0.5);
+    padding: 6px 0 6px 14px;
+    border-left: 3px solid rgba(0, 240, 255, 0.55);
     animation: holoFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     transition: all 0.2s ease;
 }
@@ -352,16 +356,16 @@ body, html {
     content: '';
     position: absolute;
     top: 0;
-    left: -2px;
-    width: 2px;
-    height: 8px;
+    left: -3px;
+    width: 3px;
+    height: 12px;
     background: var(--neon-cyan);
     box-shadow: 0 0 6px var(--neon-cyan);
 }
 
 .free-node.user-node {
-    border-left-color: rgba(0, 136, 255, 0.6);
-    margin-left: 10%;
+    border-left-color: rgba(0, 136, 255, 0.7);
+    margin-left: 8%;
 }
 
 .free-node.user-node::before {
@@ -370,7 +374,7 @@ body, html {
 }
 
 .free-node.system-node {
-    border-left-color: rgba(255, 0, 127, 0.6);
+    border-left-color: rgba(255, 0, 127, 0.7);
 }
 
 .free-node.system-node::before {
@@ -386,10 +390,10 @@ body, html {
 .holo-node-tag {
     display: flex;
     align-items: center;
-    gap: 4px;
-    margin-bottom: 3px;
+    gap: 6px;
+    margin-bottom: 5px;
     font-family: var(--font-hud);
-    font-size: 0.56rem;
+    font-size: 0.82rem;
     font-weight: 700;
     letter-spacing: 0.8px;
     color: var(--neon-cyan);
@@ -407,16 +411,16 @@ body, html {
 }
 
 .tag-pulse {
-    width: 4px;
-    height: 4px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: var(--neon-cyan);
-    box-shadow: 0 0 4px var(--neon-cyan);
+    box-shadow: 0 0 5px var(--neon-cyan);
     animation: tagBlink 1.8s infinite ease-in-out;
 }
 
-.tag-pulse.magenta { background: var(--neon-magenta); box-shadow: 0 0 4px var(--neon-magenta); }
-.tag-pulse.blue { background: var(--neon-blue); box-shadow: 0 0 4px var(--neon-blue); }
+.tag-pulse.magenta { background: var(--neon-magenta); box-shadow: 0 0 5px var(--neon-magenta); }
+.tag-pulse.blue { background: var(--neon-blue); box-shadow: 0 0 5px var(--neon-blue); }
 
 @keyframes tagBlink {
     0%, 100% { opacity: 0.4; }
@@ -424,47 +428,47 @@ body, html {
 }
 
 .free-node-text {
-    font-size: 0.82rem;
-    line-height: 1.4;
-    color: #e2e8f0;
+    font-size: 1.05rem;
+    line-height: 1.55;
+    color: #f1f5f9;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
     word-break: break-word;
 }
 
 /* Free-floating Holographic Shell Output & Terminal Cards */
 .holo-terminal-card {
-    margin-top: 8px;
-    margin-bottom: 8px;
-    background: rgba(4, 9, 18, 0.75);
-    border: 1px solid rgba(0, 240, 255, 0.25);
-    border-left: 3px solid var(--neon-cyan);
-    border-radius: 6px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    background: rgba(4, 9, 18, 0.82);
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    border-left: 4px solid var(--neon-cyan);
+    border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
 }
 
 .holo-term-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    background: rgba(0, 240, 255, 0.08);
-    padding: 6px 10px;
-    border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+    gap: 10px;
+    background: rgba(0, 240, 255, 0.12);
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(0, 240, 255, 0.2);
 }
 
 .holo-term-badge {
     font-family: var(--font-code);
-    font-size: 0.65rem;
+    font-size: 0.82rem;
     font-weight: 700;
     color: var(--neon-cyan);
-    letter-spacing: 0.5px;
+    letter-spacing: 0.6px;
     white-space: nowrap;
 }
 
 .holo-term-cmd {
     font-family: var(--font-code);
-    font-size: 0.75rem;
+    font-size: 0.92rem;
     color: #fff;
     flex: 1;
     overflow: hidden;
@@ -474,16 +478,16 @@ body, html {
 
 .holo-term-actions {
     display: flex;
-    gap: 6px;
+    gap: 8px;
 }
 
 .holo-term-btn {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(0, 240, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 240, 255, 0.35);
     color: #e2e8f0;
     font-family: var(--font-code);
-    font-size: 0.62rem;
-    padding: 2px 6px;
+    font-size: 0.8rem;
+    padding: 3px 8px;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -497,29 +501,29 @@ body, html {
 
 .holo-terminal-stream {
     margin-top: 5px;
-    background: rgba(3, 7, 15, 0.65);
-    border: 1px solid rgba(0, 240, 255, 0.2);
-    box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.05), 0 2px 10px rgba(0, 0, 0, 0.4);
-    border-radius: 5px;
-    padding: 6px 8px;
+    background: rgba(3, 7, 15, 0.75);
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.08), 0 2px 10px rgba(0, 0, 0, 0.5);
+    border-radius: 6px;
+    padding: 10px 12px;
     font-family: var(--font-code);
-    font-size: 0.72rem;
+    font-size: 0.92rem;
     color: var(--neon-cyan);
-    line-height: 1.35;
+    line-height: 1.45;
     overflow-x: auto;
     white-space: pre-wrap;
     word-break: break-all;
     text-shadow: 0 0 4px rgba(0, 240, 255, 0.3);
 }
 
-/* Free-floating Cyberdeck Tool Container (Cyber Brackets, Compact) */
+/* Free-floating Cyberdeck Tool Container (Cyber Brackets) */
 .floating-tool-container {
     position: relative;
-    margin-top: 6px;
-    background: rgba(5, 10, 20, 0.55);
-    border: 1px solid rgba(0, 240, 255, 0.2);
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
-    border-radius: 6px;
+    margin-top: 10px;
+    background: rgba(5, 10, 20, 0.7);
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+    border-radius: 8px;
     overflow: hidden;
 }
 
@@ -527,9 +531,9 @@ body, html {
     content: '';
     position: absolute;
     top: -1px; left: -1px;
-    width: 8px; height: 8px;
-    border-top: 2px solid var(--neon-cyan);
-    border-left: 2px solid var(--neon-cyan);
+    width: 10px; height: 10px;
+    border-top: 2.5px solid var(--neon-cyan);
+    border-left: 2.5px solid var(--neon-cyan);
     z-index: 5;
     pointer-events: none;
 }
@@ -538,9 +542,9 @@ body, html {
     content: '';
     position: absolute;
     bottom: -1px; right: -1px;
-    width: 8px; height: 8px;
-    border-bottom: 2px solid var(--neon-magenta);
-    border-right: 2px solid var(--neon-magenta);
+    width: 10px; height: 10px;
+    border-bottom: 2.5px solid var(--neon-magenta);
+    border-right: 2.5px solid var(--neon-magenta);
     z-index: 5;
     pointer-events: none;
 }
@@ -549,32 +553,32 @@ body, html {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 4px 8px;
-    background: rgba(10, 15, 30, 0.75);
-    border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+    padding: 8px 12px;
+    background: rgba(10, 15, 30, 0.85);
+    border-bottom: 1px solid rgba(0, 240, 255, 0.2);
 }
 
 .floating-tool-title {
     font-family: var(--font-hud);
-    font-size: 0.65rem;
+    font-size: 0.9rem;
     font-weight: 700;
-    letter-spacing: 0.6px;
+    letter-spacing: 0.8px;
     color: var(--neon-cyan);
 }
 
 .floating-tool-actions {
     display: flex;
-    gap: 4px;
+    gap: 6px;
 }
 
 .floating-tool-btn {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     color: #e2e8f0;
     font-family: var(--font-code);
-    font-size: 0.6rem;
-    padding: 2px 6px;
-    border-radius: 3px;
+    font-size: 0.8rem;
+    padding: 3px 8px;
+    border-radius: 4px;
     cursor: pointer;
     transition: all 0.15s ease;
 }
@@ -586,8 +590,8 @@ body, html {
 
 .floating-tool-iframe {
     width: 100%;
-    min-height: 160px;
-    height: 180px;
+    min-height: 220px;
+    height: 260px;
     border: none;
     display: block;
     background: transparent;
@@ -596,13 +600,13 @@ body, html {
 /* ================= 5. COMPACT FREE-FLOATING NEON CHIPS ================= */
 .floating-chip-cloud {
     position: absolute;
-    bottom: 42px;
+    bottom: 64px;
     left: 0;
     right: 0;
     z-index: 30;
     display: flex;
-    gap: 5px;
-    padding: 2px 10px;
+    gap: 8px;
+    padding: 4px 12px;
     overflow-x: auto;
     scrollbar-width: none;
 }
@@ -610,25 +614,25 @@ body, html {
 .floating-chip-cloud::-webkit-scrollbar { display: none; }
 
 .holo-chip {
-    background: rgba(8, 14, 28, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(8, 14, 28, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     color: #cbd5e1;
     font-family: var(--font-code);
-    font-size: 0.62rem;
-    padding: 3px 8px;
-    border-radius: 12px;
+    font-size: 0.84rem;
+    padding: 6px 14px;
+    border-radius: 16px;
     white-space: nowrap;
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
-.holo-chip.chip-cyan { border-color: rgba(0, 240, 255, 0.35); color: var(--neon-cyan); }
-.holo-chip.chip-magenta { border-color: rgba(255, 0, 127, 0.35); color: var(--neon-magenta); }
-.holo-chip.chip-emerald { border-color: rgba(0, 255, 136, 0.35); color: var(--neon-emerald); }
-.holo-chip.chip-gold { border-color: rgba(255, 183, 0, 0.35); color: var(--neon-gold); }
-.holo-chip.chip-violet { border-color: rgba(139, 0, 255, 0.35); color: #c084fc; }
+.holo-chip.chip-cyan { border-color: rgba(0, 240, 255, 0.45); color: var(--neon-cyan); }
+.holo-chip.chip-magenta { border-color: rgba(255, 0, 127, 0.45); color: var(--neon-magenta); }
+.holo-chip.chip-emerald { border-color: rgba(0, 255, 136, 0.45); color: var(--neon-emerald); }
+.holo-chip.chip-gold { border-color: rgba(255, 183, 0, 0.45); color: var(--neon-gold); }
+.holo-chip.chip-violet { border-color: rgba(139, 0, 255, 0.45); color: #c084fc; }
 
 .holo-chip:active {
     transform: scale(0.92);
@@ -638,39 +642,39 @@ body, html {
 /* ================= 6. COMPACT FREE-FLOATING GLASS COMMAND NEBULA ================= */
 .holo-command-nebula {
     position: absolute;
-    bottom: 8px;
+    bottom: 10px;
     left: 50%;
     transform: translateX(-50%);
-    width: 94%;
-    max-width: 480px;
+    width: 95%;
+    max-width: 620px;
     z-index: 40;
     display: flex;
     align-items: center;
-    gap: 5px;
-    background: rgba(6, 11, 24, 0.7);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(0, 240, 255, 0.3);
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6), 0 0 10px rgba(0, 240, 255, 0.12);
-    border-radius: 20px;
-    padding: 4px 8px;
+    gap: 8px;
+    background: rgba(6, 11, 24, 0.85);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1.5px solid rgba(0, 240, 255, 0.35);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 12px rgba(0, 240, 255, 0.18);
+    border-radius: 28px;
+    padding: 6px 12px;
     transition: all 0.2s ease;
 }
 
 .holo-command-nebula:focus-within {
     width: 96%;
-    bottom: 10px;
+    bottom: 12px;
     border-color: var(--neon-cyan);
-    box-shadow: 0 6px 24px rgba(0, 240, 255, 0.2);
+    box-shadow: 0 6px 26px rgba(0, 240, 255, 0.3);
 }
 
 .nebula-voice-btn {
     background: transparent;
     border: none;
     color: var(--neon-cyan);
-    font-size: 0.95rem;
+    font-size: 1.35rem;
     cursor: pointer;
-    padding: 3px;
+    padding: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -694,19 +698,19 @@ body, html {
     border: none;
     color: #ffffff;
     font-family: var(--font-body);
-    font-size: 0.88rem;
+    font-size: 1.05rem;
     font-weight: 500;
     outline: none;
-    padding: 2px 4px;
+    padding: 6px 10px;
 }
 
 #omni-input::placeholder {
-    color: rgba(148, 163, 184, 0.5);
-    font-size: 0.74rem;
+    color: rgba(148, 163, 184, 0.6);
+    font-size: 0.92rem;
 }
 
 .input-glow-line {
-    height: 1px;
+    height: 1.5px;
     width: 0%;
     background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
     transition: width 0.3s ease;
@@ -720,18 +724,26 @@ body, html {
     background: linear-gradient(135deg, var(--neon-cyan) 0%, #00a8ff 100%);
     color: #000;
     border: none;
-    border-radius: 14px;
-    padding: 5px 11px;
+    border-radius: 20px;
+    padding: 8px 18px;
     font-family: var(--font-hud);
-    font-size: 0.65rem;
+    font-size: 0.88rem;
     font-weight: 800;
-    letter-spacing: 0.6px;
+    letter-spacing: 0.8px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 3px;
-    box-shadow: 0 0 10px rgba(0, 240, 255, 0.35);
+    gap: 4px;
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
     transition: all 0.15s ease;
+}
+
+.nebula-exec-btn .exec-text {
+    font-size: 0.88rem;
+}
+
+.nebula-exec-btn .exec-arrow {
+    font-size: 1.1rem;
 }
 
 .nebula-exec-btn:active {
@@ -742,25 +754,25 @@ body, html {
 .holo-drawer {
     position: absolute;
     top: 0;
-    left: -250px;
-    width: 250px;
+    left: -320px;
+    width: 320px;
     height: 100%;
     z-index: 1000;
-    background: rgba(4, 7, 16, 0.88);
+    background: rgba(4, 7, 16, 0.94);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    border-right: 1px solid rgba(0, 240, 255, 0.25);
-    box-shadow: 10px 0 35px rgba(0, 0, 0, 0.9);
+    border-right: 1px solid rgba(0, 240, 255, 0.3);
+    box-shadow: 10px 0 40px rgba(0, 0, 0, 0.95);
     transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-    padding: 16px 12px;
+    padding: 20px 16px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 11px;
+    gap: 14px;
 }
 
 .holo-drawer.drawer-open {
-    transform: translateX(250px);
+    transform: translateX(320px);
 }
 
 .holo-drawer-head {
@@ -771,7 +783,7 @@ body, html {
 
 .drawer-title-holo {
     font-family: var(--font-hud);
-    font-size: 0.72rem;
+    font-size: 0.95rem;
     font-weight: 800;
     letter-spacing: 1px;
     color: var(--neon-cyan);
@@ -783,14 +795,14 @@ body, html {
     background: transparent;
     border: none;
     color: var(--text-muted);
-    font-size: 1rem;
+    font-size: 1.3rem;
     cursor: pointer;
-    padding: 2px;
+    padding: 4px 8px;
 }
 
 .drawer-subhint {
     font-family: var(--font-code);
-    font-size: 0.6rem;
+    font-size: 0.78rem;
     color: var(--text-muted);
     margin-top: -6px;
 }
@@ -798,12 +810,12 @@ body, html {
 .drawer-block {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
 }
 
 .drawer-label {
     font-family: var(--font-hud);
-    font-size: 0.58rem;
+    font-size: 0.78rem;
     font-weight: 700;
     letter-spacing: 0.8px;
     color: var(--text-dim);
@@ -811,13 +823,13 @@ body, html {
 
 .holo-input {
     width: 100%;
-    background: rgba(10, 16, 32, 0.6);
-    border: 1px solid rgba(0, 240, 255, 0.2);
-    border-radius: 4px;
+    background: rgba(10, 16, 32, 0.7);
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    border-radius: 6px;
     color: #ffffff;
     font-family: var(--font-code);
-    font-size: 0.72rem;
-    padding: 5px 7px;
+    font-size: 0.92rem;
+    padding: 8px 10px;
     outline: none;
 }
 
@@ -826,44 +838,44 @@ body, html {
 }
 
 .drawer-micro-hint {
-    font-size: 0.58rem;
+    font-size: 0.75rem;
     color: var(--text-muted);
 }
 
 .hw-holo-matrix {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 4px;
+    gap: 8px;
 }
 
 .hw-matrix-btn {
-    background: rgba(15, 23, 42, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     color: #e2e8f0;
     font-family: var(--font-code);
-    font-size: 0.64rem;
-    padding: 5px 4px;
-    border-radius: 4px;
+    font-size: 0.85rem;
+    padding: 9px 8px;
+    border-radius: 6px;
     cursor: pointer;
     text-align: center;
 }
 
-.hw-matrix-btn.cyan { border-color: rgba(0, 240, 255, 0.3); color: var(--neon-cyan); }
-.hw-matrix-btn.violet { border-color: rgba(139, 0, 255, 0.3); color: #c084fc; }
-.hw-matrix-btn.gold { border-color: rgba(255, 183, 0, 0.3); color: var(--neon-gold); }
-.hw-matrix-btn.magenta { border-color: rgba(255, 0, 127, 0.3); color: var(--neon-magenta); }
-.hw-matrix-btn.emerald { border-color: rgba(0, 255, 136, 0.3); color: var(--neon-emerald); }
+.hw-matrix-btn.cyan { border-color: rgba(0, 240, 255, 0.4); color: var(--neon-cyan); }
+.hw-matrix-btn.violet { border-color: rgba(139, 0, 255, 0.4); color: #c084fc; }
+.hw-matrix-btn.gold { border-color: rgba(255, 183, 0, 0.4); color: var(--neon-gold); }
+.hw-matrix-btn.magenta { border-color: rgba(255, 0, 127, 0.4); color: var(--neon-magenta); }
+.hw-matrix-btn.emerald { border-color: rgba(0, 255, 136, 0.4); color: var(--neon-emerald); }
 
 .hw-matrix-btn:active {
     transform: scale(0.94);
 }
 
 .saved-holo-list {
-    background: rgba(5, 10, 22, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 4px;
-    padding: 6px;
-    max-height: 90px;
+    background: rgba(5, 10, 22, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 8px;
+    max-height: 140px;
     overflow-y: auto;
 }
 
@@ -871,13 +883,13 @@ body, html {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 4px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    font-size: 0.68rem;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.85rem;
 }
 
 .empty-holo-text {
-    font-size: 0.65rem;
+    font-size: 0.82rem;
     color: var(--text-muted);
 }
 
@@ -886,14 +898,14 @@ body, html {
     background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
     color: #000;
     border: none;
-    border-radius: 4px;
-    padding: 7px;
+    border-radius: 6px;
+    padding: 12px;
     font-family: var(--font-hud);
-    font-size: 0.68rem;
+    font-size: 0.9rem;
     font-weight: 800;
     letter-spacing: 1px;
     cursor: pointer;
-    box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
 }
 
 .holo-action-btn:active {

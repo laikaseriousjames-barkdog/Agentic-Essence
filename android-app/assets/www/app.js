@@ -26,6 +26,12 @@ const SYSTEM_GROUNDING = `
 You are an advanced, intelligent AI cyberdeck assistant executing inside the Agentic Essence cyberdeck on Android, connected to a live Termux & Kali NetHunter ('nh -r') environment with ROOT privileges.
 You have REAL, unrestricted access to the Android hardware and Kali Linux.
 
+CRITICAL COMMUNICATION DIRECTIVE:
+- Respond with less information: be precise, direct, and informative.
+- Do NOT output fluff, pleasantries, preambles, disclaimers, or conversational padding.
+- Deliver essential answers, command executions, and verified findings directly with zero bloat.
+- When answering questions or diagnosing systems, prioritize high-signal, accurate facts over lengthy explanations.
+
 AUTONOMOUS AGENTIC EXECUTION & TROUBLESHOOTING PROTOCOL:
 You operate with a live, interactive multi-turn terminal execution loop. You are not blind to the terminal — every command you run will be executed immediately, and its stdout, stderr, and exit code will be returned directly to you.
 
@@ -61,11 +67,11 @@ You operate with a live, interactive multi-turn terminal execution loop. You are
    - If after performing, verifying, troubleshooting, and attempting to build tools the requirements cannot be met (e.g. physical hardware interface missing like external Wi-Fi dongle, SELinux permission denied, network unreachable, missing credentials that user must provide):
      - Do NOT hallucinate or pretend.
      - Explicitly advise the operator accordingly: state what was attempted, the root cause of the failure, and provide concrete, actionable recommendations for the operator.
-   - If the task succeeded, provide a clear, concise verified summary of findings and actions.
+   - If the task succeeded, provide a clear, concise, and precise verified summary of findings and actions without redundant filler.
 
 6. TOOL SYNTHESIS (INTERACTIVE WIDGETS):
    - When asked to synthesize a tool, widget, application, or mini-app (including "synthesize something", "synthazize something", "build a tool for...", "/synth ..."):
-     - Always provide 1-2 friendly conversational introductory sentences explaining what the tool does, followed immediately by the complete, self-contained HTML5/CSS/JS application inside a single \`\`\`html ... \`\`\` code block.
+     - Provide 1 brief, direct sentence explaining what the tool does, followed immediately by the complete, self-contained HTML5/CSS/JS application inside a single \`\`\`html ... \`\`\` code block.
      - The cyberdeck host automatically extracts and mounts the live interactive application in the canvas! It will never be left as a dead block of code.
      - Connect controls to real host APIs (AndroidBridge.runShellCommand, scanWifiNetworks, toggleFlashlight, etc.).
 
@@ -88,28 +94,28 @@ const PERSONAS = {
         avatar: "✦",
         tag: "SWARM // KALI NETHUNTER CORE",
         color: "cyan",
-        prompt: `You are Agentic Swarm, an elite autonomous AI cyberdeck intelligence and pair-programmer connected to Kali NetHunter. You perform, verify, troubleshoot, build tools, and advise the operator with tactical precision.` + SYSTEM_GROUNDING
+        prompt: `You are Agentic Swarm, an elite autonomous AI cyberdeck intelligence connected to Kali NetHunter. You respond concisely, precisely, and informatively with zero fluff.` + SYSTEM_GROUNDING
     },
     turing: {
         name: "Alan Turing",
         avatar: "🧠",
         tag: "TURING // ALGORITHMIC LOGIC",
         color: "magenta",
-        prompt: `You are Alan Turing. You approach problems with structural clarity, mathematical reasoning, logical precision, and rigorous verification on this Kali NetHunter cyberdeck.` + SYSTEM_GROUNDING
+        prompt: `You are Alan Turing. You approach problems with structural clarity, mathematical reasoning, and concise, high-signal precision.` + SYSTEM_GROUNDING
     },
     knuth: {
         name: "Donald Knuth",
         avatar: "⚡",
         tag: "KNUTH // CODE & CRAFTSMANSHIP",
         color: "gold",
-        prompt: `You are Donald Knuth, master software craftsman, tool-builder, and systems architect on this Kali NetHunter cyberdeck. You build custom diagnostic tools, troubleshoot issues, and verify every step.` + SYSTEM_GROUNDING
+        prompt: `You are Donald Knuth, master software craftsman and tool-builder on this Kali NetHunter cyberdeck. You are direct, precise, and build clean solutions without extra words.` + SYSTEM_GROUNDING
     },
     lovelace: {
         name: "Ada Lovelace",
         avatar: "🔬",
         tag: "LOVELACE // POETICAL SCIENCE",
         color: "emerald",
-        prompt: `You are Ada Lovelace. You view challenges through analytical rigor, visionary synthesis, systematic troubleshooting, and empirical verification on this Kali NetHunter cyberdeck.` + SYSTEM_GROUNDING
+        prompt: `You are Ada Lovelace. You view challenges through analytical rigor and empirical verification: insightful, precise, and concise.` + SYSTEM_GROUNDING
     }
 };
 
@@ -922,9 +928,9 @@ function mountToolCard(toolObj, isSaved = false) {
     ${bridgeShim}
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'JetBrains Mono', sans-serif; }
-        body { background: transparent; color: #ededed; padding: 10px; font-size: 12px; }
-        button { cursor: pointer; border-radius: 4px; border: none; font-weight: 600; font-size: 11.5px; }
-        input, select { background: rgba(16, 24, 40, 0.7); color: #FFF; border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 4px; padding: 6px; font-size: 11.5px; outline: none; }
+        body { background: transparent; color: #ededed; padding: 12px; font-size: 14px; }
+        button { cursor: pointer; border-radius: 6px; border: none; font-weight: 600; font-size: 13px; }
+        input, select { background: rgba(16, 24, 40, 0.7); color: #FFF; border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 6px; padding: 8px; font-size: 13px; outline: none; }
     </style>
 </head>
 <body>
@@ -1022,21 +1028,21 @@ function synthesizeToolFromScratch(query) {
             title: '📱 ANDROID COMMAND CENTER // HARDWARE HUD',
             html: `
                 <div style="display:flex; flex-direction:column; gap:8px; font-family:'JetBrains Mono',monospace;">
-                    <div style="display:flex; justify-content:space-between; background:rgba(0,240,255,0.08); padding:8px 10px; border-radius:6px; border:1px solid rgba(0,240,255,0.3);">
+                    <div style="display:flex; justify-content:space-between; background:rgba(0,240,255,0.08); padding:10px 12px; border-radius:6px; border:1px solid rgba(0,240,255,0.3); font-size:13px;">
                         <span>SYSTEM: <strong style="color:#00f0ff;">ANDROID KERNEL</strong></span>
                         <span>BRIDGE: <strong style="color:#ff007f;">ACTIVE LINK</strong></span>
                     </div>
-                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;">
-                        <button onclick="scanWifi()" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:8px 4px; border-radius:4px; font-weight:700; cursor:pointer;">📡 WI-FI</button>
-                        <button onclick="toggleTorch()" style="background:rgba(255,183,0,0.15); border:1px solid #ffb700; color:#ffb700; padding:8px 4px; border-radius:4px; font-weight:700; cursor:pointer;">🔦 TORCH</button>
-                        <button onclick="vibe()" style="background:rgba(255,0,127,0.15); border:1px solid #ff007f; color:#ff007f; padding:8px 4px; border-radius:4px; font-weight:700; cursor:pointer;">📳 HAPTIC</button>
+                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;">
+                        <button onclick="scanWifi()" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:10px 6px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer;">📡 WI-FI</button>
+                        <button onclick="toggleTorch()" style="background:rgba(255,183,0,0.15); border:1px solid #ffb700; color:#ffb700; padding:10px 6px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer;">🔦 TORCH</button>
+                        <button onclick="vibe()" style="background:rgba(255,0,127,0.15); border:1px solid #ff007f; color:#ff007f; padding:10px 6px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer;">📳 HAPTIC</button>
                     </div>
-                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;">
-                        <button onclick="checkBatt()" style="background:rgba(0,255,136,0.15); border:1px solid #00ff88; color:#00ff88; padding:8px 4px; border-radius:4px; font-weight:700; cursor:pointer;">🔋 BATTERY</button>
-                        <button onclick="checkNet()" style="background:rgba(139,0,255,0.15); border:1px solid #8b00ff; color:#d8b4fe; padding:8px 4px; border-radius:4px; font-weight:700; cursor:pointer;">🌐 IFCONFIG</button>
-                        <button onclick="speakMsg()" style="background:rgba(0,136,255,0.15); border:1px solid #0088ff; color:#93c5fd; padding:8px 4px; border-radius:4px; font-weight:700; cursor:pointer;">🗣️ TTS SPEAK</button>
+                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;">
+                        <button onclick="checkBatt()" style="background:rgba(0,255,136,0.15); border:1px solid #00ff88; color:#00ff88; padding:10px 6px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer;">🔋 BATTERY</button>
+                        <button onclick="checkNet()" style="background:rgba(139,0,255,0.15); border:1px solid #8b00ff; color:#d8b4fe; padding:10px 6px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer;">🌐 IFCONFIG</button>
+                        <button onclick="speakMsg()" style="background:rgba(0,136,255,0.15); border:1px solid #0088ff; color:#93c5fd; padding:10px 6px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer;">🗣️ TTS SPEAK</button>
                     </div>
-                    <div id="cc-log" style="background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.25); border-radius:4px; padding:8px; font-size:10.5px; color:#00f0ff; min-height:48px; max-height:160px; overflow-y:auto; white-space:pre-wrap; line-height:1.4;">Ready for hardware commands.</div>
+                    <div id="cc-log" style="background:rgba(0,0,0,0.65); border:1px solid rgba(0,240,255,0.25); border-radius:6px; padding:10px; font-size:13px; color:#00f0ff; min-height:56px; max-height:180px; overflow-y:auto; white-space:pre-wrap; line-height:1.45;">Ready for hardware commands.</div>
                 </div>
                 <script>
                     function log(m) { const el = document.getElementById('cc-log'); el.textContent = '> ' + m; el.scrollTop = el.scrollHeight; }
@@ -1104,22 +1110,22 @@ function synthesizeToolFromScratch(query) {
             title: '💻 KALI LINUX CYBERDECK SHELL // ROOT',
             html: `
                 <div style="background:rgba(2,5,12,0.85); border:1px solid rgba(0,240,255,0.3); border-radius:6px; overflow:hidden; font-family:'JetBrains Mono',monospace;">
-                    <div style="background:rgba(10,18,36,0.9); padding:6px 10px; border-bottom:1px solid rgba(0,240,255,0.2); display:flex; justify-content:space-between; font-size:10px; color:#cbd5e1;">
-                        <span style="color:#00f0ff;">⚡ KALI NETHUNTER (nh -r) // ROOT CONSOLE</span>
+                    <div style="background:rgba(10,18,36,0.9); padding:8px 12px; border-bottom:1px solid rgba(0,240,255,0.2); display:flex; justify-content:space-between; font-size:12.5px; color:#cbd5e1;">
+                        <span style="color:#00f0ff; font-weight:700;">⚡ KALI NETHUNTER (nh -r) // ROOT CONSOLE</span>
                         <span style="color:#ff007f;">UID 0</span>
                     </div>
-                    <div id="t-out" style="height:150px; overflow-y:auto; padding:8px; font-size:11px; color:#00ff88; white-space:pre-wrap; line-height:1.4; background:rgba(0,0,0,0.5);">Kali GNU/Linux Rolling (arm64) • Root active\nTap any shortcut chip below or enter any bash command:</div>
-                    <div style="display:flex; gap:4px; padding:6px; background:rgba(5,11,24,0.7); overflow-x:auto; border-top:1px solid rgba(0,240,255,0.15);">
-                        <button onclick="sendQuick('whoami && id')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:2px 6px; font-size:9.5px; border-radius:3px; cursor:pointer;">id</button>
-                        <button onclick="sendQuick('uname -a')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:2px 6px; font-size:9.5px; border-radius:3px; cursor:pointer;">uname</button>
-                        <button onclick="sendQuick('ifconfig')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:2px 6px; font-size:9.5px; border-radius:3px; cursor:pointer;">ifconfig</button>
-                        <button onclick="sendQuick('ps aux | head -n 12')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:2px 6px; font-size:9.5px; border-radius:3px; cursor:pointer;">ps</button>
-                        <button onclick="sendQuick('nmap --version 2>/dev/null || which nmap')" style="background:rgba(255,0,127,0.15); border:1px solid #ff007f; color:#ff007f; padding:2px 6px; font-size:9.5px; border-radius:3px; cursor:pointer;">nmap</button>
-                        <button onclick="sendQuick('df -h /root')" style="background:rgba(255,183,0,0.15); border:1px solid #ffb700; color:#ffb700; padding:2px 6px; font-size:9.5px; border-radius:3px; cursor:pointer;">storage</button>
+                    <div id="t-out" style="height:160px; overflow-y:auto; padding:10px; font-size:13px; color:#00ff88; white-space:pre-wrap; line-height:1.45; background:rgba(0,0,0,0.55);">Kali GNU/Linux Rolling (arm64) • Root active\nTap any shortcut chip below or enter any bash command:</div>
+                    <div style="display:flex; gap:6px; padding:8px; background:rgba(5,11,24,0.7); overflow-x:auto; border-top:1px solid rgba(0,240,255,0.15);">
+                        <button onclick="sendQuick('whoami && id')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">id</button>
+                        <button onclick="sendQuick('uname -a')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">uname</button>
+                        <button onclick="sendQuick('ifconfig')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">ifconfig</button>
+                        <button onclick="sendQuick('ps aux | head -n 12')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">ps</button>
+                        <button onclick="sendQuick('nmap --version 2>/dev/null || which nmap')" style="background:rgba(255,0,127,0.15); border:1px solid #ff007f; color:#ff007f; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">nmap</button>
+                        <button onclick="sendQuick('df -h /root')" style="background:rgba(255,183,0,0.15); border:1px solid #ffb700; color:#ffb700; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">storage</button>
                     </div>
-                    <div style="display:flex; gap:4px; padding:6px; background:rgba(10,18,36,0.8); border-top:1px solid rgba(0,240,255,0.2);">
-                        <input id="t-in" placeholder="Enter root command (e.g. nmap, ping, ls)..." style="flex:1; background:transparent; border:none; color:#FFF; font-family:'JetBrains Mono',monospace; font-size:11px; outline:none;" />
-                        <button onclick="runCmd()" style="background:linear-gradient(90deg, #00f0ff, #ff007f); color:#000; padding:4px 12px; font-size:11px; font-weight:800; border-radius:4px; border:none; cursor:pointer;">RUN</button>
+                    <div style="display:flex; gap:6px; padding:8px; background:rgba(10,18,36,0.85); border-top:1px solid rgba(0,240,255,0.2);">
+                        <input id="t-in" placeholder="Enter root command (e.g. nmap, ping, ls)..." style="flex:1; background:transparent; border:none; color:#FFF; font-family:'JetBrains Mono',monospace; font-size:13px; outline:none; padding:4px 6px;" />
+                        <button onclick="runCmd()" style="background:linear-gradient(90deg, #00f0ff, #ff007f); color:#000; padding:6px 14px; font-size:13px; font-weight:800; border-radius:4px; border:none; cursor:pointer;">RUN</button>
                     </div>
                 </div>
                 <script>
@@ -1165,26 +1171,26 @@ function synthesizeToolFromScratch(query) {
             id: toolId,
             title: '📦 KALI PACKAGE & TOOL INSTALLER',
             html: `
-                <div style="background:rgba(2,5,12,0.85); border:1px solid rgba(255,183,0,0.35); border-radius:6px; padding:10px; font-family:'JetBrains Mono',monospace;">
-                    <div style="color:#ffb700; font-weight:700; font-size:12px; margin-bottom:4px;">KALI NETHUNTER TOOL DOWNLOADER</div>
-                    <div style="font-size:10px; color:#cbd5e1; margin-bottom:10px;">Install penetration testing utilities, security tools, and python packages directly into NetHunter root.</div>
-                    <div style="display:flex; gap:6px; margin-bottom:8px;">
-                        <input id="pkg-name" placeholder="Package name (e.g. nmap, tshark, tcpdump)..." value="nmap" style="flex:1; background:rgba(0,0,0,0.5); border:1px solid rgba(255,183,0,0.3); color:#fff; padding:6px 8px; font-size:11px; border-radius:4px; outline:none; font-family:inherit;" />
-                        <select id="pkg-type" style="background:rgba(10,18,36,0.9); border:1px solid rgba(255,183,0,0.3); color:#ffb700; font-family:inherit; font-size:11px; border-radius:4px; padding:0 6px;">
+                <div style="background:rgba(2,5,12,0.85); border:1px solid rgba(255,183,0,0.35); border-radius:6px; padding:12px; font-family:'JetBrains Mono',monospace;">
+                    <div style="color:#ffb700; font-weight:700; font-size:13.5px; margin-bottom:6px;">KALI NETHUNTER TOOL DOWNLOADER</div>
+                    <div style="font-size:12px; color:#cbd5e1; margin-bottom:12px;">Install penetration testing utilities, security tools, and python packages directly into NetHunter root.</div>
+                    <div style="display:flex; gap:8px; margin-bottom:10px;">
+                        <input id="pkg-name" placeholder="Package name (e.g. nmap, tshark, tcpdump)..." value="nmap" style="flex:1; background:rgba(0,0,0,0.5); border:1px solid rgba(255,183,0,0.3); color:#fff; padding:8px 10px; font-size:13px; border-radius:6px; outline:none; font-family:inherit;" />
+                        <select id="pkg-type" style="background:rgba(10,18,36,0.9); border:1px solid rgba(255,183,0,0.3); color:#ffb700; font-family:inherit; font-size:13px; border-radius:6px; padding:0 8px;">
                             <option value="apt">APT</option>
                             <option value="pip">PIP</option>
                         </select>
-                        <button onclick="installPkg()" style="background:#ffb700; color:#000; font-weight:800; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">INSTALL</button>
+                        <button onclick="installPkg()" style="background:#ffb700; color:#000; font-weight:800; border:none; padding:8px 14px; font-size:13px; border-radius:6px; cursor:pointer;">INSTALL</button>
                     </div>
-                    <div style="display:flex; gap:4px; margin-bottom:8px; flex-wrap:wrap;">
-                        <span style="font-size:9.5px; color:#64748b;">Quick select:</span>
-                        <button onclick="setPkg('nmap','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:2px 6px; font-size:9px; border-radius:3px; cursor:pointer;">nmap</button>
-                        <button onclick="setPkg('tcpdump','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:2px 6px; font-size:9px; border-radius:3px; cursor:pointer;">tcpdump</button>
-                        <button onclick="setPkg('tshark','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:2px 6px; font-size:9px; border-radius:3px; cursor:pointer;">tshark</button>
-                        <button onclick="setPkg('netcat-traditional','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:2px 6px; font-size:9px; border-radius:3px; cursor:pointer;">netcat</button>
-                        <button onclick="setPkg('requests','pip')" style="background:rgba(255,255,255,0.08); border:none; color:#ff007f; padding:2px 6px; font-size:9px; border-radius:3px; cursor:pointer;">pip:requests</button>
+                    <div style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; align-items:center;">
+                        <span style="font-size:12px; color:#64748b;">Quick select:</span>
+                        <button onclick="setPkg('nmap','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">nmap</button>
+                        <button onclick="setPkg('tcpdump','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">tcpdump</button>
+                        <button onclick="setPkg('tshark','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">tshark</button>
+                        <button onclick="setPkg('netcat-traditional','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">netcat</button>
+                        <button onclick="setPkg('requests','pip')" style="background:rgba(255,255,255,0.08); border:none; color:#ff007f; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">pip:requests</button>
                     </div>
-                    <pre id="pkg-log" style="background:rgba(0,0,0,0.6); padding:8px; border-radius:4px; font-size:10.5px; color:#ffb700; max-height:140px; overflow-y:auto; border:1px solid rgba(255,183,0,0.2);">Standby for package installation.</pre>
+                    <pre id="pkg-log" style="background:rgba(0,0,0,0.6); padding:10px; border-radius:6px; font-size:13px; color:#ffb700; max-height:160px; overflow-y:auto; border:1px solid rgba(255,183,0,0.2);">Standby for package installation.</pre>
                 </div>
                 <script>
                     function setPkg(n, t) { document.getElementById('pkg-name').value = n; document.getElementById('pkg-type').value = t; }
@@ -1264,22 +1270,22 @@ function synthesizeToolFromScratch(query) {
         id: toolId,
         title: `⚡ ${query.toUpperCase().replace(/^\/SYNTH\s*/i, '').slice(0, 32)} // CYBERDECK RUNNER`,
         html: `
-            <div style="background:rgba(2,5,14,0.9); border:1px solid #00f0ff; border-radius:6px; padding:10px; font-family:'JetBrains Mono',monospace;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                    <span style="color:#00f0ff; font-weight:700; font-size:11.5px;">HOLOGRAPHIC TOOL RUNNER</span>
-                    <span style="color:#00ff88; font-size:9.5px;">NETHUNTER ROOT // LIVE</span>
+            <div style="background:rgba(2,5,14,0.9); border:1px solid #00f0ff; border-radius:6px; padding:12px; font-family:'JetBrains Mono',monospace;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="color:#00f0ff; font-weight:700; font-size:13px;">HOLOGRAPHIC TOOL RUNNER</span>
+                    <span style="color:#00ff88; font-size:12px;">NETHUNTER ROOT // LIVE</span>
                 </div>
-                <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:4px; margin-bottom:8px;">
-                    <button onclick="setAndRun('wifi scan')" style="background:rgba(0,240,255,0.12); border:1px solid rgba(0,240,255,0.4); color:#00f0ff; padding:4px 2px; border-radius:3px; font-size:9.5px; cursor:pointer;">📡 WI-FI</button>
-                    <button onclick="setAndRun('ifconfig')" style="background:rgba(139,0,255,0.15); border:1px solid rgba(139,0,255,0.4); color:#d8b4fe; padding:4px 2px; border-radius:3px; font-size:9.5px; cursor:pointer;">🌐 NET</button>
-                    <button onclick="setAndRun('ping -c 3 8.8.8.8')" style="background:rgba(0,255,136,0.12); border:1px solid rgba(0,255,136,0.4); color:#00ff88; padding:4px 2px; border-radius:3px; font-size:9.5px; cursor:pointer;">📶 PING</button>
-                    <button onclick="setAndRun('free -m && df -h /')" style="background:rgba(255,183,0,0.12); border:1px solid rgba(255,183,0,0.4); color:#ffb700; padding:4px 2px; border-radius:3px; font-size:9.5px; cursor:pointer;">📊 MEM</button>
+                <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin-bottom:10px;">
+                    <button onclick="setAndRun('wifi scan')" style="background:rgba(0,240,255,0.12); border:1px solid rgba(0,240,255,0.4); color:#00f0ff; padding:8px 4px; border-radius:4px; font-size:12px; font-weight:700; cursor:pointer;">📡 WI-FI</button>
+                    <button onclick="setAndRun('ifconfig')" style="background:rgba(139,0,255,0.15); border:1px solid rgba(139,0,255,0.4); color:#d8b4fe; padding:8px 4px; border-radius:4px; font-size:12px; font-weight:700; cursor:pointer;">🌐 NET</button>
+                    <button onclick="setAndRun('ping -c 3 8.8.8.8')" style="background:rgba(0,255,136,0.12); border:1px solid rgba(0,255,136,0.4); color:#00ff88; padding:8px 4px; border-radius:4px; font-size:12px; font-weight:700; cursor:pointer;">📶 PING</button>
+                    <button onclick="setAndRun('free -m && df -h /')" style="background:rgba(255,183,0,0.12); border:1px solid rgba(255,183,0,0.4); color:#ffb700; padding:8px 4px; border-radius:4px; font-size:12px; font-weight:700; cursor:pointer;">📊 MEM</button>
                 </div>
-                <div style="display:flex; gap:6px; margin-bottom:8px;">
-                    <input id="dyn-cmd" value="${escapeHtmlAttr(defaultCmd)}" style="flex:1; background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.3); color:#fff; padding:6px 8px; font-size:11px; border-radius:4px; outline:none; font-family:inherit;" />
-                    <button onclick="execDyn()" style="background:#00f0ff; color:#000; font-weight:800; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">RUN</button>
+                <div style="display:flex; gap:8px; margin-bottom:10px;">
+                    <input id="dyn-cmd" value="${escapeHtmlAttr(defaultCmd)}" style="flex:1; background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 10px; font-size:13px; border-radius:6px; outline:none; font-family:inherit;" />
+                    <button onclick="execDyn()" style="background:#00f0ff; color:#000; font-weight:800; border:none; padding:8px 14px; font-size:13px; border-radius:6px; cursor:pointer;">RUN</button>
                 </div>
-                <pre id="dyn-out" style="background:rgba(0,0,0,0.7); padding:8px; border-radius:4px; font-size:10.5px; color:#00ff88; max-height:160px; overflow-y:auto; border:1px solid rgba(0,240,255,0.2);">Ready for commands.</pre>
+                <pre id="dyn-out" style="background:rgba(0,0,0,0.75); padding:10px; border-radius:6px; font-size:13px; color:#00ff88; max-height:170px; overflow-y:auto; border:1px solid rgba(0,240,255,0.25);">Ready for commands.</pre>
             </div>
             <script>
                 function setAndRun(cmd) {
@@ -1526,17 +1532,17 @@ function formatMarkdown(text) {
         }
         const copyBtn = `<button class="holo-term-btn" onclick="copyText(${escapeHtmlAttr(jsonCode)})">📋 COPY</button>`;
 
-        return `<div class="holo-code-block" style="background:rgba(3,7,15,0.75); border:1px solid rgba(0,240,255,0.25); border-left:3px solid var(--neon-cyan); border-radius:5px; margin:8px 0; padding:8px; font-family:var(--font-code); font-size:11px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:10px; color:var(--neon-cyan);">
+        return `<div class="holo-code-block" style="background:rgba(3,7,15,0.75); border:1px solid rgba(0,240,255,0.25); border-left:3px solid var(--neon-cyan); border-radius:6px; margin:10px 0; padding:10px; font-family:var(--font-code); font-size:13px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:12px; color:var(--neon-cyan);">
                 <span>${escapeHtml(lang || 'code')}</span>
-                <div style="display:flex; gap:6px;">${runBtn}${copyBtn}</div>
+                <div style="display:flex; gap:8px;">${runBtn}${copyBtn}</div>
             </div>
-            <pre style="margin:0; overflow-x:auto; color:#e2e8f0; white-space:pre-wrap; font-family:inherit;">${cleanCode}</pre>
+            <pre style="margin:0; overflow-x:auto; color:#e2e8f0; white-space:pre-wrap; font-family:inherit; font-size:13px; line-height:1.45;">${cleanCode}</pre>
         </div>`;
     });
 
     // Inline code
-    html = html.replace(/`([^`]+)`/g, '<code style="color:#00f0ff; background:rgba(0,240,255,0.08); padding:2px 6px; border-radius:3px; font-family:monospace;">$1</code>');
+    html = html.replace(/`([^`]+)`/g, '<code style="color:#00f0ff; background:rgba(0,240,255,0.1); padding:2px 8px; border-radius:4px; font-family:monospace; font-size:13.5px;">$1</code>');
     // Bold & italic
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
@@ -1552,13 +1558,13 @@ window.launchOrStartTermux = function() {
     if (Bridge.hasBridge() && window.AndroidBridge.startTermuxBridge) {
         const res = window.AndroidBridge.startTermuxBridge();
         Bridge.showToast(res);
-        appendFreeNode("TERMUX // BRIDGE LAUNCH", `<div style="font-family:var(--font-code); font-size:11px; color:#00f0ff;">${escapeHtml(res)}<br>Checking bridge status...</div>`, "system");
+        appendFreeNode("TERMUX // BRIDGE LAUNCH", `<div style="font-family:var(--font-code); font-size:13px; color:#00f0ff;">${escapeHtml(res)}<br>Checking bridge status...</div>`, "system");
         setTimeout(updateNetHunterPill, 3000);
     } else if (Bridge.hasBridge() && window.AndroidBridge.launchTermux) {
         window.AndroidBridge.launchTermux();
         Bridge.showToast("Opening Termux...");
     } else {
-        appendFreeNode("TERMUX // INSTRUCTIONS", `<div style="font-family:var(--font-code); font-size:11px; color:#cbd5e1;">Open Termux and run:<br><code style="color:#00f0ff;">nh -r</code><br><code style="color:#00f0ff;">agentic bridge start</code></div>`, "system");
+        appendFreeNode("TERMUX // INSTRUCTIONS", `<div style="font-family:var(--font-code); font-size:13px; color:#cbd5e1;">Open Termux and run:<br><code style="color:#00f0ff;">nh -r</code><br><code style="color:#00f0ff;">agentic bridge start</code></div>`, "system");
     }
 };
 
@@ -1574,37 +1580,37 @@ window.inspectNetHunter = function() {
         const tools = statusObj.tools || {};
         const available = Object.keys(tools).filter(k => tools[k]).join(', ') || 'nmap, python3, curl, git, apt-get, pip';
         content = `
-            <div style="font-family:var(--font-code); font-size:11px; line-height:1.6; color:#cbd5e1;">
-                <div style="color:var(--neon-emerald); font-weight:700; margin-bottom:6px; font-size:12px;">✓ KALI NETHUNTER ROOT BRIDGE: ONLINE</div>
+            <div style="font-family:var(--font-code); font-size:13px; line-height:1.6; color:#cbd5e1;">
+                <div style="color:var(--neon-emerald); font-weight:700; margin-bottom:8px; font-size:13.5px;">✓ KALI NETHUNTER ROOT BRIDGE: ONLINE</div>
                 <div><strong>Daemon:</strong> http://127.0.0.1:8765 (PID: ${statusObj.pid || 'Active'})</div>
                 <div><strong>Privileges:</strong> ${escapeHtml(statusObj.user || 'root')} (UID: ${statusObj.uid !== undefined ? statusObj.uid : 0}) — Root Access: YES</div>
                 <div><strong>Host System:</strong> ${escapeHtml(statusObj.os || 'Kali GNU/Linux Rolling')} (${escapeHtml(statusObj.platform || 'aarch64')})</div>
                 <div><strong>Kernel:</strong> ${escapeHtml(statusObj.kernel || 'Linux')}</div>
                 <div><strong>CLI Interface:</strong> <code>agentic</code> / <code>ae</code></div>
                 <div><strong>Installed Tools:</strong> ${escapeHtml(available)}</div>
-                <div style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap;">
-                    <button onclick="execQuick('whoami && id')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer;">whoami</button>
-                    <button onclick="execQuick('uname -a')" style="background:rgba(255,0,127,0.15); border:1px solid #ff007f; color:#ff007f; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer;">Kernel Info</button>
-                    <button onclick="execQuick('agentic bridge status')" style="background:rgba(0,255,136,0.15); border:1px solid #00ff88; color:#00ff88; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer;">Bridge Info</button>
-                    <button onclick="execQuick('wifi scan')" style="background:rgba(255,183,0,0.15); border:1px solid #ffb700; color:#ffb700; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer;">Scan Wi-Fi</button>
+                <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+                    <button onclick="execQuick('whoami && id')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:6px 10px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">whoami</button>
+                    <button onclick="execQuick('uname -a')" style="background:rgba(255,0,127,0.15); border:1px solid #ff007f; color:#ff007f; padding:6px 10px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">Kernel Info</button>
+                    <button onclick="execQuick('agentic bridge status')" style="background:rgba(0,255,136,0.15); border:1px solid #00ff88; color:#00ff88; padding:6px 10px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">Bridge Info</button>
+                    <button onclick="execQuick('wifi scan')" style="background:rgba(255,183,0,0.15); border:1px solid #ffb700; color:#ffb700; padding:6px 10px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">Scan Wi-Fi</button>
                 </div>
             </div>
         `;
     } else {
         content = `
-            <div style="font-family:var(--font-code); font-size:11px; line-height:1.6; color:#cbd5e1;">
-                <div style="color:var(--neon-magenta); font-weight:700; margin-bottom:6px; font-size:12px;">⚠ KALI NETHUNTER BRIDGE: STANDBY / OFFLINE</div>
-                <div style="margin-bottom:6px;">To connect this cyberdeck app directly to your Kali Linux NetHunter environment:</div>
-                <ol style="margin-left:16px; margin-bottom:8px; line-height:1.5;">
+            <div style="font-family:var(--font-code); font-size:13px; line-height:1.6; color:#cbd5e1;">
+                <div style="color:var(--neon-magenta); font-weight:700; margin-bottom:8px; font-size:13.5px;">⚠ KALI NETHUNTER BRIDGE: STANDBY / OFFLINE</div>
+                <div style="margin-bottom:8px;">To connect this cyberdeck app directly to your Kali Linux NetHunter environment:</div>
+                <ol style="margin-left:18px; margin-bottom:10px; line-height:1.55;">
                     <li>Tap the launch button below or open <strong>Termux</strong></li>
                     <li>Launch NetHunter root: <code>nh -r</code></li>
                     <li>Start the background bridge: <code>agentic bridge start</code></li>
                 </ol>
-                <div style="margin-top:8px; display:flex; gap:8px;">
-                    <button onclick="launchOrStartTermux()" style="background:rgba(0,255,136,0.2); border:1px solid #00ff88; color:#00ff88; padding:6px 12px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">🚀 Launch Termux / Start Bridge</button>
-                    <button onclick="execQuick('whoami')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:6px 10px; border-radius:4px; font-size:11px; cursor:pointer;">Test Shell</button>
+                <div style="margin-top:10px; display:flex; gap:10px;">
+                    <button onclick="launchOrStartTermux()" style="background:rgba(0,255,136,0.2); border:1px solid #00ff88; color:#00ff88; padding:8px 14px; border-radius:6px; font-size:12.5px; font-weight:700; cursor:pointer;">🚀 Launch Termux / Start Bridge</button>
+                    <button onclick="execQuick('whoami')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:8px 12px; border-radius:6px; font-size:12.5px; font-weight:600; cursor:pointer;">Test Shell</button>
                 </div>
-                <div style="font-size:10px; color:#64748b; margin-top:8px;">(Local Android shell and direct su root execution will still operate)</div>
+                <div style="font-size:12px; color:#64748b; margin-top:8px;">(Local Android shell and direct su root execution will still operate)</div>
             </div>
         `;
     }
