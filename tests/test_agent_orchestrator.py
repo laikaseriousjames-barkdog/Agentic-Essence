@@ -142,3 +142,91 @@ def test_app_js_troubleshooting_and_terminal_protocol():
     # Verify tool building support
     assert "BUILD_TOOL:" in content
 
+
+def test_antigravity_style_and_fluff_stripping():
+    import os
+    import re
+    tests_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_dir = os.path.dirname(tests_dir)
+    app_js_path = os.path.join(repo_dir, "android-app/assets/www/app.js")
+    assert os.path.isfile(app_js_path)
+
+    with open(app_js_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Verify Antigravity communication directives
+    assert "CRITICAL COMMUNICATION DIRECTIVE (REPLY LIKE ANTIGRAVITY)" in content
+    assert "MANDATORY TERMINAL EXECUTION" in content
+    assert "ZERO CONVERSATIONAL FLUFF" in content
+    assert "stripConversationalFluff" in content
+    assert "FINAL SUMMARY (ANTIGRAVITY STYLE)" in content
+
+    # Test the conversational fluff stripping logic (mirroring app.js)
+    def strip_conversational_fluff(text: str) -> str:
+        if not text:
+            return ''
+        cleaned = text.strip()
+        leading_patterns = [
+            r'^(?:sure(?: thing)?[!.,]?|certainly[!.,]?|of course[!.,]?|absolutely[!.,]?|alright[!.,]?|all right[!.,]?|okay[!.,]?|ok[!.,]?|got it[!.,]?|understood[!.,]?|no problem[!.,]?)\s*',
+            r'^(?:hello(?: there)?[!.,]?|hi(?: there)?[!.,]?|hey(?: there)?[!.,]?|greetings[!.,]?)\s*',
+            r'^(?:thank you(?: for[^\n.:]*)?[!.:]?\s*)',
+            r'^(?:thanks(?: for[^\n.:]*)?[!.:]?\s*)',
+            r'^(?:i(?:\'d|\s+would)?\s+be\s+(?:happy|glad|pleased)\s+to\s+help[^\n.:]*[.:!]?\s*)',
+            r'^(?:i can (?:certainly |definitely )?help[^\n.:]*[.:!]?\s*)',
+            r'^(?:let me (?:check|run|execute|inspect|take a look at|look into|test|diagnose|see|query|help)[^\n.:]*[.:!]?\s*)',
+            r'^(?:i will (?:now )?(?:check|run|execute|inspect|test|diagnose|see|query)[^\n.:]*[.:!]?\s*)',
+            r'^(?:i (?:have |already )?(?:run|executed|checked|inspected|analyzed|reviewed|examined)[^\n.:]*[.:!]?\s*)',
+            r'^(?:here (?:is|are) the (?:results?|output|details?|information|findings?|status)[^\n.:]*[.:!]?\s*)',
+            r'^(?:based on the (?:terminal|system|command)?\s*(?:output|observation|feedback|execution)[^\n.:]*[.:!]?\s*)',
+            r'^(?:(?:from|according to|looking at|in) the (?:terminal|system|command|above)?\s*(?:output|observation|feedback|execution)[^\n.:]*[.:!]?\s*)',
+            r'^(?:the (?:terminal|command|system) (?:output|result|response) (?:shows|indicates|confirms)[^\n.:]*[.:!]?\s*)',
+            r'^(?:as an ai[^\n]*\n*)',
+        ]
+
+        changed = True
+        while changed:
+            changed = False
+            for p in leading_patterns:
+                m = re.match(p, cleaned, re.IGNORECASE)
+                if m and m.group(0):
+                    cleaned = cleaned[len(m.group(0)):].strip()
+                    changed = True
+
+        trailing_patterns = [
+            r'(?:\r?\n|\s)*(?:hope (?:this|that) helps!?[^\n]*)$',
+            r'(?:\r?\n|\s)*(?:let me know if you (?:need|have|want|require)[^\n]*)$',
+            r'(?:\r?\n|\s)*(?:feel free to (?:ask|reach out|let me know)[^\n]*)$',
+            r'(?:\r?\n|\s)*(?:if you (?:have|need|require) (?:any|further|more)[^\n]*)$',
+            r'(?:\r?\n|\s)*(?:please let me know if[^\n]*)$',
+            r'(?:\r?\n|\s)*(?:i am here if you need[^\n]*)$',
+            r'(?:\r?\n|\s)*(?:happy to help[!.]?)$',
+        ]
+
+        changed = True
+        while changed:
+            changed = False
+            for p in trailing_patterns:
+                m = re.search(p, cleaned, re.IGNORECASE)
+                if m and m.group(0):
+                    cleaned = cleaned[:m.start()].strip()
+                    changed = True
+
+        return cleaned
+
+    sample_fluffy = (
+        "Sure thing! I would be happy to help with that.\n"
+        "Based on the terminal observation, here are the findings:\n"
+        "- Interface `wlan0`: UP (IP: 192.168.1.50)\n"
+        "- Gateway: 192.168.1.1\n"
+        "Hope this helps! Let me know if you need anything else."
+    )
+    cleaned = strip_conversational_fluff(sample_fluffy)
+    assert "- Interface `wlan0`: UP (IP: 192.168.1.50)" in cleaned
+    assert "- Gateway: 192.168.1.1" in cleaned
+    assert "Sure thing!" not in cleaned
+    assert "I would be happy to help" not in cleaned
+    assert "Based on the terminal observation" not in cleaned
+    assert "Hope this helps" not in cleaned
+    assert "Let me know" not in cleaned
+
+

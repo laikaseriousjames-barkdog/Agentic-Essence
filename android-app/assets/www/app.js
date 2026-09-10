@@ -26,11 +26,19 @@ const SYSTEM_GROUNDING = `
 You are an advanced, intelligent AI cyberdeck assistant executing inside the Agentic Essence cyberdeck on Android, connected to a live Termux & Kali NetHunter ('nh -r') environment with ROOT privileges.
 You have REAL, unrestricted access to the Android hardware and Kali Linux.
 
-CRITICAL COMMUNICATION DIRECTIVE:
-- Respond with less information: be precise, direct, and informative.
-- Do NOT output fluff, pleasantries, preambles, disclaimers, or conversational padding.
-- Deliver essential answers, command executions, and verified findings directly with zero bloat.
-- When answering questions or diagnosing systems, prioritize high-signal, accurate facts over lengthy explanations.
+CRITICAL COMMUNICATION DIRECTIVE (REPLY LIKE ANTIGRAVITY):
+- Respond with less information: be precise, direct, and informative with ZERO fluff.
+- MANDATORY TERMINAL EXECUTION:
+  * When asked to inspect, query, test, troubleshoot, configure, or solve any system, network, or hardware task, ALWAYS execute real shell commands using:
+    [EXEC: <command>]
+  * Showing the live terminal execution card is MANDATORY so the operator sees the actual command output. Never guess, assume, or write speculative text when a command can be executed.
+- ZERO CONVERSATIONAL FLUFF:
+  * NEVER output greetings, pleasantries, preambles, or conversational filler (e.g. "Sure!", "Certainly!", "I can help with that", "Okay, let's check...", "Hello", "As an AI...").
+  * NEVER output conversational sign-offs (e.g. "Hope this helps!", "Let me know if you need anything else", "Feel free to ask").
+  * NO apologies, no conversational padding, and no persona roleplay bloat.
+- CONCISE & HIGH-SIGNAL FORMAT:
+  * When initiating a command: Output ONLY the command tag [EXEC: <command>] or a single brief line stating the direct action (e.g. "Inspecting network interfaces:\n[EXEC: ifconfig]").
+  * After terminal execution: Output ONLY verified facts in concise, structured bullet points (max 3-5 bullets). Do NOT repeat raw command output line-by-line; highlight only the critical facts.
 
 AUTONOMOUS AGENTIC EXECUTION & TROUBLESHOOTING PROTOCOL:
 You operate with a live, interactive multi-turn terminal execution loop. You are not blind to the terminal — every command you run will be executed immediately, and its stdout, stderr, and exit code will be returned directly to you.
@@ -67,7 +75,7 @@ You operate with a live, interactive multi-turn terminal execution loop. You are
    - If after performing, verifying, troubleshooting, and attempting to build tools the requirements cannot be met (e.g. physical hardware interface missing like external Wi-Fi dongle, SELinux permission denied, network unreachable, missing credentials that user must provide):
      - Do NOT hallucinate or pretend.
      - Explicitly advise the operator accordingly: state what was attempted, the root cause of the failure, and provide concrete, actionable recommendations for the operator.
-   - If the task succeeded, provide a clear, concise, and precise verified summary of findings and actions without redundant filler.
+   - If the task succeeded, provide a clear, concise, and precise verified summary of findings in bullet points without redundant filler.
 
 6. TOOL SYNTHESIS (INTERACTIVE WIDGETS):
    - When asked to synthesize a tool, widget, application, or mini-app (including "synthesize something", "synthazize something", "build a tool for...", "/synth ..."):
@@ -94,28 +102,28 @@ const PERSONAS = {
         avatar: "✦",
         tag: "SWARM // KALI NETHUNTER CORE",
         color: "cyan",
-        prompt: `You are Agentic Swarm, an elite autonomous AI cyberdeck intelligence connected to Kali NetHunter. You respond concisely, precisely, and informatively with zero fluff.` + SYSTEM_GROUNDING
+        prompt: `You are Agentic Swarm, an elite autonomous AI cyberdeck intelligence connected to Kali NetHunter. You reply like Antigravity: direct actions, show terminal execution via [EXEC: <cmd>], and state verified facts in concise bullets with zero fluff.` + SYSTEM_GROUNDING
     },
     turing: {
         name: "Alan Turing",
         avatar: "🧠",
         tag: "TURING // ALGORITHMIC LOGIC",
         color: "magenta",
-        prompt: `You are Alan Turing. You approach problems with structural clarity, mathematical reasoning, and concise, high-signal precision.` + SYSTEM_GROUNDING
+        prompt: `You are Alan Turing. You reply like Antigravity: structural clarity, show terminal execution via [EXEC: <cmd>], and concise, high-signal verification without extra words.` + SYSTEM_GROUNDING
     },
     knuth: {
         name: "Donald Knuth",
         avatar: "⚡",
         tag: "KNUTH // CODE & CRAFTSMANSHIP",
         color: "gold",
-        prompt: `You are Donald Knuth, master software craftsman and tool-builder on this Kali NetHunter cyberdeck. You are direct, precise, and build clean solutions without extra words.` + SYSTEM_GROUNDING
+        prompt: `You are Donald Knuth, master software craftsman and tool-builder on this Kali NetHunter cyberdeck. You reply like Antigravity: direct, show terminal execution via [EXEC: <cmd>], and concise bulleted outcomes.` + SYSTEM_GROUNDING
     },
     lovelace: {
         name: "Ada Lovelace",
         avatar: "🔬",
         tag: "LOVELACE // POETICAL SCIENCE",
         color: "emerald",
-        prompt: `You are Ada Lovelace. You view challenges through analytical rigor and empirical verification: insightful, precise, and concise.` + SYSTEM_GROUNDING
+        prompt: `You are Ada Lovelace. You reply like Antigravity: empirical verification, show terminal execution via [EXEC: <cmd>], and insightful, crisp, precise facts.` + SYSTEM_GROUNDING
     }
 };
 
@@ -615,6 +623,12 @@ ALL BUTTONS AND CONTROLS MUST CALL REAL HOST APIS:
                     toolObj = synthesizeToolFromScratch(text);
                 }
 
+                // Strip conversational fluff for Antigravity-style precision
+                const stripped = stripConversationalFluff(cleanText);
+                if (stripped || !toolObj) {
+                    cleanText = stripped || cleanText;
+                }
+
                 let contentHtml = renderAssistantContent(cleanText);
                 if (toolObj) {
                     contentHtml += mountToolCard(toolObj, false);
@@ -649,7 +663,7 @@ ALL BUTTONS AND CONTROLS MUST CALL REAL HOST APIS:
                 `2. TROUBLESHOOT: If an error, failure, missing tool, or unexpected state occurred, diagnose the issue and troubleshoot.\n` +
                 `3. BUILD TOOLS: If existing standard tools are missing or insufficient, build a tool or script (via [EXEC: ...] or [BUILD_TOOL: ...]) to get results.\n` +
                 `4. ADVISE ACCORDINGLY: If after troubleshooting and attempting to build tools the requirements cannot be met (e.g. missing physical hardware interface, unresolvable permission restriction, network offline), stop executing and advise the operator accordingly with the root cause, what was tried, and concrete recommendations.\n` +
-                `5. If the goal has been successfully accomplished, provide your final verified summary.`;
+                `5. FINAL SUMMARY (ANTIGRAVITY STYLE): If the goal has been successfully accomplished, provide your final verified summary in concise, factual bullet points only (max 3-5 bullets). DO NOT include conversational fluff, polite preamble, repeating the command, or sign-offs ("Hope this helps", "Let me know"). Deliver ONLY verified facts and outcomes.`;
 
             activeMessages.push({ role: 'assistant', content: rawReply });
             activeMessages.push({ role: 'user', content: feedbackPrompt });
@@ -748,6 +762,68 @@ function executeShellOrMock(rawCmd) {
 }
 
 /**
+ * Strips conversational fluff, preambles, apologies, and closing sign-offs
+ * to enforce Antigravity-style direct, high-signal communication.
+ */
+function stripConversationalFluff(text) {
+    if (!text) return '';
+    let cleaned = text.trim();
+
+    // 1. Leading pleasantries, preambles, conversational openings
+    const leadingPatterns = [
+        /^(?:sure(?: thing)?[!.,]?|certainly[!.,]?|of course[!.,]?|absolutely[!.,]?|alright[!.,]?|all right[!.,]?|okay[!.,]?|ok[!.,]?|got it[!.,]?|understood[!.,]?|no problem[!.,]?)\s*/i,
+        /^(?:hello(?: there)?[!.,]?|hi(?: there)?[!.,]?|hey(?: there)?[!.,]?|greetings[!.,]?)\s*/i,
+        /^(?:thank you(?: for[^\n.:]*)?[!.:]?\s*)/i,
+        /^(?:thanks(?: for[^\n.:]*)?[!.:]?\s*)/i,
+        /^(?:i(?:\'d|\s+would)?\s+be\s+(?:happy|glad|pleased)\s+to\s+help[^\n.:]*[.:!]?\s*)/i,
+        /^(?:i can (?:certainly |definitely )?help[^\n.:]*[.:!]?\s*)/i,
+        /^(?:let me (?:check|run|execute|inspect|take a look at|look into|test|diagnose|see|query|help)[^\n.:]*[.:!]?\s*)/i,
+        /^(?:i will (?:now )?(?:check|run|execute|inspect|test|diagnose|see|query)[^\n.:]*[.:!]?\s*)/i,
+        /^(?:i (?:have |already )?(?:run|executed|checked|inspected|analyzed|reviewed|examined)[^\n.:]*[.:!]?\s*)/i,
+        /^(?:here (?:is|are) the (?:results?|output|details?|information|findings?|status)[^\n.:]*[.:!]?\s*)/i,
+        /^(?:based on the (?:terminal|system|command)?\s*(?:output|observation|feedback|execution)[^\n.:]*[.:!]?\s*)/i,
+        /^(?:(?:from|according to|looking at|in) the (?:terminal|system|command|above)?\s*(?:output|observation|feedback|execution)[^\n.:]*[.:!]?\s*)/i,
+        /^(?:the (?:terminal|command|system) (?:output|result|response) (?:shows|indicates|confirms)[^\n.:]*[.:!]?\s*)/i,
+        /^(?:as an ai[^\n]*\n*)/i
+    ];
+
+    let changed = true;
+    while (changed) {
+        changed = false;
+        for (const pattern of leadingPatterns) {
+            if (pattern.test(cleaned)) {
+                cleaned = cleaned.replace(pattern, '').trim();
+                changed = true;
+            }
+        }
+    }
+
+    // 2. Trailing polite sign-offs / conversational closing lines
+    const trailingPatterns = [
+        /(?:\r?\n|\s)*(?:hope (?:this|that) helps!?[^\n]*)$/i,
+        /(?:\r?\n|\s)*(?:let me know if you (?:need|have|want|require)[^\n]*)$/i,
+        /(?:\r?\n|\s)*(?:feel free to (?:ask|reach out|let me know)[^\n]*)$/i,
+        /(?:\r?\n|\s)*(?:if you (?:have|need|require) (?:any|further|more)[^\n]*)$/i,
+        /(?:\r?\n|\s)*(?:please let me know if[^\n]*)$/i,
+        /(?:\r?\n|\s)*(?:i am here if you need[^\n]*)$/i,
+        /(?:\r?\n|\s)*(?:happy to help[!.]?)$/i
+    ];
+
+    changed = true;
+    while (changed) {
+        changed = false;
+        for (const pattern of trailingPatterns) {
+            if (pattern.test(cleaned)) {
+                cleaned = cleaned.replace(pattern, '').trim();
+                changed = true;
+            }
+        }
+    }
+
+    return cleaned;
+}
+
+/**
  * Parses and runs regular tools ([EXEC: <command>], [BUILD_TOOL: ...]) embedded in AI conversational responses.
  */
 function renderAssistantContent(rawText, execResultsMap = null) {
@@ -780,7 +856,10 @@ function renderAssistantContent(rawText, execResultsMap = null) {
     while ((match = execRegex.exec(textProcessed)) !== null) {
         const textBefore = textProcessed.substring(lastIndex, match.index);
         if (textBefore) {
-            parts.push(formatMarkdown(textBefore));
+            const strippedBefore = stripConversationalFluff(textBefore);
+            if (strippedBefore) {
+                parts.push(formatMarkdown(strippedBefore));
+            }
         }
 
         const cmd = match[1].trim();
@@ -798,7 +877,10 @@ function renderAssistantContent(rawText, execResultsMap = null) {
 
     const textAfter = textProcessed.substring(lastIndex);
     if (textAfter) {
-        parts.push(formatMarkdown(textAfter));
+        const strippedAfter = stripConversationalFluff(textAfter);
+        if (strippedAfter) {
+            parts.push(formatMarkdown(strippedAfter));
+        }
     }
 
     return parts.join('');
