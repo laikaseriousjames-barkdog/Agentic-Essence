@@ -156,32 +156,40 @@ def test_antigravity_style_and_fluff_stripping():
 
     # Verify Antigravity communication directives
     assert "CRITICAL COMMUNICATION DIRECTIVE (REPLY LIKE ANTIGRAVITY)" in content
+    assert "TALK LIKE A REALLY SMART PERSON" in content
+    assert "INTERNAL VERIFICATION (DO NOT TELL THE USER ABOUT VERIFICATION)" in content
     assert "MANDATORY TERMINAL EXECUTION" in content
     assert "ZERO CONVERSATIONAL FLUFF" in content
     assert "stripConversationalFluff" in content
     assert "FINAL SUMMARY (ANTIGRAVITY STYLE)" in content
+    assert "isGreetingIntent" in content
 
     # Test the conversational fluff stripping logic (mirroring app.js)
-    def strip_conversational_fluff(text: str) -> str:
+    def strip_conversational_fluff(text: str, is_greeting: bool = False) -> str:
         if not text:
             return ''
         cleaned = text.strip()
         leading_patterns = [
-            r'^(?:sure(?: thing)?[!.,]?|certainly[!.,]?|of course[!.,]?|absolutely[!.,]?|alright[!.,]?|all right[!.,]?|okay[!.,]?|ok[!.,]?|got it[!.,]?|understood[!.,]?|no problem[!.,]?)\s*',
-            r'^(?:hello(?: there)?[!.,]?|hi(?: there)?[!.,]?|hey(?: there)?[!.,]?|greetings[!.,]?)\s*',
-            r'^(?:thank you(?: for[^\n.:]*)?[!.:]?\s*)',
-            r'^(?:thanks(?: for[^\n.:]*)?[!.:]?\s*)',
-            r'^(?:i(?:\'d|\s+would)?\s+be\s+(?:happy|glad|pleased)\s+to\s+help[^\n.:]*[.:!]?\s*)',
-            r'^(?:i can (?:certainly |definitely )?help[^\n.:]*[.:!]?\s*)',
+            r'^(?:(?:verification|verified|system verification)\s*(?:summary|results?|status|findings?|complete)?:?[^\n]*\n*)',
+            r'^(?:i (?:have |already )?(?:verified|internally verified|checked and verified)(?: that)?[^\n.:]*[.:!]?\s*)',
+            r'^(?:i(?:\'d|\s+would)?\s+be\s+(?:happy|glad|pleased|thrilled)\s+to\s+help[^\n.:]*[.:!]?\s*)',
+            r'^(?:i can (?:certainly |definitely |gladly )?help[^\n.:]*[.:!]?\s*)',
             r'^(?:let me (?:check|run|execute|inspect|take a look at|look into|test|diagnose|see|query|help)[^\n.:]*[.:!]?\s*)',
             r'^(?:i will (?:now )?(?:check|run|execute|inspect|test|diagnose|see|query)[^\n.:]*[.:!]?\s*)',
-            r'^(?:i (?:have |already )?(?:run|executed|checked|inspected|analyzed|reviewed|examined)[^\n.:]*[.:!]?\s*)',
             r'^(?:here (?:is|are) the (?:results?|output|details?|information|findings?|status)[^\n.:]*[.:!]?\s*)',
             r'^(?:based on the (?:terminal|system|command)?\s*(?:output|observation|feedback|execution)[^\n.:]*[.:!]?\s*)',
             r'^(?:(?:from|according to|looking at|in) the (?:terminal|system|command|above)?\s*(?:output|observation|feedback|execution)[^\n.:]*[.:!]?\s*)',
             r'^(?:the (?:terminal|command|system) (?:output|result|response) (?:shows|indicates|confirms)[^\n.:]*[.:!]?\s*)',
             r'^(?:as an ai[^\n]*\n*)',
         ]
+
+        if not is_greeting:
+            leading_patterns = [
+                r'^(?:sure(?: thing)?[!.,]?|certainly[!.,]?|of course[!.,]?|absolutely[!.,]?|alright[!.,]?|all right[!.,]?|okay[!.,]?|ok[!.,]?|got it[!.,]?|understood[!.,]?|no problem[!.,]?)\s*',
+                r'^(?:hello(?: there)?[!.,]?|hi(?: there)?[!.,]?|hey(?: there)?[!.,]?|greetings[!.,]?)\s*',
+                r'^(?:thank you(?: for[^\n.:]*)?[!.:]?\s*)',
+                r'^(?:thanks(?: for[^\n.:]*)?[!.:]?\s*)',
+            ] + leading_patterns
 
         changed = True
         while changed:
@@ -213,20 +221,20 @@ def test_antigravity_style_and_fluff_stripping():
 
         return cleaned
 
-    sample_fluffy = (
-        "Sure thing! I would be happy to help with that.\n"
-        "Based on the terminal observation, here are the findings:\n"
+    # Greeting should preserve natural response
+    greeting_reply = "Hey. What are we working on?"
+    assert strip_conversational_fluff(greeting_reply, is_greeting=True) == "Hey. What are we working on?"
+
+    # Verification preamble should be stripped away
+    verification_fluffy = (
+        "Verification Summary:\n"
         "- Interface `wlan0`: UP (IP: 192.168.1.50)\n"
         "- Gateway: 192.168.1.1\n"
-        "Hope this helps! Let me know if you need anything else."
+        "Hope this helps!"
     )
-    cleaned = strip_conversational_fluff(sample_fluffy)
-    assert "- Interface `wlan0`: UP (IP: 192.168.1.50)" in cleaned
-    assert "- Gateway: 192.168.1.1" in cleaned
-    assert "Sure thing!" not in cleaned
-    assert "I would be happy to help" not in cleaned
-    assert "Based on the terminal observation" not in cleaned
-    assert "Hope this helps" not in cleaned
-    assert "Let me know" not in cleaned
+    cleaned_v = strip_conversational_fluff(verification_fluffy, is_greeting=False)
+    assert "Verification Summary" not in cleaned_v
+    assert "- Interface `wlan0`: UP (IP: 192.168.1.50)" in cleaned_v
+    assert "Hope this helps" not in cleaned_v
 
 
