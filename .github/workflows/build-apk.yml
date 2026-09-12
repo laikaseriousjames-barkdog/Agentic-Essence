@@ -33,7 +33,8 @@ jobs:
 
       - name: Build and Sign APK
         run: |
-          mkdir -p /root/android-sdk
+          sudo mkdir -p /root/android-sdk /root/Downloads
+          sudo chmod -R 777 /root
           cp "$ANDROID_HOME/platforms/android-34/android.jar" /root/android-sdk/android.jar 2>/dev/null || cp "$ANDROID_HOME/platforms/"*/android.jar /root/android-sdk/android.jar
           find "$ANDROID_HOME/build-tools" -name "d8.jar" -o -name "r8.jar" | head -n 1 | xargs -I {} cp {} /root/android-sdk/r8.jar
           chmod +x ./build_apk.sh
