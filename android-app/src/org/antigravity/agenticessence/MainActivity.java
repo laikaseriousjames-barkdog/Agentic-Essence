@@ -51,6 +51,10 @@ public class MainActivity extends Activity {
             requestPermissions(permList.toArray(new String[0]), PERMISSION_REQUEST_CODE);
         }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            WebView.setWebContentsDebuggingEnabled(true);
+        }
+
         mWebView = (WebView) findViewById(R.id.webview);
         mWebView.setBackgroundColor(Color.parseColor("#0B0C10"));
         mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
