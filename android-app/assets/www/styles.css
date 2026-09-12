@@ -911,3 +911,63 @@ body, html {
 .holo-action-btn:active {
     transform: scale(0.96);
 }
+
+/* ==========================================================================
+   LOVELACE SENSORY PULSE & REACTIVE HUD ANIMATIONS
+   ========================================================================== */
+@keyframes sensoryHarmonicGlow {
+    0% { filter: drop-shadow(0 0 4px rgba(0, 255, 136, 0.2)); }
+    50% { filter: drop-shadow(0 0 16px rgba(0, 255, 136, 0.65)); }
+    100% { filter: drop-shadow(0 0 4px rgba(0, 255, 136, 0.2)); }
+}
+
+@keyframes sensoryQuantumGlow {
+    0% { filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.3)); }
+    50% { filter: drop-shadow(0 0 24px rgba(255, 0, 127, 0.8)); }
+    100% { filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.3)); }
+}
+
+@keyframes sensoryAlertGlow {
+    0% { filter: drop-shadow(0 0 8px rgba(255, 0, 60, 0.4)); }
+    50% { filter: drop-shadow(0 0 30px rgba(255, 0, 60, 0.9)); }
+    100% { filter: drop-shadow(0 0 8px rgba(255, 0, 60, 0.4)); }
+}
+
+.sensory-harmonic .plasma-nebula-glow {
+    animation: sensoryHarmonicGlow 1.2s ease-in-out;
+}
+
+.sensory-quantum .plasma-nebula-glow {
+    animation: sensoryQuantumGlow 1.5s ease-in-out;
+}
+
+.sensory-alert .plasma-nebula-glow {
+    animation: sensoryAlertGlow 0.8s ease-in-out 2;
+}
+
+/* Tablet & Large Screen Optimization */
+@media (min-width: 900px) {
+    .holo-hud-header {
+        padding: 16px 28px;
+    }
+    .hud-title-main {
+        font-size: 1.45rem;
+        letter-spacing: 3px;
+    }
+    .holo-canvas-feed {
+        max-width: 1080px;
+        margin: 0 auto;
+        width: 100%;
+    }
+    .floating-chip-cloud {
+        max-width: 1080px;
+        margin: 0 auto 10px auto;
+        justify-content: center;
+    }
+    .holo-command-nebula {
+        max-width: 1080px;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: calc(100% - 32px);
+    }
+}

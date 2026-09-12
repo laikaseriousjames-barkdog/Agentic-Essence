@@ -140,6 +140,13 @@
             </div>
             <div id="savedToolsList" class="saved-holo-list">
                 <div class="empty-holo-text">No stored widgets. Synthesize any tool to save.</div>
+        <!-- State Persistence & Export -->
+        <div class="drawer-block">
+            <label class="drawer-label">CYBERDECK SESSION PERSISTENCE</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <button onclick="SessionStateManager.exportConfig()" class="hw-matrix-btn cyan" style="font-size:12px; padding:8px 6px;">💾 Export State</button>
+                <button onclick="document.getElementById('importFileInput').click()" class="hw-matrix-btn emerald" style="font-size:12px; padding:8px 6px;">📂 Import State</button>
+                <input type="file" id="importFileInput" style="display:none;" onchange="const f=this.files[0]; if(f){const r=new FileReader(); r.onload=()=>SessionStateManager.importConfig(r.result); r.readAsText(f);}" accept=".json" />
             </div>
         </div>
 

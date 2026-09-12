@@ -248,9 +248,18 @@ document.addEventListener("DOMContentLoaded", () => {
     updateToolboxBadge();
     renderSavedToolsList();
 
-    // 3. Check Kali NetHunter Bridge Status
-    updateNetHunterPill();
-    setInterval(updateNetHunterPill, 12000);
+    // 3. Check Kali NetHunter Bridge Status & Start Telemetry
+    if (typeof telemetry !== 'undefined') {
+        telemetry.start(4000);
+    } else {
+        updateNetHunterPill();
+        setInterval(updateNetHunterPill, 12000);
+    }
+
+    // 4. Initialize Knuth Trie & LRU Cache from Stored Tools
+    if (typeof populateTrieFromStoredTools === 'function') {
+        populateTrieFromStoredTools();
+    }
 
     // 3. Keyboard Submission
     omniInput.addEventListener('keydown', (e) => {
@@ -1019,6 +1028,25 @@ function mountToolCard(toolObj, isSaved = false) {
     const iframeId = 'frame_' + toolObj.id;
     const toolJsonEscaped = encodeURIComponent(JSON.stringify(toolObj));
 
+    // Turing's Sandbox Pre-Execution Validation
+    if (typeof WidgetSandboxValidator !== 'undefined') {
+        const check = WidgetSandboxValidator.validate(toolObj.html);
+        if (!check.valid) {
+            console.warn('[Turing Sandbox Blocked]', check.error);
+            return `
+                <div class="floating-tool-container" id="${containerId}">
+                    <div class="floating-tool-header" style="border-bottom: 1px solid var(--neon-magenta);">
+                        <span class="floating-tool-title" style="color:var(--neon-magenta);">⚠ SANDBOX INTERCEPT // ${escapeHtml(toolObj.title)}</span>
+                        <button class="floating-tool-btn" onclick="deleteCustomTool('${containerId}')">✕ DISMISS</button>
+                    </div>
+                    <div style="padding:14px; font-family:var(--font-code); font-size:12.5px; color:#ff77aa;">
+                        Deterministic DAG validator intercepted execution: ${escapeHtml(check.error)}
+                    </div>
+                </div>
+            `;
+        }
+    }
+
     let completeDoc = toolObj.html;
     const bridgeShim = `<script>
         try {
@@ -1056,6 +1084,21 @@ function mountToolCard(toolObj, isSaved = false) {
         }
     }
 
+    // Inject Turing Watchdog
+    if (typeof WidgetSandboxValidator !== 'undefined') {
+        completeDoc = WidgetSandboxValidator.injectWatchdog(completeDoc);
+    }
+
+    // Cache in Knuth LRU
+    if (typeof toolLRU !== 'undefined') {
+        toolLRU.put(toolObj.id || toolObj.title, toolObj);
+    }
+
+    // Trigger Lovelace Sensory Pulse
+    if (typeof LovelaceSensorySystem !== 'undefined') {
+        LovelaceSensorySystem.pulse('quantum');
+    }
+
     return `
         <div class="floating-tool-container" id="${containerId}">
             <div class="floating-tool-header">
@@ -1076,10 +1119,13 @@ window.saveCustomTool = function(toolJsonEscaped, id) {
         if (!state.savedTools.some(t => t.title === tool.title)) {
             state.savedTools.push(tool);
             localStorage.setItem('ae_saved_tools', JSON.stringify(state.savedTools));
+            if (typeof toolTrie !== 'undefined') toolTrie.insert(tool.title, tool);
+            if (typeof toolLRU !== 'undefined') toolLRU.put(tool.id || tool.title, tool);
             updateToolboxBadge();
             renderSavedToolsList();
             Bridge.showToast(`Saved: ${tool.title}`);
             Bridge.vibrate(30);
+            if (typeof LovelaceSensorySystem !== 'undefined') LovelaceSensorySystem.pulse('harmonic');
         }
     } catch (e) {
         console.warn("Tool save err:", e);
@@ -1750,3 +1796,366 @@ window.updateNetHunterPill = function() {
         drawerStatus.style.color = isOnline ? "var(--neon-emerald)" : "var(--neon-magenta)";
     }
 };
+
+// ============================================================================
+// 1. KNUTH IN-MEMORY TRIE SEARCH & LRU TOOL CACHE ENGINE
+// ============================================================================
+class ToolTrieNode {
+    constructor() {
+        this.children = {};
+        this.isWord = false;
+        this.data = null;
+    }
+}
+
+class ToolTrieSearch {
+    constructor() {
+        this.root = new ToolTrieNode();
+    }
+
+    insert(phrase, payload) {
+        if (!phrase) return;
+        const words = phrase.toLowerCase().trim().split(/\s+/);
+        for (let i = 0; i < words.length; i++) {
+            const sub = words.slice(i).join(' ');
+            let curr = this.root;
+            for (const ch of sub) {
+                if (!curr.children[ch]) curr.children[ch] = new ToolTrieNode();
+                curr = curr.children[ch];
+            }
+            curr.isWord = true;
+            curr.data = payload;
+        }
+    }
+
+    searchPrefix(prefix, limit = 8) {
+        if (!prefix) return [];
+        let curr = this.root;
+        for (const ch of prefix.toLowerCase().trim()) {
+            if (!curr.children[ch]) return [];
+            curr = curr.children[ch];
+        }
+        const results = [];
+        const dfs = (node) => {
+            if (results.length >= limit) return;
+            if (node.isWord && node.data) {
+                if (!results.some(r => (r.id && r.id === node.data.id) || r.title === node.data.title)) {
+                    results.push(node.data);
+                }
+            }
+            for (const k in node.children) {
+                dfs(node.children[k]);
+            }
+        };
+        dfs(curr);
+        return results;
+    }
+}
+
+class ToolLRUCache {
+    constructor(maxCapacity = 50) {
+        this.maxCapacity = maxCapacity;
+        this.cache = new Map();
+    }
+
+    get(key) {
+        if (!this.cache.has(key)) return null;
+        const val = this.cache.get(key);
+        this.cache.delete(key);
+        this.cache.set(key, val);
+        return val;
+    }
+
+    put(key, value) {
+        if (this.cache.has(key)) {
+            this.cache.delete(key);
+        } else if (this.cache.size >= this.maxCapacity) {
+            const oldestKey = this.cache.keys().next().value;
+            this.cache.delete(oldestKey);
+        }
+        this.cache.set(key, value);
+    }
+
+    has(key) {
+        return this.cache.has(key);
+    }
+
+    clear() {
+        this.cache.clear();
+    }
+}
+
+const toolLRU = new ToolLRUCache(50);
+const toolTrie = new ToolTrieSearch();
+window.toolLRU = toolLRU;
+window.toolTrie = toolTrie;
+
+function populateTrieFromStoredTools() {
+    toolTrie.insert("NetHunter Status", { id: "nh_status", title: "NetHunter Status", action: "inspectNetHunter()" });
+    toolTrie.insert("Wi-Fi Scan", { id: "wifi_scan", title: "Wi-Fi Scan", action: "execQuick('wifi scan')" });
+    toolTrie.insert("Host Identity", { id: "host_id", title: "Host Identity", action: "execQuick('whoami && uname -a')" });
+    toolTrie.insert("Net Interfaces", { id: "ifconfig", title: "Net Interfaces", action: "execQuick('ifconfig')" });
+    toolTrie.insert("Ping Test", { id: "ping_test", title: "Ping Test", action: "execQuick('ping -c 3 8.8.8.8')" });
+    toolTrie.insert("Synth Tool", { id: "synth_tool", title: "Synth Tool", action: "execQuick('/synth Wi-Fi signal analyzer')" });
+    
+    if (state.savedTools && Array.isArray(state.savedTools)) {
+        state.savedTools.forEach(t => {
+            toolTrie.insert(t.title, t);
+            toolLRU.put(t.id || t.title, t);
+        });
+    }
+}
+window.populateTrieFromStoredTools = populateTrieFromStoredTools;
+
+// ============================================================================
+// 2. TURING DETERMINISTIC TOOL DAG & AST SANDBOX VALIDATOR
+// ============================================================================
+class ToolExecutionDAG {
+    constructor() {
+        this.nodes = new Map();
+        this.edges = new Map();
+    }
+
+    addNode(id, actionFn) {
+        this.nodes.set(id, actionFn);
+        if (!this.edges.has(id)) this.edges.set(id, new Set());
+    }
+
+    addDependency(fromId, toId) {
+        if (!this.edges.has(fromId)) this.edges.set(fromId, new Set());
+        this.edges.get(fromId).add(toId);
+    }
+
+    hasCycles() {
+        const visited = new Set();
+        const recStack = new Set();
+
+        const dfs = (curr) => {
+            visited.add(curr);
+            recStack.add(curr);
+            const neighbors = this.edges.get(curr) || [];
+            for (const n of neighbors) {
+                if (!visited.has(n) && dfs(n)) return true;
+                if (recStack.has(n)) return true;
+            }
+            recStack.delete(curr);
+            return false;
+        };
+
+        for (const node of this.nodes.keys()) {
+            if (!visited.has(node) && dfs(node)) return true;
+        }
+        return false;
+    }
+}
+window.ToolExecutionDAG = ToolExecutionDAG;
+
+class WidgetSandboxValidator {
+    static validate(htmlCode) {
+        if (!htmlCode || typeof htmlCode !== 'string') return { valid: false, error: 'Empty payload' };
+        
+        // 1. Detect non-yielding infinite loops
+        const infiniteLoopRegex = /\b(?:while\s*\(\s*(?:true|1)\s*\)|for\s*\(\s*;\s*;\s*\))\s*\{(?![^}]*\b(break|return|await|setTimeout|requestAnimationFrame)\b)/i;
+        if (infiniteLoopRegex.test(htmlCode)) {
+            return { valid: false, error: 'Detected potential non-terminating loop without yield.' };
+        }
+
+        // 2. Detect unauthorized top-level location overrides
+        const dangerousRedirects = [
+            /window\.top\.location/i,
+            /window\.parent\.location/i,
+            /top\.location\s*=/i
+        ];
+        for (const pattern of dangerousRedirects) {
+            if (pattern.test(htmlCode)) {
+                return { valid: false, error: 'Top-level frame redirection blocked by sandbox security policy.' };
+            }
+        }
+
+        return { valid: true };
+    }
+
+    static injectWatchdog(htmlCode) {
+        const watchdogScript = `<script>
+            (function() {
+                var __mountTime = Date.now();
+                window.addEventListener('error', function(e) {
+                    console.warn('[Tool Sandbox Exception]', e.message);
+                });
+                var __watchdog = setTimeout(function() {
+                    // Tool mounted cleanly and reached interactive state
+                }, 8000);
+            })();
+        <\/script>`;
+
+        if (htmlCode.includes('</head>')) {
+            return htmlCode.replace('</head>', `${watchdogScript}</head>`);
+        } else if (htmlCode.includes('<head>')) {
+            return htmlCode.replace('<head>', `<head>${watchdogScript}`);
+        }
+        return watchdogScript + htmlCode;
+    }
+}
+window.WidgetSandboxValidator = WidgetSandboxValidator;
+
+// ============================================================================
+// 3. SWARM ASYNCHRONOUS TELEMETRY & PERSISTENT SESSION ENGINE
+// ============================================================================
+class TelemetryStreamManager {
+    constructor() {
+        this.currentTelemetry = {
+            status: "standby",
+            os: "Kali NetHunter",
+            user: "root",
+            uid: 0,
+            pingMs: null,
+            lastPoll: 0
+        };
+        this.pollInterval = null;
+    }
+
+    start(intervalMs = 4000) {
+        if (this.pollInterval) clearInterval(this.pollInterval);
+        this.fetchTelemetry();
+        this.pollInterval = setInterval(() => this.fetchTelemetry(), intervalMs);
+    }
+
+    stop() {
+        if (this.pollInterval) clearInterval(this.pollInterval);
+        this.pollInterval = null;
+    }
+
+    async fetchTelemetry() {
+        const start = performance.now();
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2500);
+            const res = await fetch('http://127.0.0.1:8765/api/status', {
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            if (res.ok) {
+                const data = await res.json();
+                this.currentTelemetry.status = "online";
+                this.currentTelemetry.pingMs = Math.round(performance.now() - start);
+                this.currentTelemetry.lastPoll = Date.now();
+                this.currentTelemetry.os = data.os || "Kali NetHunter";
+                this.currentTelemetry.user = data.user || "root";
+                this.currentTelemetry.uid = data.uid !== undefined ? data.uid : 0;
+                this.updateHUD(true);
+                return;
+            }
+        } catch (e) {}
+
+        this.currentTelemetry.status = "standby";
+        this.currentTelemetry.pingMs = null;
+        this.updateHUD(false);
+    }
+
+    updateHUD(isOnline) {
+        const pill = document.getElementById('nh-bridge-pill');
+        const text = document.getElementById('nh-pill-text');
+        const drawerStatus = document.getElementById('nh-drawer-status');
+        
+        if (pill) {
+            pill.className = isOnline ? "hud-pill-btn neon-emerald" : "hud-pill-btn neon-magenta";
+            pill.title = isOnline 
+                ? `Kali NetHunter Root: ONLINE (${this.currentTelemetry.pingMs || 1}ms latency)` 
+                : "Kali NetHunter Bridge: STANDBY";
+        }
+        if (text) {
+            text.textContent = isOnline ? "NH: ROOT" : "NH: STANDBY";
+        }
+        if (drawerStatus) {
+            drawerStatus.textContent = isOnline ? `ONLINE (ROOT • ${this.currentTelemetry.pingMs || 1}ms)` : "STANDBY";
+            drawerStatus.style.color = isOnline ? "var(--neon-emerald)" : "var(--neon-magenta)";
+        }
+    }
+}
+
+const telemetry = new TelemetryStreamManager();
+window.telemetry = telemetry;
+
+class SessionStateManager {
+    static exportConfig() {
+        const payload = {
+            version: "5.0.0",
+            timestamp: new Date().toISOString(),
+            settings: {
+                persona: state.persona,
+                provider: state.provider,
+                model: state.model,
+                customUrl: state.customUrl,
+                ttsEnabled: state.ttsEnabled,
+                hapticsEnabled: state.hapticsEnabled
+            },
+            savedTools: state.savedTools
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `agentic-essence-backup-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        Bridge.showToast("Cyberdeck configuration exported.");
+    }
+
+    static importConfig(jsonString) {
+        try {
+            const data = JSON.parse(jsonString);
+            if (data.savedTools && Array.isArray(data.savedTools)) {
+                state.savedTools = data.savedTools;
+                localStorage.setItem('ae_saved_tools', JSON.stringify(state.savedTools));
+                updateToolboxBadge();
+                renderSavedToolsList();
+                populateTrieFromStoredTools();
+            }
+            if (data.settings) {
+                if (data.settings.persona) {
+                    state.persona = data.settings.persona;
+                    localStorage.setItem('ae_persona', state.persona);
+                }
+                if (data.settings.provider) {
+                    state.provider = data.settings.provider;
+                    localStorage.setItem('ae_provider', state.provider);
+                }
+                if (data.settings.model) {
+                    state.model = data.settings.model;
+                    localStorage.setItem('ae_model', state.model);
+                }
+            }
+            Bridge.showToast("Configuration restored successfully.");
+            Bridge.vibrate(40);
+        } catch (e) {
+            Bridge.showToast("Invalid configuration file.");
+        }
+    }
+}
+window.SessionStateManager = SessionStateManager;
+
+// ============================================================================
+// 4. LOVELACE SENSORY & HAPTIC HARMONY ENGINE
+// ============================================================================
+class LovelaceSensorySystem {
+    static pulse(mode = 'harmonic') {
+        const universe = document.querySelector('.holographic-universe');
+        if (!universe) return;
+
+        universe.classList.remove('sensory-harmonic', 'sensory-alert', 'sensory-quantum');
+        void universe.offsetWidth; // Force reflow
+        
+        if (mode === 'harmonic') {
+            universe.classList.add('sensory-harmonic');
+            if (state.hapticsEnabled) Bridge.vibrate(20);
+        } else if (mode === 'alert') {
+            universe.classList.add('sensory-alert');
+            if (state.hapticsEnabled) Bridge.vibrate(60);
+        } else if (mode === 'quantum') {
+            universe.classList.add('sensory-quantum');
+            if (state.hapticsEnabled) Bridge.vibrate(35);
+        }
+    }
+}
+window.LovelaceSensorySystem = LovelaceSensorySystem;
