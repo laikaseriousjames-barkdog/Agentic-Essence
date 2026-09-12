@@ -750,6 +750,15 @@ body, html {
     transform: scale(0.92);
 }
 
+.nebula-exec-btn:disabled,
+.nebula-exec-btn.busy {
+    opacity: 0.65;
+    cursor: not-allowed;
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    box-shadow: none;
+    pointer-events: none;
+}
+
 /* ================= 7. COMPACT TRANSLUCENT GLASS ENGINE DRAWER ================= */
 .holo-drawer {
     position: absolute;

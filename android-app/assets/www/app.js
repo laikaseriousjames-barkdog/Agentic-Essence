@@ -13,8 +13,29 @@ const state = {
     ttsEnabled: localStorage.getItem('ae_tts') === 'true',
     hapticsEnabled: localStorage.getItem('ae_haptics') !== 'false',
     savedTools: JSON.parse(localStorage.getItem('ae_saved_tools') || '[]'),
-    history: []
+    isGenerating: false,
+    personaHistories: {
+        swarm: [],
+        turing: [],
+        knuth: [],
+        lovelace: []
+    }
 };
+
+Object.defineProperty(state, 'history', {
+    get() {
+        if (!this.personaHistories[this.persona]) {
+            this.personaHistories[this.persona] = [];
+        }
+        return this.personaHistories[this.persona];
+    },
+    set(val) {
+        if (!this.personaHistories[this.persona]) {
+            this.personaHistories[this.persona] = [];
+        }
+        this.personaHistories[this.persona] = val;
+    }
+});
 
 if (state.model.includes('gemini-2') || state.model.includes('gemini-1.5')) {
     state.model = 'gemini-3.1-flash-lite';
@@ -23,8 +44,10 @@ if (state.model.includes('gemini-2') || state.model.includes('gemini-1.5')) {
 
 const SYSTEM_GROUNDING = `
 === ENVIRONMENT CONTEXT & ROOT PRIVILEGES ===
-You are an advanced, intelligent AI cyberdeck assistant executing inside the Agentic Essence cyberdeck on Android, connected to a live Termux & Kali NetHunter ('nh -r') environment with ROOT privileges.
-You have REAL, unrestricted access to the Android hardware and Kali Linux.
+You are an advanced, intelligent AI cyberdeck assistant executing inside the Agentic Essence cyberdeck on Android, connected to a live Termux & Kali NetHunter ('nh -r') rootless PRoot environment on Linux kernel 5.15 aarch64.
+You have root privileges (UID 0) inside Kali NetHunter.
+Linux diagnostic and networking commands execute directly: 'ip addr', 'ss', 'ping', 'uptime', 'free -m', 'curl', 'nmap', 'python3'.
+For Android hardware state, use the built-in hardware commands: 'wifi scan', 'wifi status', 'battery', 'ifconfig'. Do NOT call raw Android binder binaries (dumpsys, am, pm) unless scripting through AndroidBridge.
 
 CRITICAL COMMUNICATION DIRECTIVE (REPLY LIKE ANTIGRAVITY):
 - TALK LIKE A REALLY SMART PERSON:
@@ -184,6 +207,16 @@ const Bridge = {
         } catch (e) {}
         return null;
     },
+    executeNetHunter(cmd) {
+        if (this.hasBridge() && window.AndroidBridge.executeNetHunter) {
+            try {
+                return window.AndroidBridge.executeNetHunter(cmd);
+            } catch (e) {
+                return "ERR: " + e.message;
+            }
+        }
+        return this.runShellCommand(cmd);
+    },
     scanWifiNetworks() {
         if (this.hasBridge() && window.AndroidBridge.scanWifiNetworks) {
             return window.AndroidBridge.scanWifiNetworks();
@@ -321,7 +354,15 @@ function initHoloCanvas() {
         }
     }, { passive: true });
 
-    function renderLoop() {
+    let lastFrameTime = 0;
+    const FRAME_INTERVAL = 1000 / 30; // 30 FPS cap: prevents GPU tile memory overflow on 120Hz displays
+
+    function renderLoop(currentTime) {
+        requestAnimationFrame(renderLoop);
+        if (document.hidden) return; // Pause rendering when tab/app is backgrounded
+        if (currentTime - lastFrameTime < FRAME_INTERVAL) return;
+        lastFrameTime = currentTime;
+
         ctx.clearRect(0, 0, width, height);
 
         // Expand touch pulse
@@ -544,11 +585,21 @@ window.execQuick = function(cmd) {
 };
 
 window.sendMessage = async function() {
+    if (state.isGenerating) return;
+
     const text = omniInput.value.trim();
     if (!text) return;
 
-    omniInput.value = '';
-    Bridge.vibrate(25);
+    state.isGenerating = true;
+    const execBtn = document.getElementById('execute-btn');
+    if (execBtn) {
+        execBtn.disabled = true;
+        execBtn.classList.add('busy');
+    }
+
+    try {
+        omniInput.value = '';
+        Bridge.vibrate(25);
 
     // 1. Render user command as free-floating node
     appendFreeNode("OPERATOR // INPUT", escapeHtml(text), "user");
@@ -601,8 +652,7 @@ window.sendMessage = async function() {
     }
 
     // 4. Live Agentic Execution, Troubleshooting & Verification Loop
-    try {
-        let systemPrompt = currentPersona.prompt;
+    let systemPrompt = currentPersona.prompt;
         
         // Append synthesis directive when requested
         if (isToolIntent) {
@@ -711,6 +761,13 @@ DO NOT run commands, DO NOT recite system status or verification checklists, and
         }
     } catch (err) {
         appendFreeNode("SYSTEM // EXCEPTION", `<span style="color:#ff007f;">${escapeHtml(err.message)}</span>`, "system");
+    } finally {
+        state.isGenerating = false;
+        const execBtn = document.getElementById('execute-btn');
+        if (execBtn) {
+            execBtn.disabled = false;
+            execBtn.classList.remove('busy');
+        }
     }
 };
 
