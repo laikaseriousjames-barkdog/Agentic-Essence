@@ -482,6 +482,28 @@ window.onProviderChange = function() {
     }
 };
 
+window.autoSaveApiKey = function(val) {
+    const k = (val || '').trim();
+    state.apiKey = k;
+    localStorage.setItem('ae_api_key', k);
+    const status = document.getElementById('apiKeySaveStatus');
+    if (status) {
+        status.style.display = 'inline';
+        status.textContent = '✓ AUTO-SAVED';
+        clearTimeout(window._saveTimer);
+        window._saveTimer = setTimeout(() => { status.style.display = 'none'; }, 2500);
+    }
+};
+
+window.saveApiKeyDirect = function() {
+    const aInput = document.getElementById('apiKeyInput');
+    if (aInput) {
+        autoSaveApiKey(aInput.value);
+        Bridge.vibrate(25);
+        Bridge.showToast("API Key Locked & Saved");
+    }
+};
+
 window.saveSettings = function() {
     const pSelect = document.getElementById('providerSelect');
     const aInput = document.getElementById('apiKeyInput');

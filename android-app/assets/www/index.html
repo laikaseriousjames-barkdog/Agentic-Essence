@@ -90,9 +90,15 @@
         </div>
 
         <div class="drawer-block" id="apiKeyGroup">
-            <label class="drawer-label" id="apiKeyLabel">GEMINI API KEY</label>
-            <input type="password" id="apiKeyInput" class="holo-input" placeholder="Enter API Key..." />
-            <span class="drawer-micro-hint">Default: gemini-3.1-flash-lite</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <label class="drawer-label" id="apiKeyLabel" style="margin-bottom:0;">GEMINI API KEY</label>
+                <span id="apiKeySaveStatus" style="font-size:11px; font-family:var(--font-code); color:var(--neon-emerald); display:none;">✓ SAVED</span>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <input type="password" id="apiKeyInput" class="holo-input" placeholder="Enter API Key..." oninput="autoSaveApiKey(this.value)" style="flex:1; margin-bottom:0;" />
+                <button type="button" onclick="saveApiKeyDirect()" class="hw-matrix-btn emerald" style="padding:10px 14px; font-weight:800; font-size:12px; white-space:nowrap; cursor:pointer;">💾 SAVE</button>
+            </div>
+            <span class="drawer-micro-hint" style="margin-top:6px; display:block;">Default: gemini-3.1-flash-lite (Auto-saved on input)</span>
         </div>
 
         <div class="drawer-block">
@@ -140,6 +146,9 @@
             </div>
             <div id="savedToolsList" class="saved-holo-list">
                 <div class="empty-holo-text">No stored widgets. Synthesize any tool to save.</div>
+            </div>
+        </div>
+
         <!-- State Persistence & Export -->
         <div class="drawer-block">
             <label class="drawer-label">CYBERDECK SESSION PERSISTENCE</label>
@@ -150,7 +159,7 @@
             </div>
         </div>
 
-        <button onclick="saveSettings()" class="holo-action-btn">CONFIRM CONFIGURATION</button>
+        <button onclick="saveSettings()" class="holo-action-btn" style="margin-top:16px; width:100%; display:block;">CONFIRM CONFIGURATION</button>
     </aside>
 
     <!-- Free-Floating Agent Canvas (No Boxes, Seamless Stream) -->
