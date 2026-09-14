@@ -63,7 +63,7 @@ jobs:
           name: agentic-holo-android
           path: holo-app/bin/AgenticHolo-Android.apk
 
-      - name: Publish APKs to gh-pages downloads folder
+      - name: Publish APKs and Website to gh-pages
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -73,9 +73,10 @@ jobs:
           cp android-app/bin/AgenticEssence-Android.apk /tmp/gh-pages-repo/downloads/AngeticEssence-Android.apk
           cp holo-app/bin/AgenticVox-Android.apk /tmp/gh-pages-repo/downloads/AgenticVox-Android.apk
           cp holo-app/bin/AgenticVox-Android.apk /tmp/gh-pages-repo/downloads/AgenticHolo-Android.apk
+          cp -r website/* /tmp/gh-pages-repo/
           cd /tmp/gh-pages-repo
-          git add downloads/
-          git commit -m "Auto-publish latest Agentic Essence & Agentic Vox Android APK builds" || echo "no changes"
+          git add downloads/ index.html styles.css sw.js manifest.json favicon.svg
+          git commit -m "Auto-publish latest Agentic Vox website & APK builds" || echo "no changes"
           git push
 
 
