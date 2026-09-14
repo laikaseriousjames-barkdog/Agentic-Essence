@@ -1,136 +1,143 @@
-<div align="center">
-
-<img src="https://raw.githubusercontent.com/laikaseriousjames-barkdog/Agentic-Essence/main/agentic-logo.svg" alt="Agentic Essence" width="80" />
-
 # Agentic Essence
 
-**Autonomous AI, Untethered.**
-
-A local-first Tri-Agent AI orchestration console. Hybrid cloud/local LLM routing, an on-device model manager, and an embedded Kali Linux VM pane — all in one command center.
+> **Autonomous AI, Untethered.**  
+> A local-first Tri-Agent AI orchestration console and mobile cyberdeck. Zero cloud lock-in.
 
 [![Version](https://img.shields.io/badge/release-beta-06b6d4?style=for-the-badge&logo=github)](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/)
-[![License](https://img.shields.io/badge/license-proprietary-8b5cf6?style=for-the-badge)](#license)
 [![Platform](https://img.shields.io/badge/platform-Windows_%2B_Android-0078D6?style=for-the-badge)](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/)
 [![Live Site](https://img.shields.io/badge/live_site-visit-10b981?style=for-the-badge&logo=netlify)](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/)
-
-</div>
-
-> **All downloads are served from the official website:**  
-> 👉 [https://laikaseriousjames-barkdog.github.io/Agentic-Essence/](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/)
+[![Build Status](https://github.com/laikaseriousjames-barkdog/Agentic-Essence/actions/workflows/build-apk.yml/badge.svg)](https://github.com/laikaseriousjames-barkdog/Agentic-Essence/actions/workflows/build-apk.yml)
 
 ---
 
-## What is Agentic Essence?
+## 🌐 Official Downloads & Website
 
-Agentic Essence is a **local-first Tri-Agent AI orchestration console** that deploys three specialized agents working in concert — a **Planner**, **Builder**, and **Auditor** — to tackle complex, long-horizon tasks on your own hardware.
-
-The desktop app for Windows and the Android app both bring this swarm to life, with no cloud lock-in. **Your hardware, your swarm.**
-
----
-
-## Desktop App (Windows · v2.5.0 · Release Beta)
-
-The Windows desktop app is a full orchestration console that includes:
-
-- **Tri-Agent orchestration** — Planner, Builder, and Auditor each routed to their own model, coordinated toward your goal.
-- **Hybrid cloud/local LLM routing** — Blend premium cloud models with fully on-device inference, switching seamlessly.
-- **On-device model manager** — Download, verify (SHA-256), load, swap, and delete local GGUF models right from the UI. Run the entire swarm offline.
-- **Embedded Kali Linux VM pane** — A built-in noVNC pane drops you straight into a Kali Linux VM for tool-building and testing, without leaving the console.
-- **Self-evolving hot reload** — The engine restarts its own backend and reloads its UI on the fly, letting the swarm reshape and refine itself continuously.
-- **Zero-trust license** — Optional offline HWID-locked activation via asymmetric key validation.
+- **Official Website & Downloads**: [https://laikaseriousjames-barkdog.github.io/Agentic-Essence/](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/)
+- **Direct Cyberdeck APK Download**: [AgenticEssence-Android.apk](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/downloads/AgenticEssence-Android.apk)
+- **Direct Agentic Vox APK Download (Voice Edition)**: [AgenticVox-Android.apk](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/downloads/AgenticVox-Android.apk)
 
 ---
 
-## Android App (Release Beta)
+## 🔑 Free Google Gemini API Key Guide
 
-The Android app is a true on-device Tri-Agent orchestration UI:
-
-- **Tri-Agent orchestration** — Planner, Builder, and Auditor on device.
-- **Provider-agnostic AI routing** — Pollinations (keyless by default), OpenRouter, OpenAI, local Ollama, or offline simulation.
-- **Shizuku / ADB automation** — Root-free on-device screen taps, swiping, typing, and app launching.
-- **Deep hardware integration** — Haptics, camera flash, text-to-speech, alarms, battery & network discovery, wake-lock, and native clipboard/intent sharing.
-
----
-
-## Getting Started
-
-### 1. Download the app
-
-Downloads are hosted on the official website only, so you always get the latest build:
-
-[![Download on the website](https://img.shields.io/badge/Download_from_the_website-0d1222?style=for-the-badge&logo=windows&logoColor=06b6d4)](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/)
-
-- **Windows desktop** — `Agentic-Essence-Setup-2.5.0.exe`
-- **Android** — `AgenticEssence-Android.apk`
-
-### 2. Optional: purchase a Pro license
-
-[![Buy License](https://img.shields.io/badge/Buy_License_$29.99-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://buy.stripe.com/bJe3cv6GCcll5O38qT6g800)
-
-The license is HWID-locked to your machine and works fully offline after activation.
+Both Agentic Essence and Agentic Vox operate local-first with zero telemetry or middleman servers. By connecting your own free Google Gemini API key:
+1. Go to **Google AI Studio**: [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey).
+2. Sign in with any standard Google account.
+3. Click **"+ Create API key"** (free tier gives 15 RPM with zero billing or credit card required).
+4. Copy the key and launch the app:
+   - In **Agentic Vox**: Tap the **⚙ Settings** icon, paste your key into the **Google Gemini API Key** field, and tap **SAVE**.
+   - In **Agentic Essence**: Open the settings drawer, paste into the API key field, and tap save.
+5. All 12 personas and real-time voice orchestration are immediately active!
 
 ---
 
-## System Requirements
+## 🎙️ Agentic Vox — Holographic Voice Cyberdeck
 
-| Requirement | Minimum |
-|-------------|---------|
-| OS (Desktop) | Windows 10/11 (64-bit) |
-| OS (Android) | Android 8.0+ |
-| RAM | 8 GB recommended |
-| Storage | 2 GB free |
-| Optional | Local GGUF models for offline inference |
+Agentic Vox is a pure voice-first spatial holodeck with 3D animated physical avatar holograms, audio lip-sync, and zero chat boxes:
+- **100% Voice-First Turn-Taking**: Continuous listening and turn-taking with audio equalizer visualization.
+- **12 Specialized Personas**: 3D geometric avatars for Swarm, Turing, Knuth, Lovelace, Shadow, Sentry, Cipher, Valkyrie, Matrix, Ghost, Glitch, and Archon.
+- **Spatial Tool Materialization**: Spawns floating interactive tools (port scanners, payload generators, hash decoders, MITRE ATT&CK matrix, Wi-Fi analyzers) out of thin air.
+- **Hardware Integration**: Full Kali NetHunter root bridge and Android hardware control (Wi-Fi, torch, battery, vibration).
+
+```
+holo-app/
+├── AndroidManifest.xml       # Audio recording, camera, location, network permissions
+├── assets/www/               # 🌌 SPATIAL HOLODECK COCKPIT
+│   ├── index.html            # Holographic chamber, voice core, HUD, settings modal
+│   ├── styles.css            # 3D spatial styles, glowing emitter floor, animated orb
+│   ├── holo-renderer.js      # 3D real-time canvas renderer for 12 physical avatars
+│   ├── voice-engine.js       # Voice turn-taking, speech synthesis, persona voice profiles
+│   ├── spatial-tasks.js      # Spawns 3D floating task & security tool cards
+│   └── app.js                # Cognitive swarm router, Gemini 2.0 Flash engine
+├── src/org/antigravity/agenticholo/
+│   ├── MainActivity.java     # WebView hardware acceleration, audio permissions
+│   └── HoloBridgeInterface.java # Android bridge for TTS, SpeechRecognizer, shell, hardware
+└── bin/
+    └── AgenticVox-Android.apk # Signed, verified ready-to-install Android APK
+```
+
+This repository contains the complete, editable source code for the Agentic Essence Android Cyberdeck app.
+
+```
+android-app/
+├── AndroidManifest.xml       # App permissions (Termux, Shizuku, Internet, Telephony), SDK target 34, screen config
+├── assets/www/               # 🖥️ CYBERDECK UI (HTML, CSS, JavaScript)
+│   ├── index.html            # Main Cyberdeck UI layout, terminal screens, agent cards
+│   ├── styles.css            # Holographic neon cyberdeck styling, responsive layouts
+│   └── app.js                # Agent swarm loop, tool synthesis, WebAppInterface bridge calls
+├── src/                      # ☕ NATIVE JAVA ENGINE & BRIDGES
+│   └── org/antigravity/agenticessence/
+│       ├── MainActivity.java # WebView initialization, permissions requester, hardware settings
+│       └── WebAppInterface.java # AndroidBridge: Termux/NetHunter bridge, Shizuku ADB, TTS, Haptics, Flashlight
+├── res/                      # 🎨 ANDROID RESOURCES
+│   ├── drawable/ic_launcher.png # Application icon
+│   ├── layout/activity_main.xml # Activity view layout
+│   └── values/               # Strings, colors, styles, themes
+├── app/                      # 🚀 JETPACK COMPOSE KOTLIN ARCHITECTURE
+│   ├── build.gradle.kts      # Gradle Kotlin DSL configuration
+│   └── src/main/java/org/antigravity/agenticessence/
+│       ├── MainActivity.kt   # Native Compose entrypoint
+│       ├── core/automation/  # Accessibility & Shizuku automation
+│       ├── core/provider/    # Universal LLM client (OpenRouter, Ollama, OpenAI, Pollinations)
+│       ├── core/swarm/       # Tri-Agent definition & SwarmManager
+│       ├── core/synthesis/   # Dynamic tool synthesis & registry
+│       └── ui/               # ChatScreen, SettingsScreen, ToolRegistryScreen
+├── build_apk.sh              # Local build script for android-app directory
+└── bin/
+    └── AgenticEssence-Android.apk # Signed, verified ready-to-install Android APK
+
+build_apk.sh                  # Root standalone build script (builds, verifies, & distributes APK)
+tests/                        # PyTest validation suite (tests build pipeline, assets, manifest, agent engine)
+.github/workflows/build-apk.yml # Continuous Integration workflow (builds APK & publishes on every push)
+website/                      # Landing page assets and docs
+```
 
 ---
 
-## Security & Privacy
+## ✏️ How to Edit the Android App
 
-- **Local-first** — Prompts and data stay on your machine by default.
-- **No telemetry** — No hidden outbound connections or data collection.
-- **Zero-trust licensing** — Offline HWID-locked activation via asymmetric key validation; no license server handshake required after activation.
-
----
-
-## Contact & Support
-
-- 📧 Email: [laikaseriousjames@gmail.com](mailto:laikaseriousjames@gmail.com)
-- 🌐 Website: [https://laikaseriousjames-barkdog.github.io/Agentic-Essence/](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/)
+1. **To modify the Cyberdeck interface or agent behavior**:
+   - Edit [index.html](file:///root/repos/Angetic-Essence/android-app/assets/www/index.html), [styles.css](file:///root/repos/Angetic-Essence/android-app/assets/www/styles.css), or [app.js](file:///root/repos/Angetic-Essence/android-app/assets/www/app.js).
+2. **To add or customize native Android capabilities (Termux, Kali NetHunter, Shell, TTS, Shizuku)**:
+   - Edit [WebAppInterface.java](file:///root/repos/Angetic-Essence/android-app/src/org/antigravity/agenticessence/WebAppInterface.java) or [MainActivity.java](file:///root/repos/Angetic-Essence/android-app/src/org/antigravity/agenticessence/MainActivity.java).
+3. **To add permissions or app metadata**:
+   - Edit [AndroidManifest.xml](file:///root/repos/Angetic-Essence/android-app/AndroidManifest.xml).
+4. **To work with the modern Jetpack Compose Kotlin architecture**:
+   - Open the project in Android Studio and edit files in `android-app/app/`.
 
 ---
 
-## 📱 Android Source Code & Development
+## 🛠️ How to Build the APK
 
-The complete, editable source code for the Android application (including the Cyberdeck UI, Native Java Bridges, Jetpack Compose Kotlin architecture, and automated APK build pipeline) is available in this repository:
+### Automated Cloud Builds (GitHub Actions)
+Whenever you push code changes to either the `master` or `android-app` branch:
+1. GitHub Actions automatically executes `.github/workflows/build-apk.yml`.
+2. Runs the full test suite (`pytest tests/`).
+3. Compiles the Java/Kotlin sources, packages assets, generates DEX, zipaligns, and cryptographically signs the APK.
+4. Publishes the updated APK directly to the website download folder on `gh-pages` and provides downloadable artifacts.
 
-👉 [**View Full Android Source Code & Build Pipeline (master branch)**](https://github.com/laikaseriousjames-barkdog/Agentic-Essence/tree/master)  
-👉 [**View Dedicated Android Branch (android-app branch)**](https://github.com/laikaseriousjames-barkdog/Agentic-Essence/tree/android-app)
-
-To clone and edit the source code locally:
+### Local Builds
+To build the Cyberdeck APK locally:
 ```bash
-git clone https://github.com/laikaseriousjames-barkdog/Agentic-Essence.git
-cd Agentic-Essence
-git checkout master
 ./build_apk.sh
 ```
+The output APK is generated at `android-app/bin/AgenticEssence-Android.apk`.
+
+To build the Agentic Vox Holographic APK locally:
+```bash
+./build_holo_apk.sh
+```
+The output APK is generated at `holo-app/bin/AgenticVox-Android.apk` (and `AgenticHolo-Android.apk`).
+
+### Run Test Suite:
+```bash
+pytest tests/
+```
 
 ---
 
-## Repository Structure
+## 📧 Contact & Support
 
-```
-Agentic-Essence/
-├── index.html          # Website landing page
-├── styles.css          # Site styles
-├── downloads/          # Release binaries (installer + APK)
-└── docs/
-    └── EULA.md         # End User License Agreement
-```
+- **Email**: [laikaseriousjames@gmail.com](mailto:laikaseriousjames@gmail.com)
+- **Website**: [https://agentic-essence.com/](https://agentic-essence.com/)
 
----
-
-## License
-
-Agentic Essence is proprietary software. All rights reserved.  
-See [EULA](docs/EULA.md) for terms of use.
-
-© 2026 Agentic Essence.
