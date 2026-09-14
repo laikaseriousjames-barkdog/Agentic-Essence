@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Agentic Vox • Holographic Voice AI &amp; Spatial Holodeck</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="icon.png">
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
@@ -21,8 +23,19 @@
         </div>
     </div>
 
-    <!-- 2. MINIMALIST TOP STATUS STRIP -->
+    <!-- 2. MINIMALIST TOP STATUS STRIP WITH LOGO -->
     <header class="holo-header">
+        <div class="holo-vox-brand" onclick="openSettingsModal()" title="Agentic Vox Spatial Voice Holodeck">
+            <div class="vox-logo-wrap">
+                <img src="icon.png" alt="Agentic Vox Logo" class="vox-logo-img" />
+                <span class="vox-pulse-halo"></span>
+            </div>
+            <div class="vox-brand-text">
+                <span class="vox-brand-name">AGENTIC <span class="accent-vox">VOX</span></span>
+                <span class="vox-brand-tag">VOICE HOLODECK</span>
+            </div>
+        </div>
+
         <div class="holo-persona-indicator" id="personaIndicator">
             <span class="persona-symbol" id="personaSymbol">✦</span>
             <div class="persona-details">
@@ -127,6 +140,13 @@
             <div class="modal-head">
                 <div class="modal-title">AGENTIC VOX CONFIGURATION</div>
                 <button class="modal-close" onclick="closeSettingsModal()">✕</button>
+            </div>
+            <div class="modal-brand-banner">
+                <img src="icon.png" alt="Agentic Vox Logo" class="modal-vox-logo" />
+                <div class="modal-brand-details">
+                    <div class="modal-vox-title">AGENTIC <span class="accent-vox">VOX</span></div>
+                    <div class="modal-vox-subtitle">SPATIAL HOLOGRAPHIC VOICE SWARM · CYBERDECK v2.0</div>
+                </div>
             </div>
             <div class="modal-body">
                 <label class="modal-label">INFERENCE ENGINE</label>

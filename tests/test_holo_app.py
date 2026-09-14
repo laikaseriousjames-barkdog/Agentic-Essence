@@ -62,6 +62,23 @@ def test_agentic_vox_branding_and_resources():
         manifest_content = f.read()
     assert "android.permission.ACCESS_FINE_LOCATION" in manifest_content
     assert "android.permission.ACCESS_COARSE_LOCATION" in manifest_content
+    assert "@drawable/ic_launcher" in manifest_content
+
+    # Logo assets
+    launcher_icon = os.path.join(HOLO_DIR, "res/drawable/ic_launcher.png")
+    app_icon = os.path.join(HOLO_DIR, "assets/www/icon.png")
+    app_favicon = os.path.join(HOLO_DIR, "assets/www/favicon.png")
+    assert os.path.isfile(launcher_icon), "ic_launcher.png missing"
+    assert os.path.isfile(app_icon), "assets/www/icon.png missing"
+    assert os.path.isfile(app_favicon), "assets/www/favicon.png missing"
+
+    # In-app brand header
+    holo_index = os.path.join(HOLO_DIR, "assets/www/index.html")
+    with open(holo_index, "r", encoding="utf-8") as f:
+        html = f.read()
+    assert "holo-vox-brand" in html
+    assert "vox-logo-img" in html
+    assert "modal-brand-banner" in html
 
 def test_google_api_key_portal_and_links():
     # Verify in holo-app index.html

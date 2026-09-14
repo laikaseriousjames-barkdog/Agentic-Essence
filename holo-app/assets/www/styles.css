@@ -182,7 +182,86 @@ html, body {
     justify-content: space-between;
     align-items: center;
     z-index: 20;
-    pointer-events: auto;
+.holo-vox-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(11, 16, 26, 0.75);
+    border: 1px solid rgba(255, 0, 127, 0.35);
+    padding: 5px 12px 5px 7px;
+    border-radius: 28px;
+    backdrop-filter: blur(14px);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 0 12px rgba(255, 0, 127, 0.1);
+}
+
+.holo-vox-brand:hover {
+    border-color: rgba(0, 240, 255, 0.7);
+    box-shadow: 0 6px 25px rgba(0, 240, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.vox-logo-wrap {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vox-logo-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    object-fit: cover;
+    box-shadow: 0 0 12px rgba(255, 0, 127, 0.5);
+    display: block;
+}
+
+.vox-pulse-halo {
+    position: absolute;
+    inset: -3px;
+    border-radius: 11px;
+    border: 1.5px solid #ff007f;
+    opacity: 0;
+    animation: voxHaloPulse 2.8s infinite;
+    pointer-events: none;
+}
+
+@keyframes voxHaloPulse {
+    0% { transform: scale(0.92); opacity: 0.8; }
+    70% { transform: scale(1.3); opacity: 0; }
+    100% { transform: scale(1.35); opacity: 0; }
+}
+
+.vox-brand-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.vox-brand-name {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    color: #fff;
+    line-height: 1.1;
+}
+
+.accent-vox {
+    background: linear-gradient(135deg, #ff007f 0%, #00f0ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.vox-brand-tag {
+    font-family: var(--font-code);
+    font-size: 8px;
+    letter-spacing: 0.8px;
+    color: #00f0ff;
+    opacity: 0.9;
+    margin-top: 1px;
 }
 
 .holo-persona-indicator {
@@ -764,3 +843,80 @@ html, body {
     border-radius: 8px;
     padding: 12px;
 }
+
+/* Modal Brand Banner with Agentic Vox Logo */
+.modal-brand-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, rgba(255, 0, 127, 0.12) 0%, rgba(0, 240, 255, 0.08) 100%);
+    border: 1px solid rgba(255, 0, 127, 0.3);
+    border-radius: 12px;
+}
+
+.modal-vox-logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    box-shadow: 0 0 16px rgba(255, 0, 127, 0.5);
+    display: block;
+    object-fit: cover;
+}
+
+.modal-brand-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-vox-title {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #fff;
+    line-height: 1.1;
+}
+
+.modal-vox-subtitle {
+    font-family: var(--font-code);
+    font-size: 8.5px;
+    color: #00f0ff;
+    letter-spacing: 0.8px;
+    margin-top: 3px;
+}
+
+/* Responsive HUD Header */
+@media (max-width: 640px) {
+    .holo-header {
+        padding: 10px 12px;
+        gap: 6px;
+    }
+    .vox-brand-tag {
+        display: none;
+    }
+    .holo-persona-indicator {
+        padding: 6px 10px;
+        gap: 8px;
+    }
+    .persona-role {
+        display: none;
+    }
+    .persona-name {
+        font-size: 11px;
+    }
+    .nh-pill {
+        padding: 5px 10px;
+    }
+}
+
+@media (max-width: 440px) {
+    .vox-brand-name {
+        display: none;
+    }
+    .holo-vox-brand {
+        padding: 4px;
+        border-radius: 50%;
+    }
+}
+

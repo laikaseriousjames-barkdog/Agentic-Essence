@@ -75,7 +75,7 @@ jobs:
           cp holo-app/bin/AgenticVox-Android.apk /tmp/gh-pages-repo/downloads/AgenticHolo-Android.apk
           cp -r website/* /tmp/gh-pages-repo/
           cd /tmp/gh-pages-repo
-          git add downloads/ index.html styles.css sw.js manifest.json favicon.svg
+          git add downloads/ index.html styles.css sw.js manifest.json favicon.svg vox-logo.png
           git commit -m "Auto-publish latest Agentic Vox website & APK builds" || echo "no changes"
           git push
 
