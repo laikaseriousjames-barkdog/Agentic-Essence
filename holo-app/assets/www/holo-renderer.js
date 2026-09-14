@@ -340,6 +340,200 @@ window.HoloRenderer = (function() {
     }
 
     // ==========================================
+    // 5. SHADOW: Offensive Red Team Faceted Stealth Crystal
+    // ==========================================
+    function drawShadow(time, glowColor, energy) {
+        const radius = 90 + energy * 42;
+        rotationAngle += 0.016;
+        const pts = [
+            { x: 0, y: -radius * 1.2, z: 0 },
+            { x: radius, y: 0, z: 0 },
+            { x: -radius, y: 0, z: 0 },
+            { x: 0, y: 0, z: radius },
+            { x: 0, y: 0, z: -radius },
+            { x: 0, y: radius * 1.2, z: 0 }
+        ];
+        const proj = pts.map(p => project3D(p.x, p.y, p.z, rotationAngle, 0.3));
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2.0;
+        for (let i = 0; i < proj.length; i++) {
+            for (let j = i + 1; j < proj.length; j++) {
+                ctx.beginPath();
+                ctx.moveTo(proj[i].x, proj[i].y);
+                ctx.lineTo(proj[j].x, proj[j].y);
+                ctx.globalAlpha = Math.min(1, (proj[i].scale + proj[j].scale) * 0.5);
+                ctx.stroke();
+            }
+        }
+        ctx.globalAlpha = 1;
+        // Sweeping red targeting reticle
+        const sweepAngle = time * 0.003;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 55 + energy * 25, sweepAngle, sweepAngle + Math.PI * 0.5);
+        ctx.strokeStyle = '#ff0055';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+    }
+
+    // ==========================================
+    // 6. SENTRY: Blue Team Fortress Shield Matrix
+    // ==========================================
+    function drawSentry(time, glowColor, energy) {
+        const r = 85 + energy * 35;
+        rotationAngle += 0.01;
+        // Hexagonal energy shield
+        const sides = 6;
+        for (let ring = 1; ring <= 3; ring++) {
+            const currentR = r * (ring / 3);
+            ctx.beginPath();
+            for (let i = 0; i <= sides; i++) {
+                const a = (i * Math.PI * 2) / sides + (ring % 2 === 0 ? rotationAngle : -rotationAngle);
+                const p = project3D(Math.cos(a) * currentR, Math.sin(a) * currentR, 0, 0, 0.2);
+                if (i === 0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+            }
+            ctx.strokeStyle = ring === 3 ? '#3b82f6' : '#60a5fa';
+            ctx.lineWidth = ring === 3 ? 2.5 : 1.2;
+            ctx.stroke();
+        }
+    }
+
+    // ==========================================
+    // 7. CIPHER: Cryptographic Gyroscopic Rings
+    // ==========================================
+    function drawCipher(time, glowColor, energy) {
+        const r = 90 + energy * 38;
+        rotationAngle += 0.013;
+        function drawGyroRing(rotY, rotX, color) {
+            ctx.beginPath();
+            for (let i = 0; i <= 24; i++) {
+                const th = (i * Math.PI * 2) / 24;
+                const p = project3D(Math.cos(th) * r, Math.sin(th) * r, 0, rotationAngle + rotY, pitchAngle + rotX);
+                if (i === 0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+            }
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.8;
+            ctx.stroke();
+        }
+        drawGyroRing(0, 0, '#a855f7');
+        drawGyroRing(Math.PI / 4, Math.PI / 4, '#c084fc');
+        drawGyroRing(-Math.PI / 4, -Math.PI / 4, '#e9d5ff');
+    }
+
+    // ==========================================
+    // 8. VALKYRIE: Emergency Incident Response Halo
+    // ==========================================
+    function drawValkyrie(time, glowColor, energy) {
+        const r = 95 + energy * 45;
+        rotationAngle += 0.02;
+        // Winged beacon
+        ctx.beginPath();
+        for (let i = -4; i <= 4; i++) {
+            const y = i * 18;
+            const xSpan = Math.sqrt(Math.max(0, r * r - y * y)) * 1.3;
+            const p1 = project3D(-xSpan, y, 0, rotationAngle, 0.2);
+            const p2 = project3D(xSpan, y, 0, rotationAngle, 0.2);
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+        }
+        ctx.strokeStyle = '#f97316';
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+    }
+
+    // ==========================================
+    // 9. MATRIX: Binary Stream Cube
+    // ==========================================
+    function drawMatrix(time, glowColor, energy) {
+        const s = 65 + energy * 30;
+        rotationAngle += 0.012;
+        const verts = [];
+        for (let x = -1; x <= 1; x += 2) {
+            for (let y = -1; y <= 1; y += 2) {
+                for (let z = -1; z <= 1; z += 2) {
+                    verts.push({ x: x * s, y: y * s, z: z * s });
+                }
+            }
+        }
+        const proj = verts.map(v => project3D(v.x, v.y, v.z, rotationAngle, 0.3));
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 2.0;
+        for (let i = 0; i < proj.length; i++) {
+            for (let j = i + 1; j < proj.length; j++) {
+                const d = Math.hypot(verts[i].x - verts[j].x, verts[i].y - verts[j].y, verts[i].z - verts[j].z);
+                if (d < s * 2.1) {
+                    ctx.beginPath();
+                    ctx.moveTo(proj[i].x, proj[i].y);
+                    ctx.lineTo(proj[j].x, proj[j].y);
+                    ctx.stroke();
+                }
+            }
+        }
+    }
+
+    // ==========================================
+    // 10. GHOST: Passive OSINT Spectral Phantom
+    // ==========================================
+    function drawGhost(time, glowColor, energy) {
+        const r = 80 + energy * 40;
+        rotationAngle += 0.008;
+        ctx.beginPath();
+        for (let i = 0; i <= 36; i++) {
+            const a = (i * Math.PI * 2) / 36;
+            const wave = Math.sin(a * 5 + time * 0.004) * 12;
+            const p = project3D(Math.cos(a) * (r + wave), Math.sin(a) * (r + wave), Math.cos(a * 2) * 20, rotationAngle, 0.25);
+            if (i === 0) ctx.moveTo(p.x, p.y);
+            else ctx.lineTo(p.x, p.y);
+        }
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+    }
+
+    // ==========================================
+    // 11. GLITCH: Fast Modulating Cyber-Synth
+    // ==========================================
+    function drawGlitch(time, glowColor, energy) {
+        const r = 85 + energy * 45;
+        rotationAngle += 0.025;
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+            const jitter = Math.random() * 15;
+            const a = (i * Math.PI * 2) / 8 + rotationAngle;
+            const p1 = project3D(Math.cos(a) * (r + jitter), Math.sin(a) * (r + jitter), 0, rotationAngle, 0.2);
+            const p2 = project3D(0, 0, (i % 2 === 0 ? 1 : -1) * (r * 0.7), rotationAngle, 0.2);
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+        }
+        ctx.strokeStyle = '#e11d48';
+        ctx.lineWidth = 2.2;
+        ctx.stroke();
+    }
+
+    // ==========================================
+    // 12. ARCHON: Governance Command Seal
+    // ==========================================
+    function drawArchon(time, glowColor, energy) {
+        const r = 90 + energy * 36;
+        rotationAngle += 0.01;
+        // Double concentric octagons
+        for (let ring = 1; ring <= 2; ring++) {
+            const curR = r * (ring === 1 ? 0.65 : 1.0);
+            ctx.beginPath();
+            for (let i = 0; i <= 8; i++) {
+                const a = (i * Math.PI * 2) / 8 + (ring === 1 ? rotationAngle : -rotationAngle * 0.5);
+                const p = project3D(Math.cos(a) * curR, Math.sin(a) * curR, 0, 0, 0.25);
+                if (i === 0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+            }
+            ctx.strokeStyle = ring === 1 ? '#818cf8' : '#6366f1';
+            ctx.lineWidth = 2.0;
+            ctx.stroke();
+        }
+    }
+
+    // ==========================================
     // RENDER LOOP
     // ==========================================
     function renderLoop(currentTime) {
@@ -374,6 +568,14 @@ window.HoloRenderer = (function() {
         if (currentPersona === 'turing') glowColor = '#ff007f';
         else if (currentPersona === 'knuth') glowColor = '#ffb700';
         else if (currentPersona === 'lovelace') glowColor = '#00ff88';
+        else if (currentPersona === 'shadow') glowColor = '#ef4444';
+        else if (currentPersona === 'sentry') glowColor = '#3b82f6';
+        else if (currentPersona === 'cipher') glowColor = '#a855f7';
+        else if (currentPersona === 'valkyrie') glowColor = '#f97316';
+        else if (currentPersona === 'matrix') glowColor = '#10b981';
+        else if (currentPersona === 'ghost') glowColor = '#94a3b8';
+        else if (currentPersona === 'glitch') glowColor = '#e11d48';
+        else if (currentPersona === 'archon') glowColor = '#6366f1';
 
         // Draw the selected active physical hologram
         if (currentPersona === 'swarm') {
@@ -384,6 +586,24 @@ window.HoloRenderer = (function() {
             drawKnuth(currentTime, glowColor, audioEnergy);
         } else if (currentPersona === 'lovelace') {
             drawLovelace(currentTime, glowColor, audioEnergy);
+        } else if (currentPersona === 'shadow') {
+            drawShadow(currentTime, glowColor, audioEnergy);
+        } else if (currentPersona === 'sentry') {
+            drawSentry(currentTime, glowColor, audioEnergy);
+        } else if (currentPersona === 'cipher') {
+            drawCipher(currentTime, glowColor, audioEnergy);
+        } else if (currentPersona === 'valkyrie') {
+            drawValkyrie(currentTime, glowColor, audioEnergy);
+        } else if (currentPersona === 'matrix') {
+            drawMatrix(currentTime, glowColor, audioEnergy);
+        } else if (currentPersona === 'ghost') {
+            drawGhost(currentTime, glowColor, audioEnergy);
+        } else if (currentPersona === 'glitch') {
+            drawGlitch(currentTime, glowColor, audioEnergy);
+        } else if (currentPersona === 'archon') {
+            drawArchon(currentTime, glowColor, audioEnergy);
+        } else {
+            drawSwarm(currentTime, glowColor, audioEnergy);
         }
     }
 

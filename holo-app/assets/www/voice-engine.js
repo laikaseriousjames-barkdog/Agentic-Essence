@@ -12,6 +12,26 @@ window.HoloVoice = (function() {
     let speechSilenceTimer = null;
     let audioAnimInterval = null;
 
+    // Operator Voice Preferences & Acoustic Profiles
+    let selectedSystemVoiceName = localStorage.getItem('holo_selected_voice') || '';
+    let userVoicePitch = parseFloat(localStorage.getItem('holo_voice_pitch') || '1.0');
+    let userVoiceRate = parseFloat(localStorage.getItem('holo_voice_rate') || '1.0');
+
+    const PERSONA_VOICES = {
+        swarm: { pitch: 0.85, rate: 1.05, phrase: "Agentic Swarm online. Ready for tactical directives." },
+        turing: { pitch: 1.00, rate: 0.98, phrase: "Alan Turing online. What formal system shall we analyze?" },
+        knuth: { pitch: 0.92, rate: 0.95, phrase: "Donald Knuth online. What algorithms shall we craft?" },
+        lovelace: { pitch: 1.18, rate: 1.02, phrase: "Ada Lovelace online. What poetry of science shall we explore?" },
+        shadow: { pitch: 0.72, rate: 1.10, phrase: "Shadow Operator online. Attack surface reconnaissance active." },
+        sentry: { pitch: 0.88, rate: 1.08, phrase: "Cyber Sentry standing guard. Threat hunting matrix engaged." },
+        cipher: { pitch: 1.06, rate: 0.92, phrase: "Cipher Core decrypted and active. Ready for cryptographic operations." },
+        valkyrie: { pitch: 1.22, rate: 1.14, phrase: "Valkyrie Tactical initialized. Emergency triage standing by." },
+        matrix: { pitch: 0.62, rate: 0.96, phrase: "Reverse Matrix engaged. Disassembler and shellcode engine ready." },
+        ghost: { pitch: 0.78, rate: 0.96, phrase: "Ghost Recon cloaked. Passive OSINT collection started." },
+        glitch: { pitch: 1.38, rate: 1.22, phrase: "Glitch Synth booted! High-velocity cyber automation spinning up." },
+        archon: { pitch: 0.75, rate: 0.90, phrase: "Archon Prime commanding. Framework compliance and threat posture active." }
+    };
+
     // DOM References
     let orbContainer, orbCore, voiceStatusLabel, transcriptText, transcriptSpeaker, eqBars;
 
@@ -158,45 +178,135 @@ window.HoloVoice = (function() {
 
         const lower = text.toLowerCase();
 
-        // 1. Direct voice persona switching
+        // 1. Direct voice persona switching (12 Personas)
+        if (lower.includes('switch to shadow') || lower === 'shadow' || lower.includes('activate shadow') || lower.includes('red team')) {
+            window.switchPersona('shadow');
+            speakAgent(PERSONA_VOICES.shadow.phrase);
+            return;
+        }
+        if (lower.includes('switch to sentry') || lower === 'sentry' || lower.includes('activate sentry') || lower.includes('blue team')) {
+            window.switchPersona('sentry');
+            speakAgent(PERSONA_VOICES.sentry.phrase);
+            return;
+        }
+        if (lower.includes('switch to cipher') || lower === 'cipher' || lower.includes('activate cipher') || lower.includes('cryptography')) {
+            window.switchPersona('cipher');
+            speakAgent(PERSONA_VOICES.cipher.phrase);
+            return;
+        }
+        if (lower.includes('switch to valkyrie') || lower === 'valkyrie' || lower.includes('activate valkyrie') || lower.includes('incident response')) {
+            window.switchPersona('valkyrie');
+            speakAgent(PERSONA_VOICES.valkyrie.phrase);
+            return;
+        }
+        if (lower.includes('switch to matrix') || lower === 'matrix' || lower.includes('activate matrix') || lower.includes('reverse engineer')) {
+            window.switchPersona('matrix');
+            speakAgent(PERSONA_VOICES.matrix.phrase);
+            return;
+        }
+        if (lower.includes('switch to ghost') || lower === 'ghost' || lower.includes('activate ghost') || lower.includes('osint')) {
+            window.switchPersona('ghost');
+            speakAgent(PERSONA_VOICES.ghost.phrase);
+            return;
+        }
+        if (lower.includes('switch to glitch') || lower === 'glitch' || lower.includes('activate glitch')) {
+            window.switchPersona('glitch');
+            speakAgent(PERSONA_VOICES.glitch.phrase);
+            return;
+        }
+        if (lower.includes('switch to archon') || lower === 'archon' || lower.includes('activate archon') || lower.includes('framework commander')) {
+            window.switchPersona('archon');
+            speakAgent(PERSONA_VOICES.archon.phrase);
+            return;
+        }
         if (lower.includes('switch to turing') || lower === 'turing' || lower.includes('activate turing')) {
             window.switchPersona('turing');
-            speakAgent("Alan Turing online. What formal system shall we analyze?");
+            speakAgent(PERSONA_VOICES.turing.phrase);
             return;
         }
         if (lower.includes('switch to swarm') || lower === 'swarm' || lower.includes('activate swarm') || lower.includes('hey swarm')) {
             window.switchPersona('swarm');
-            speakAgent("Agentic Swarm online. Ready for tactical directives.");
+            speakAgent(PERSONA_VOICES.swarm.phrase);
             return;
         }
         if (lower.includes('switch to knuth') || lower === 'knuth' || lower.includes('activate knuth')) {
             window.switchPersona('knuth');
-            speakAgent("Donald Knuth online. What algorithms shall we craft?");
+            speakAgent(PERSONA_VOICES.knuth.phrase);
             return;
         }
         if (lower.includes('switch to lovelace') || lower === 'lovelace' || lower.includes('activate lovelace')) {
             window.switchPersona('lovelace');
-            speakAgent("Ada Lovelace online. What poetry of science shall we explore?");
+            speakAgent(PERSONA_VOICES.lovelace.phrase);
             return;
         }
 
         // 2. Spatial card dismissal by voice
         if (lower.includes('dismiss') || lower.includes('clear tasks') || lower.includes('clear cards') || lower === 'close') {
-            SpatialTasks.clearAll();
+            if (window.SpatialTasks) SpatialTasks.clearAll();
             speakAgent("Spatial tasks dismissed.");
             return;
         }
 
-        // 3. Direct hardware query interception
-        if (lower.includes('scan wifi') || lower.includes('wi-fi scan') || lower.includes('scan networks')) {
+        // 3. Cyber Security Tactical Operations & Spatial Cards
+        if (lower.includes('scan port') || lower.includes('port scan') || lower.includes('scan ports') || lower.includes('port scanner') || lower.includes('probe ports')) {
+            let target = '127.0.0.1';
+            const match = lower.match(/(?:on|at|for|target)\s+([0-9a-z.-]+)/i);
+            if (match) target = match[1];
+            if (window.SpatialTasks && window.SpatialTasks.spawnPortScannerCard) {
+                SpatialTasks.spawnPortScannerCard(target);
+                speakAgent("Port scanner and service reconnaissance matrix materialized.");
+                return;
+            }
+        }
+
+        if (lower.includes('reverse shell') || lower.includes('generate payload') || lower.includes('payload generator') || lower.includes('payloads') || lower.includes('shellcode')) {
+            if (window.SpatialTasks && window.SpatialTasks.spawnPayloadGeneratorCard) {
+                SpatialTasks.spawnPayloadGeneratorCard();
+                speakAgent("Offensive reverse shell payload generator active.");
+                return;
+            }
+        }
+
+        if (lower.includes('hash analyzer') || lower.includes('identify hash') || lower.includes('decode base64') || lower.includes('crypto tool') || lower.includes('hash decoder') || lower.includes('analyze hash')) {
+            if (window.SpatialTasks && window.SpatialTasks.spawnHashAnalyzerCard) {
+                SpatialTasks.spawnHashAnalyzerCard();
+                speakAgent("Cryptographic analyzer and hash identifier online.");
+                return;
+            }
+        }
+
+        if (lower.includes('scan wifi') || lower.includes('wi-fi scan') || lower.includes('scan networks') || lower.includes('wireless recon')) {
+            if (window.SpatialTasks && window.SpatialTasks.spawnWifiReconCard) {
+                SpatialTasks.spawnWifiReconCard();
+                speakAgent("Scanning 802.11 wireless spectrum. Access points mapped.");
+                return;
+            }
             const res = executeHardware('wifi scan');
-            SpatialTasks.spawnTerminalCard('wifi scan', res);
+            if (window.SpatialTasks) SpatialTasks.spawnTerminalCard('wifi scan', res);
             speakAgent("Scanning wireless environment. Telemetry card materialized.");
             return;
         }
+
+        if (lower.includes('mitre attack') || lower.includes('mitre matrix') || lower.includes('threat tactics') || lower.includes('mitre')) {
+            if (window.SpatialTasks && window.SpatialTasks.spawnMitreAttackCard) {
+                SpatialTasks.spawnMitreAttackCard();
+                speakAgent("MITRE ATT&CK tactical matrix materialized.");
+                return;
+            }
+        }
+
+        if (lower.includes('security audit') || lower.includes('check posture') || lower.includes('device hardening') || lower.includes('security posture') || lower.includes('audit device')) {
+            if (window.SpatialTasks && window.SpatialTasks.spawnSecurityPostureCard) {
+                SpatialTasks.spawnSecurityPostureCard();
+                speakAgent("Device security posture audit complete.");
+                return;
+            }
+        }
+
+        // 4. Direct hardware query interception
         if (lower.includes('battery') || lower.includes('power state')) {
             const res = executeHardware('battery');
-            SpatialTasks.spawnTelemetryCard('Power Subsystem', { "Battery State": res, "Charging": "USB", "Status": "Optimal" });
+            if (window.SpatialTasks) SpatialTasks.spawnTelemetryCard('Power Subsystem', { "Battery State": res, "Charging": "USB", "Status": "Optimal" });
             speakAgent(res);
             return;
         }
@@ -211,7 +321,7 @@ window.HoloVoice = (function() {
             return;
         }
 
-        // 4. Conversational Turn & Tool Synthesis via Cognitive Swarm
+        // 5. Conversational Turn & Tool Synthesis via Cognitive Swarm
         if (window.HoloBrain && window.HoloBrain.processTurn) {
             await window.HoloBrain.processTurn(text);
         } else {
@@ -241,8 +351,18 @@ window.HoloVoice = (function() {
         // Animate 3D hologram lip-sync & audio energy
         startHoloLipSync();
 
+        const profile = PERSONA_VOICES[persona] || PERSONA_VOICES.swarm;
+        const targetPitch = Math.max(0.4, Math.min(2.0, profile.pitch * userVoicePitch));
+        const targetRate = Math.max(0.5, Math.min(2.0, profile.rate * userVoiceRate));
+
         // 1. Native Android TTS via HoloBridge
         if (window.HoloBridge && window.HoloBridge.speakPersona) {
+            if (window.HoloBridge.setVoicePitch) window.HoloBridge.setVoicePitch(targetPitch);
+            if (window.HoloBridge.setVoiceSpeechRate) window.HoloBridge.setVoiceSpeechRate(targetRate);
+            if (selectedSystemVoiceName && window.HoloBridge.setVoice) {
+                window.HoloBridge.setVoice(selectedSystemVoiceName);
+            }
+
             window.HoloBridge.speakPersona(text, persona);
 
             // Poll for when speaking ends
@@ -269,11 +389,15 @@ window.HoloVoice = (function() {
             const clean = text.replace(/<[^>]*>/g, '').replace(/```[\s\S]*?```/g, '').replace(/[#*_`]/g, '');
             const utterance = new SpeechSynthesisUtterance(clean);
             
-            // Set persona voice pitch/rate
-            if (persona === 'swarm') { utterance.pitch = 0.85; utterance.rate = 1.05; }
-            else if (persona === 'turing') { utterance.pitch = 1.0; utterance.rate = 0.98; }
-            else if (persona === 'knuth') { utterance.pitch = 0.92; utterance.rate = 0.95; }
-            else if (persona === 'lovelace') { utterance.pitch = 1.18; utterance.rate = 1.02; }
+            utterance.pitch = targetPitch;
+            utterance.rate = targetRate;
+
+            // Apply selected system voice if specified
+            if (selectedSystemVoiceName) {
+                const voices = window.speechSynthesis.getVoices();
+                const matched = voices.find(v => v.name === selectedSystemVoiceName || v.voiceURI === selectedSystemVoiceName);
+                if (matched) utterance.voice = matched;
+            }
 
             utterance.onend = () => { onSpeechFinished(); };
             utterance.onerror = () => { onSpeechFinished(); };
@@ -384,6 +508,28 @@ window.HoloVoice = (function() {
     function onNativeSpeechResult(text) {
         handleVoiceInput(text);
     }
+    function onNativeSpeechDetected() {
+        updateVoiceState('listening');
+        pulseEqualizer(true);
+    }
+    function onNativePartialResult(partial) {
+        if (partial && partial.trim()) {
+            showTranscript('OPERATOR', partial.trim());
+            pulseEqualizer(true);
+        }
+    }
+    function onNativeError(errorCode) {
+        console.log("[HoloVoice] Native speech error code:", errorCode);
+        pulseEqualizer(false);
+        updateVoiceState('idle');
+        if (isContinuous && !isSpeaking) {
+            setTimeout(() => {
+                if (!isListening && !isSpeaking) {
+                    startListening();
+                }
+            }, 800);
+        }
+    }
     function onNativeAudioLevel(rmsdB) {
         const normalized = Math.max(0, Math.min(1, (rmsdB + 2) / 14));
         if (window.HoloRenderer) window.HoloRenderer.setAudioLevel(normalized);
@@ -391,6 +537,92 @@ window.HoloVoice = (function() {
     }
     function onNativeStateChange(state) {
         updateVoiceState(state);
+    }
+
+    // Native TTS fallback when Java TTS is not ready
+    window.onNativeTTSFallback = function(text) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const clean = (text || '').replace(/<[^>]*>/g, '').replace(/[#*_`]/g, '');
+            const utterance = new SpeechSynthesisUtterance(clean);
+            utterance.pitch = userVoicePitch;
+            utterance.rate = userVoiceRate;
+            utterance.onend = () => { onSpeechFinished(); };
+            utterance.onerror = () => { onSpeechFinished(); };
+            window.speechSynthesis.speak(utterance);
+        } else {
+            setTimeout(onSpeechFinished, 1800);
+        }
+    };
+
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = () => {
+            if (window.populateSystemVoices) window.populateSystemVoices();
+        };
+    }
+
+    function getAvailableVoices() {
+        let list = [];
+        if ('speechSynthesis' in window) {
+            const browserVoices = window.speechSynthesis.getVoices();
+            if (browserVoices && browserVoices.length) {
+                list = browserVoices.map(v => ({
+                    name: v.name,
+                    lang: v.lang,
+                    source: 'WebSpeech',
+                    default: v.default
+                }));
+            }
+        }
+        if (window.HoloBridge && window.HoloBridge.getAvailableVoices) {
+            try {
+                const nativeVoices = JSON.parse(window.HoloBridge.getAvailableVoices());
+                if (nativeVoices && nativeVoices.length) {
+                    nativeVoices.forEach(nv => {
+                        list.push({
+                            name: nv.name,
+                            lang: nv.locale,
+                            source: 'AndroidTTS',
+                            default: false
+                        });
+                    });
+                }
+            } catch (e) {}
+        }
+        return list;
+    }
+
+    function setSelectedVoice(name) {
+        selectedSystemVoiceName = name || '';
+        localStorage.setItem('holo_selected_voice', selectedSystemVoiceName);
+        if (window.HoloBridge && window.HoloBridge.setVoice) {
+            window.HoloBridge.setVoice(selectedSystemVoiceName);
+        }
+    }
+
+    function getSelectedVoice() {
+        return selectedSystemVoiceName;
+    }
+
+    function setVoicePitch(p) {
+        userVoicePitch = parseFloat(p) || 1.0;
+        localStorage.setItem('holo_voice_pitch', userVoicePitch);
+        if (window.HoloBridge && window.HoloBridge.setVoicePitch) {
+            window.HoloBridge.setVoicePitch(userVoicePitch);
+        }
+    }
+
+    function setVoiceRate(r) {
+        userVoiceRate = parseFloat(r) || 1.0;
+        localStorage.setItem('holo_voice_rate', userVoiceRate);
+        if (window.HoloBridge && window.HoloBridge.setVoiceSpeechRate) {
+            window.HoloBridge.setVoiceSpeechRate(userVoiceRate);
+        }
+    }
+
+    function auditionVoice(sampleText) {
+        const text = sampleText || "Acoustic voice synthesis active. All cybersecurity telemetry systems operational.";
+        speakAgent(text);
     }
 
     return {
@@ -402,9 +634,19 @@ window.HoloVoice = (function() {
         stopSpeaking: stopSpeaking,
         injectCommand: function(cmd) { handleVoiceInput(cmd); },
         onNativeSpeechResult: onNativeSpeechResult,
+        onNativeSpeechDetected: onNativeSpeechDetected,
+        onNativePartialResult: onNativePartialResult,
+        onNativeError: onNativeError,
         onNativeAudioLevel: onNativeAudioLevel,
         onNativeStateChange: onNativeStateChange,
-        setContinuous: function(val) { isContinuous = val; }
+        setContinuous: function(val) { isContinuous = val; },
+        getAvailableVoices: getAvailableVoices,
+        setSelectedVoice: setSelectedVoice,
+        getSelectedVoice: getSelectedVoice,
+        setVoicePitch: setVoicePitch,
+        setVoiceRate: setVoiceRate,
+        auditionVoice: auditionVoice,
+        getPersonaVoices: function() { return PERSONA_VOICES; }
     };
 })();
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agentic Hologram • Spatial Holodeck</title>
+    <title>Agentic Vox • Holographic Voice AI &amp; Spatial Holodeck</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
@@ -54,6 +54,30 @@
         <button class="summon-chip" data-persona="lovelace" onclick="switchPersona('lovelace')">
             <span class="dot emerald"></span>LOVELACE
         </button>
+        <button class="summon-chip" data-persona="shadow" onclick="switchPersona('shadow')">
+            <span class="dot red"></span>SHADOW
+        </button>
+        <button class="summon-chip" data-persona="sentry" onclick="switchPersona('sentry')">
+            <span class="dot blue"></span>SENTRY
+        </button>
+        <button class="summon-chip" data-persona="cipher" onclick="switchPersona('cipher')">
+            <span class="dot purple"></span>CIPHER
+        </button>
+        <button class="summon-chip" data-persona="valkyrie" onclick="switchPersona('valkyrie')">
+            <span class="dot orange"></span>VALKYRIE
+        </button>
+        <button class="summon-chip" data-persona="matrix" onclick="switchPersona('matrix')">
+            <span class="dot green"></span>MATRIX
+        </button>
+        <button class="summon-chip" data-persona="ghost" onclick="switchPersona('ghost')">
+            <span class="dot silver"></span>GHOST
+        </button>
+        <button class="summon-chip" data-persona="glitch" onclick="switchPersona('glitch')">
+            <span class="dot pink"></span>GLITCH
+        </button>
+        <button class="summon-chip" data-persona="archon" onclick="switchPersona('archon')">
+            <span class="dot indigo"></span>ARCHON
+        </button>
     </nav>
 
     <!-- 4. SPATIAL FLOATING TASKS LAYER (SPAWNED OUT OF THIN AIR) -->
@@ -64,7 +88,7 @@
     <!-- 5. LIVE VOCAL SUBTITLE & AURA PROJECTION -->
     <div class="vocal-transcript-hud" id="vocalHud">
         <div class="transcript-speaker" id="transcriptSpeaker">OPERATOR</div>
-        <div class="transcript-body" id="transcriptText">Say "Hey Swarm", "Switch to Turing", "Scan Wi-Fi", or "Synthesize a tool"...</div>
+        <div class="transcript-body" id="transcriptText">Say "Hey Swarm", "Switch to Shadow", "Scan Ports", or "Reverse Shell"...</div>
     </div>
 
     <!-- 6. THE HOLOGRAPHIC VOICE CORE (VOICE-FIRST INTERACTION) -->
@@ -87,10 +111,13 @@
         </div>
 
         <div class="voice-shortcuts">
-            <button class="quick-vocal-chip" onclick="HoloVoice.injectCommand('wifi scan')">📡 Wi-Fi Scan</button>
-            <button class="quick-vocal-chip" onclick="HoloVoice.injectCommand('battery')">🔋 Battery</button>
-            <button class="quick-vocal-chip" onclick="HoloVoice.injectCommand('synthesize network monitor')">⚡ /synth HUD</button>
-            <button class="quick-vocal-chip" onclick="SpatialTasks.clearAll()">🧹 Dismiss Tasks</button>
+            <button class="quick-vocal-chip" onclick="SpatialTasks.spawnPortScannerCard()">⚡ Port Scan</button>
+            <button class="quick-vocal-chip" onclick="SpatialTasks.spawnPayloadGeneratorCard()">🐚 Payloads</button>
+            <button class="quick-vocal-chip" onclick="SpatialTasks.spawnHashAnalyzerCard()">🔑 Hashes</button>
+            <button class="quick-vocal-chip" onclick="SpatialTasks.spawnWifiReconCard()">📡 Wi-Fi Recon</button>
+            <button class="quick-vocal-chip" onclick="SpatialTasks.spawnMitreAttackCard()">🎯 MITRE</button>
+            <button class="quick-vocal-chip" onclick="SpatialTasks.spawnSecurityPostureCard()">🛡️ Posture</button>
+            <button class="quick-vocal-chip" onclick="SpatialTasks.clearAll()">🧹 Dismiss</button>
         </div>
     </footer>
 
@@ -98,23 +125,55 @@
     <div class="holo-modal-backdrop" id="settingsModal" onclick="closeSettingsModal(event)">
         <div class="holo-modal-glass" onclick="event.stopPropagation()">
             <div class="modal-head">
-                <div class="modal-title">HOLODECK CONFIGURATION</div>
+                <div class="modal-title">AGENTIC VOX CONFIGURATION</div>
                 <button class="modal-close" onclick="closeSettingsModal()">✕</button>
             </div>
             <div class="modal-body">
                 <label class="modal-label">INFERENCE ENGINE</label>
                 <select id="providerSelect" class="modal-input" onchange="onProviderChange()">
-                    <option value="gemini">Google Gemini 3.1 (Free)</option>
-                    <option value="groq">Groq LPU (Ultra-Fast)</option>
+                    <option value="gemini">Google Gemini 2.0 / 1.5 Flash (Free Tier)</option>
+                    <option value="groq">Groq LPU (Ultra-Fast Cloud)</option>
                     <option value="ollama">Ollama Local Cyberdeck</option>
                 </select>
 
-                <label class="modal-label">GEMINI API KEY</label>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; margin-bottom:4px;">
+                    <label class="modal-label" id="apiKeyLabel" style="margin:0;">GOOGLE GEMINI API KEY (FREE TIER)</label>
+                    <button class="modal-link-btn" onclick="openGoogleKeyPortal()" title="Get Free Google Gemini Key from Google AI Studio" style="background:rgba(0,240,255,0.12); border:1px solid #00f0ff; color:#00f0ff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:4px; cursor:pointer;">Get Free Key ↗</button>
+                </div>
                 <div style="display:flex; gap:8px;">
-                    <input type="password" id="apiKeyInput" class="modal-input" placeholder="Paste Gemini Key (AQ...)" oninput="autoSaveApiKey(this.value)" />
+                    <input type="password" id="apiKeyInput" class="modal-input" placeholder="AIzaSy... (Paste Google Gemini Key)" oninput="autoSaveApiKey(this.value)" />
                     <button class="modal-action-btn" onclick="saveApiKeyDirect()">SAVE</button>
                 </div>
-                <span class="modal-hint">Key auto-saves to local storage.</span>
+                <div id="freeKeyGuide" style="background:rgba(0, 240, 255, 0.05); border:1px solid rgba(0, 240, 255, 0.18); border-radius:6px; padding:8px 10px; margin-top:6px; margin-bottom:12px;">
+                    <div style="font-size:11px; color:#00f0ff; font-weight:700; margin-bottom:3px;">⚡ GET A 100% FREE KEY IN 30 SECONDS:</div>
+                    <div style="font-size:11px; color:#cbd5e1; line-height:1.4;">
+                        1. Tap <a href="javascript:void(0)" onclick="openGoogleKeyPortal()" style="color:#00f0ff; font-weight:700;">Get Free Key ↗</a> to open Google AI Studio.<br>
+                        2. Sign in with any Google account &amp; click <strong>"Create API Key"</strong>.<br>
+                        3. Copy the key, paste it above, and tap <strong>SAVE</strong>. (Zero cost, no credit card required).
+                    </div>
+                </div>
+
+                <label class="modal-label" style="margin-top:14px;">VOICE AGENT & ACOUSTIC SYNTHESIS</label>
+                <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:10px; margin-bottom:12px;">
+                    <label style="font-size:11px; color:#a0aec0; display:block; margin-bottom:4px;">SYSTEM / DEVICE TTS VOICE</label>
+                    <select id="systemVoiceSelect" class="modal-input" onchange="onSystemVoiceChange(this.value)" style="margin-bottom:8px;">
+                        <option value="">Default Persona Voice Profile</option>
+                    </select>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <span style="font-size:11px; color:#a0aec0;">Voice Pitch Multiplier</span>
+                        <span id="pitchDisplay" style="font-size:11px; color:#00f0ff; font-family:monospace;">1.00x</span>
+                    </div>
+                    <input type="range" id="voicePitchSlider" min="0.5" max="2.0" step="0.05" value="1.0" oninput="onVoicePitchSlider(this.value)" style="width:100%; accent-color:#00f0ff; margin-bottom:8px;" />
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <span style="font-size:11px; color:#a0aec0;">Speech Rate Multiplier</span>
+                        <span id="rateDisplay" style="font-size:11px; color:#00f0ff; font-family:monospace;">1.00x</span>
+                    </div>
+                    <input type="range" id="voiceRateSlider" min="0.5" max="2.0" step="0.05" value="1.0" oninput="onVoiceRateSlider(this.value)" style="width:100%; accent-color:#00f0ff; margin-bottom:8px;" />
+
+                    <button class="modal-action-btn" onclick="testAuditionVoice()" style="width:100%;">🔊 Audition Voice Sample</button>
+                </div>
 
                 <label class="modal-label" style="margin-top:14px;">CONTINUOUS VOICE LISTENER</label>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">

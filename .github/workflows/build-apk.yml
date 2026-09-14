@@ -51,7 +51,13 @@ jobs:
           name: agentic-essence-android
           path: android-app/bin/AgenticEssence-Android.apk
 
-      - name: Upload Hologram APK artifact
+      - name: Upload Agentic Vox APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentic-vox-android
+          path: holo-app/bin/AgenticVox-Android.apk
+
+      - name: Upload Hologram APK artifact (Legacy Alias)
         uses: actions/upload-artifact@v4
         with:
           name: agentic-holo-android
@@ -65,10 +71,11 @@ jobs:
           mkdir -p /tmp/gh-pages-repo/downloads
           cp android-app/bin/AgenticEssence-Android.apk /tmp/gh-pages-repo/downloads/AgenticEssence-Android.apk
           cp android-app/bin/AgenticEssence-Android.apk /tmp/gh-pages-repo/downloads/AngeticEssence-Android.apk
-          cp holo-app/bin/AgenticHolo-Android.apk /tmp/gh-pages-repo/downloads/AgenticHolo-Android.apk
+          cp holo-app/bin/AgenticVox-Android.apk /tmp/gh-pages-repo/downloads/AgenticVox-Android.apk
+          cp holo-app/bin/AgenticVox-Android.apk /tmp/gh-pages-repo/downloads/AgenticHolo-Android.apk
           cd /tmp/gh-pages-repo
           git add downloads/
-          git commit -m "Auto-publish latest Agentic Essence & Hologram Android APK builds" || echo "no changes"
+          git commit -m "Auto-publish latest Agentic Essence & Agentic Vox Android APK builds" || echo "no changes"
           git push
 
 

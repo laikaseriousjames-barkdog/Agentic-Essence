@@ -49,3 +49,63 @@ def test_holo_renderer_personas():
     assert "drawKnuth" in js
     assert "drawLovelace" in js
     assert "FRAME_INTERVAL" in js
+
+def test_agentic_vox_branding_and_resources():
+    strings_path = os.path.join(HOLO_DIR, "res/values/strings.xml")
+    assert os.path.isfile(strings_path)
+    with open(strings_path, "r", encoding="utf-8") as f:
+        strings_content = f.read()
+    assert "Agentic Vox" in strings_content
+
+    manifest_path = os.path.join(HOLO_DIR, "AndroidManifest.xml")
+    with open(manifest_path, "r", encoding="utf-8") as f:
+        manifest_content = f.read()
+    assert "android.permission.ACCESS_FINE_LOCATION" in manifest_content
+    assert "android.permission.ACCESS_COARSE_LOCATION" in manifest_content
+
+def test_google_api_key_portal_and_links():
+    # Verify in holo-app index.html
+    holo_index = os.path.join(HOLO_DIR, "assets/www/index.html")
+    with open(holo_index, "r", encoding="utf-8") as f:
+        holo_html = f.read()
+    assert "Agentic Vox" in holo_html
+    assert "openGoogleKeyPortal" in holo_html
+    assert "GOOGLE GEMINI API KEY" in holo_html
+
+    # Verify in website index.html
+    site_index = os.path.join(REPO_DIR, "website/index.html")
+    with open(site_index, "r", encoding="utf-8") as f:
+        site_html = f.read()
+    assert "Agentic Vox" in site_html
+    assert "https://aistudio.google.com/app/apikey" in site_html
+    assert "Free Google API Key" in site_html
+    assert "AgenticVox-Android.apk" in site_html
+
+def test_native_voice_engine_callbacks_and_providers():
+    voice_js = os.path.join(HOLO_DIR, "assets/www/voice-engine.js")
+    with open(voice_js, "r", encoding="utf-8") as f:
+        v_code = f.read()
+    assert "onNativeSpeechDetected" in v_code
+    assert "onNativePartialResult" in v_code
+    assert "onNativeError" in v_code
+    assert "onNativeTTSFallback" in v_code
+
+    app_js = os.path.join(HOLO_DIR, "assets/www/app.js")
+    with open(app_js, "r", encoding="utf-8") as f:
+        a_code = f.read()
+    assert "onProviderChange" in a_code
+    assert "openGoogleKeyPortal" in a_code
+    assert "gemini-2.0-flash" in a_code
+
+    java_bridge = os.path.join(HOLO_DIR, "src/org/antigravity/agenticholo/HoloBridgeInterface.java")
+    with open(java_bridge, "r", encoding="utf-8") as f:
+        j_code = f.read()
+    assert "openExternalUrl" in j_code
+
+def test_vox_apk_binaries():
+    bin_apk = os.path.join(HOLO_DIR, "bin/AgenticVox-Android.apk")
+    download_apk = os.path.join(REPO_DIR, "downloads/AgenticVox-Android.apk")
+    assert os.path.isfile(bin_apk), "holo-app/bin/AgenticVox-Android.apk missing"
+    assert os.path.isfile(download_apk), "downloads/AgenticVox-Android.apk missing"
+    assert os.path.getsize(bin_apk) > 10000
+    assert os.path.getsize(download_apk) > 10000

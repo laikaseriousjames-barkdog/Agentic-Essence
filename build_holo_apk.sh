@@ -13,9 +13,10 @@ if [ ! -f "$KEYSTORE" ] && [ -f "/root/android_tools/debug.keystore" ]; then
     KEYSTORE="/root/android_tools/debug.keystore"
 fi
 
-OUT_APK="$APP_DIR/bin/AgenticHolo-Android.apk"
+OUT_APK="$APP_DIR/bin/AgenticVox-Android.apk"
+HOLO_ALIAS="$APP_DIR/bin/AgenticHolo-Android.apk"
 
-echo "=== Building Agentic Hologram Android Holodeck APK ==="
+echo "=== Building Agentic Vox (Holographic Voice Cyberdeck) Android APK ==="
 
 mkdir -p "$APP_DIR/bin" "$APP_DIR/obj" "$APP_DIR/assets/www"
 
@@ -88,18 +89,25 @@ apksigner sign --ks "$KEYSTORE" \
 echo "Step 8: Verifying APK signature..."
 apksigner verify "$OUT_APK"
 
-# Step 9: Distribute locally and to downloads
+# Step 9: Create compatibility copy
+cp "$OUT_APK" "$HOLO_ALIAS"
+
+# Step 10: Distribute locally and to downloads
 if [ -d "$SCRIPT_DIR/downloads" ]; then
+    cp "$OUT_APK" "$SCRIPT_DIR/downloads/AgenticVox-Android.apk"
     cp "$OUT_APK" "$SCRIPT_DIR/downloads/AgenticHolo-Android.apk"
 fi
 if [ -w "/root" ]; then
     mkdir -p /root/Downloads
+    cp "$OUT_APK" /root/Downloads/AgenticVox-Android.apk 2>/dev/null || true
     cp "$OUT_APK" /root/Downloads/AgenticHolo-Android.apk 2>/dev/null || true
+    cp "$OUT_APK" /root/AgenticVox-Android.apk 2>/dev/null || true
     cp "$OUT_APK" /root/AgenticHolo-Android.apk 2>/dev/null || true
 fi
 if [ -d "/sdcard/Download" ] && [ -w "/sdcard/Download" ]; then
+    cp "$OUT_APK" /sdcard/Download/AgenticVox-Android.apk 2>/dev/null || true
     cp "$OUT_APK" /sdcard/Download/AgenticHolo-Android.apk 2>/dev/null || true
 fi
 
-echo "=== SUCCESS! Agentic Hologram APK built and verified at $OUT_APK ==="
-ls -lh "$OUT_APK"
+echo "=== SUCCESS! Agentic Vox APK built and verified at $OUT_APK ==="
+ls -lh "$OUT_APK" "$HOLO_ALIAS"

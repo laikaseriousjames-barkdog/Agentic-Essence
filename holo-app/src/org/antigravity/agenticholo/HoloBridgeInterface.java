@@ -27,14 +27,19 @@ import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import android.speech.tts.Voice;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public class HoloBridgeInterface {
     private static final String TAG = "AgenticHoloBridge";
@@ -95,6 +100,30 @@ public class HoloBridgeInterface {
                 } else if ("lovelace".equalsIgnoreCase(persona)) {
                     mTTS.setPitch(1.18f);
                     mTTS.setSpeechRate(1.02f);
+                } else if ("shadow".equalsIgnoreCase(persona)) {
+                    mTTS.setPitch(0.72f);
+                    mTTS.setSpeechRate(1.10f);
+                } else if ("sentry".equalsIgnoreCase(persona)) {
+                    mTTS.setPitch(0.88f);
+                    mTTS.setSpeechRate(1.08f);
+                } else if ("cipher".equalsIgnoreCase(persona)) {
+                    mTTS.setPitch(1.06f);
+                    mTTS.setSpeechRate(0.92f);
+                } else if ("valkyrie".equalsIgnoreCase(persona)) {
+                    mTTS.setPitch(1.22f);
+                    mTTS.setSpeechRate(1.14f);
+                } else if ("matrix".equalsIgnoreCase(persona)) {
+                    mTTS.setPitch(0.62f);
+                    mTTS.setSpeechRate(0.96f);
+                } else if ("ghost".equalsIgnoreCase(persona)) {
+                    mTTS.setPitch(0.78f);
+                    mTTS.setSpeechRate(0.96f);
+                } else if ("glitch".equalsIgnoreCase(persona)) {
+                    mTTS.setPitch(1.38f);
+                    mTTS.setSpeechRate(1.22f);
+                } else if ("archon".equalsIgnoreCase(persona)) {
+                    mTTS.setPitch(0.75f);
+                    mTTS.setSpeechRate(0.90f);
                 } else {
                     mTTS.setPitch(1.00f);
                     mTTS.setSpeechRate(1.00f);
@@ -111,6 +140,125 @@ public class HoloBridgeInterface {
                 evaluateJs("window.onNativeTTSFallback('" + cleanText.replace("'", "\\'") + "')");
             }
         });
+    }
+
+    @JavascriptInterface
+    public String getAvailableVoices() {
+        JSONArray array = new JSONArray();
+        if (mTTS != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            try {
+                Set<Voice> voices = mTTS.getVoices();
+                if (voices != null) {
+                    for (Voice v : voices) {
+                        JSONObject obj = new JSONObject();
+                        obj.put("name", v.getName());
+                        obj.put("locale", v.getLocale() != null ? v.getLocale().toString() : "");
+                        obj.put("quality", v.getQuality());
+                        obj.put("latency", v.getLatency());
+                        obj.put("isNetwork", v.isNetworkConnectionRequired());
+                        array.put(obj);
+                    }
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Error fetching voices: " + e.getMessage());
+            }
+        }
+        return array.toString();
+    }
+
+    @JavascriptInterface
+    public boolean setVoice(String voiceName) {
+        if (mTTS != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && voiceName != null) {
+            try {
+                Set<Voice> voices = mTTS.getVoices();
+                if (voices != null) {
+                    for (Voice v : voices) {
+                        if (v.getName().equalsIgnoreCase(voiceName)) {
+                            mTTS.setVoice(v);
+                            return true;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Error setting voice: " + e.getMessage());
+            }
+        }
+        return false;
+    }
+
+    @JavascriptInterface
+    public void setVoicePitch(float pitch) {
+        if (mTTS != null) {
+            mTTS.setPitch(pitch);
+        }
+    }
+
+    @JavascriptInterface
+    public void setVoiceSpeechRate(float rate) {
+        if (mTTS != null) {
+            mTTS.setSpeechRate(rate);
+        }
+    }
+
+    @JavascriptInterface
+    public String getDeviceSecurityPosture() {
+        JSONObject posture = new JSONObject();
+        try {
+            boolean isRooted = false;
+            String[] suPaths = {
+                "/system/bin/su", "/system/xbin/su", "/sbin/su",
+                "/data/local/xbin/su", "/data/local/bin/su", "/system/sd/xbin/su",
+                "/system/bin/failsafe/su", "/data/local/su", "/data/data/com.termux/files/usr/bin/su"
+            };
+            for (String p : suPaths) {
+                if (new File(p).exists()) {
+                    isRooted = true;
+                    break;
+                }
+            }
+            posture.put("isRooted", isRooted);
+            posture.put("androidVersion", Build.VERSION.RELEASE);
+            posture.put("sdkVersion", Build.VERSION.SDK_INT);
+            posture.put("deviceModel", Build.MANUFACTURER + " " + Build.MODEL);
+            posture.put("kernelVersion", System.getProperty("os.version", "Linux 5.15 aarch64"));
+            posture.put("isNetHunterBridgeActive", isNetHunterOnline());
+        } catch (Exception e) {
+            Log.w(TAG, "Security posture error: " + e.getMessage());
+        }
+        return posture.toString();
+    }
+
+    @JavascriptInterface
+    public String runPortScan(String host, String portCsv) {
+        JSONArray results = new JSONArray();
+        String targetHost = (host == null || host.trim().isEmpty()) ? "127.0.0.1" : host.trim();
+        String[] portStrs = (portCsv == null || portCsv.trim().isEmpty()) 
+            ? "21,22,23,25,53,80,110,135,139,443,445,1433,3306,3389,8080,8443".split(",")
+            : portCsv.split(",");
+
+        for (String pStr : portStrs) {
+            int port;
+            try {
+                port = Integer.parseInt(pStr.trim());
+            } catch (Exception e) {
+                continue;
+            }
+            JSONObject portObj = new JSONObject();
+            try {
+                portObj.put("port", port);
+                long start = System.currentTimeMillis();
+                try (Socket socket = new Socket()) {
+                    socket.connect(new InetSocketAddress(targetHost, port), 250);
+                    portObj.put("status", "OPEN");
+                    portObj.put("latencyMs", System.currentTimeMillis() - start);
+                } catch (Exception e) {
+                    portObj.put("status", "CLOSED");
+                    portObj.put("latencyMs", System.currentTimeMillis() - start);
+                }
+                results.put(portObj);
+            } catch (Exception ignored) {}
+        }
+        return results.toString();
     }
 
     @JavascriptInterface
@@ -365,6 +513,20 @@ public class HoloBridgeInterface {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    @JavascriptInterface
+    public void openExternalUrl(String url) {
+        if (url == null || url.trim().isEmpty()) return;
+        mActivity.runOnUiThread(() -> {
+            try {
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url.trim()));
+                browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                mActivity.startActivity(browserIntent);
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to open external URL: " + e.getMessage());
+            }
+        });
     }
 
     @JavascriptInterface

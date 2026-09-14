@@ -13,11 +13,48 @@
 ## 🌐 Official Downloads & Website
 
 - **Official Website & Downloads**: [https://laikaseriousjames-barkdog.github.io/Agentic-Essence/](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/)
-- **Direct Android APK Download**: [AgenticEssence-Android.apk](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/downloads/AgenticEssence-Android.apk)
+- **Direct Cyberdeck APK Download**: [AgenticEssence-Android.apk](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/downloads/AgenticEssence-Android.apk)
+- **Direct Agentic Vox APK Download (Voice Edition)**: [AgenticVox-Android.apk](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/downloads/AgenticVox-Android.apk)
 
 ---
 
-## 📱 Android Cyberdeck Source Code & Architecture
+## 🔑 Free Google Gemini API Key Guide
+
+Both Agentic Essence and Agentic Vox operate local-first with zero telemetry or middleman servers. By connecting your own free Google Gemini API key:
+1. Go to **Google AI Studio**: [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey).
+2. Sign in with any standard Google account.
+3. Click **"+ Create API key"** (free tier gives 15 RPM with zero billing or credit card required).
+4. Copy the key and launch the app:
+   - In **Agentic Vox**: Tap the **⚙ Settings** icon, paste your key into the **Google Gemini API Key** field, and tap **SAVE**.
+   - In **Agentic Essence**: Open the settings drawer, paste into the API key field, and tap save.
+5. All 12 personas and real-time voice orchestration are immediately active!
+
+---
+
+## 🎙️ Agentic Vox — Holographic Voice Cyberdeck
+
+Agentic Vox is a pure voice-first spatial holodeck with 3D animated physical avatar holograms, audio lip-sync, and zero chat boxes:
+- **100% Voice-First Turn-Taking**: Continuous listening and turn-taking with audio equalizer visualization.
+- **12 Specialized Personas**: 3D geometric avatars for Swarm, Turing, Knuth, Lovelace, Shadow, Sentry, Cipher, Valkyrie, Matrix, Ghost, Glitch, and Archon.
+- **Spatial Tool Materialization**: Spawns floating interactive tools (port scanners, payload generators, hash decoders, MITRE ATT&CK matrix, Wi-Fi analyzers) out of thin air.
+- **Hardware Integration**: Full Kali NetHunter root bridge and Android hardware control (Wi-Fi, torch, battery, vibration).
+
+```
+holo-app/
+├── AndroidManifest.xml       # Audio recording, camera, location, network permissions
+├── assets/www/               # 🌌 SPATIAL HOLODECK COCKPIT
+│   ├── index.html            # Holographic chamber, voice core, HUD, settings modal
+│   ├── styles.css            # 3D spatial styles, glowing emitter floor, animated orb
+│   ├── holo-renderer.js      # 3D real-time canvas renderer for 12 physical avatars
+│   ├── voice-engine.js       # Voice turn-taking, speech synthesis, persona voice profiles
+│   ├── spatial-tasks.js      # Spawns 3D floating task & security tool cards
+│   └── app.js                # Cognitive swarm router, Gemini 2.0 Flash engine
+├── src/org/antigravity/agenticholo/
+│   ├── MainActivity.java     # WebView hardware acceleration, audio permissions
+│   └── HoloBridgeInterface.java # Android bridge for TTS, SpeechRecognizer, shell, hardware
+└── bin/
+    └── AgenticVox-Android.apk # Signed, verified ready-to-install Android APK
+```
 
 This repository contains the complete, editable source code for the Agentic Essence Android Cyberdeck app.
 
@@ -79,12 +116,18 @@ Whenever you push code changes to either the `master` or `android-app` branch:
 3. Compiles the Java/Kotlin sources, packages assets, generates DEX, zipaligns, and cryptographically signs the APK.
 4. Publishes the updated APK directly to the website download folder on `gh-pages` and provides downloadable artifacts.
 
-### Local One-Command Build
-To build the APK locally:
+### Local Builds
+To build the Cyberdeck APK locally:
 ```bash
 ./build_apk.sh
 ```
 The output APK is generated at `android-app/bin/AgenticEssence-Android.apk`.
+
+To build the Agentic Vox Holographic APK locally:
+```bash
+./build_holo_apk.sh
+```
+The output APK is generated at `holo-app/bin/AgenticVox-Android.apk` (and `AgenticHolo-Android.apk`).
 
 ### Run Test Suite:
 ```bash

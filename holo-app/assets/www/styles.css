@@ -33,6 +33,38 @@ body.persona-lovelace {
     --active-glow: var(--neon-emerald);
     --active-dim: rgba(0, 255, 136, 0.18);
 }
+body.persona-shadow {
+    --active-glow: #ef4444;
+    --active-dim: rgba(239, 68, 68, 0.18);
+}
+body.persona-sentry {
+    --active-glow: #3b82f6;
+    --active-dim: rgba(59, 130, 246, 0.18);
+}
+body.persona-cipher {
+    --active-glow: #a855f7;
+    --active-dim: rgba(168, 85, 247, 0.18);
+}
+body.persona-valkyrie {
+    --active-glow: #f97316;
+    --active-dim: rgba(249, 115, 22, 0.18);
+}
+body.persona-matrix {
+    --active-glow: #10b981;
+    --active-dim: rgba(16, 185, 129, 0.18);
+}
+body.persona-ghost {
+    --active-glow: #94a3b8;
+    --active-dim: rgba(148, 163, 184, 0.18);
+}
+body.persona-glitch {
+    --active-glow: #e11d48;
+    --active-dim: rgba(225, 29, 72, 0.18);
+}
+body.persona-archon {
+    --active-glow: #6366f1;
+    --active-dim: rgba(99, 102, 241, 0.18);
+}
 
 * {
     box-sizing: border-box;
@@ -250,13 +282,20 @@ html, body {
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 8px;
+    gap: 6px;
+    max-width: 95%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
     background: rgba(4, 6, 11, 0.7);
     border: 1px solid rgba(255, 255, 255, 0.08);
     padding: 4px 6px;
     border-radius: 24px;
     backdrop-filter: blur(14px);
     z-index: 20;
+}
+.holo-summon-bar::-webkit-scrollbar {
+    display: none;
 }
 
 .summon-chip {
@@ -273,6 +312,8 @@ html, body {
     gap: 6px;
     cursor: pointer;
     transition: all 0.25s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .summon-chip .dot {
@@ -285,6 +326,44 @@ html, body {
 .summon-chip .dot.magenta { background: var(--neon-magenta); }
 .summon-chip .dot.gold { background: var(--neon-gold); }
 .summon-chip .dot.emerald { background: var(--neon-emerald); }
+.summon-chip .dot.red { background: #ef4444; }
+.summon-chip .dot.blue { background: #3b82f6; }
+.summon-chip .dot.purple { background: #a855f7; }
+.summon-chip .dot.orange { background: #f97316; }
+.summon-chip .dot.green { background: #10b981; }
+.summon-chip .dot.silver { background: #94a3b8; }
+.summon-chip .dot.pink { background: #e11d48; }
+.summon-chip .dot.indigo { background: #6366f1; }
+
+.summon-chip.active .dot {
+    opacity: 1;
+    box-shadow: 0 0 8px currentColor;
+}
+
+/* Cyber cards & tools */
+.spatial-task-card.cyber-card {
+    border-color: rgba(0, 240, 255, 0.35);
+    background: rgba(6, 9, 19, 0.94);
+}
+
+.quick-port-btn, .payload-tab-btn, .mitre-tactic-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #cbd5e1;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-family: var(--font-code);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.quick-port-btn:active, .payload-tab-btn.active, .mitre-tactic-btn.active {
+    background: rgba(0, 240, 255, 0.2);
+    border-color: #00f0ff;
+    color: #00f0ff;
+}
 
 .summon-chip.active {
     background: rgba(255, 255, 255, 0.08);

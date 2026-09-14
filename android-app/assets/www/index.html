@@ -53,7 +53,7 @@
     </header>
 
     <!-- Persona Stream Hologram Selector (Free-Floating) -->
-    <nav class="persona-holo-bar">
+    <nav class="persona-holo-bar" style="overflow-x:auto; max-width:98%; scrollbar-width:none;">
         <button class="persona-stream-btn active" data-persona="swarm" onclick="switchPersona('swarm')">
             <span class="persona-dot cyan"></span>✦ SWARM
         </button>
@@ -65,6 +65,30 @@
         </button>
         <button class="persona-stream-btn" data-persona="lovelace" onclick="switchPersona('lovelace')">
             <span class="persona-dot emerald"></span>🔬 LOVELACE
+        </button>
+        <button class="persona-stream-btn" data-persona="shadow" onclick="switchPersona('shadow')">
+            <span class="persona-dot magenta"></span>🥷 SHADOW
+        </button>
+        <button class="persona-stream-btn" data-persona="sentry" onclick="switchPersona('sentry')">
+            <span class="persona-dot cyan"></span>🛡️ SENTRY
+        </button>
+        <button class="persona-stream-btn" data-persona="cipher" onclick="switchPersona('cipher')">
+            <span class="persona-dot violet"></span>🔑 CIPHER
+        </button>
+        <button class="persona-stream-btn" data-persona="valkyrie" onclick="switchPersona('valkyrie')">
+            <span class="persona-dot gold"></span>🚨 VALKYRIE
+        </button>
+        <button class="persona-stream-btn" data-persona="matrix" onclick="switchPersona('matrix')">
+            <span class="persona-dot emerald"></span>👾 MATRIX
+        </button>
+        <button class="persona-stream-btn" data-persona="ghost" onclick="switchPersona('ghost')">
+            <span class="persona-dot cyan"></span>👁️ GHOST
+        </button>
+        <button class="persona-stream-btn" data-persona="glitch" onclick="switchPersona('glitch')">
+            <span class="persona-dot magenta"></span>⚡ GLITCH
+        </button>
+        <button class="persona-stream-btn" data-persona="archon" onclick="switchPersona('archon')">
+            <span class="persona-dot violet"></span>🏛️ ARCHON
         </button>
     </nav>
 
@@ -124,6 +148,28 @@
                     <button onclick="launchOrStartTermux()" class="hw-matrix-btn emerald" style="font-size:12px; padding:8px 6px; grid-column:span 2;">🚀 Launch Termux / Start Bridge</button>
                 </div>
             </div>
+        </div>
+
+        <!-- Tactical Cyber Security Arsenal -->
+        <div class="drawer-block">
+            <label class="drawer-label">TACTICAL CYBER ARSENAL</label>
+            <div class="hw-holo-matrix">
+                <button onclick="openCyberTool('portscan')" class="hw-matrix-btn cyan">⚡ Port Scanner</button>
+                <button onclick="openCyberTool('payload')" class="hw-matrix-btn magenta">🐚 Payloads</button>
+                <button onclick="openCyberTool('hash')" class="hw-matrix-btn violet">🔑 Crypto/Hashes</button>
+                <button onclick="openCyberTool('mitre')" class="hw-matrix-btn gold">🎯 MITRE Matrix</button>
+                <button onclick="openCyberTool('posture')" class="hw-matrix-btn emerald">🛡️ Posture Audit</button>
+                <button onclick="execQuick('wifi scan')" class="hw-matrix-btn cyan">📡 RF Wi-Fi</button>
+            </div>
+        </div>
+
+        <!-- Voice Agent & Acoustic Lab -->
+        <div class="drawer-block">
+            <label class="drawer-label">VOICE AGENT &amp; ACOUSTIC ENGINE</label>
+            <select id="deckVoiceSelect" class="holo-input" onchange="localStorage.setItem('ae_selected_voice', this.value); Bridge.speak('Voice profile updated.');" style="margin-bottom:8px;">
+                <option value="">Default Persona Voice Profile</option>
+            </select>
+            <button type="button" onclick="Bridge.speak('Agentic Cyberdeck voice synthesis active. All tactical cybersecurity systems nominal.');" class="hw-matrix-btn cyan" style="width:100%; font-size:12px; padding:6px;">🗣️ Audition Spoken Voice</button>
         </div>
 
         <!-- Hardware Controls -->
@@ -191,10 +237,14 @@
     <!-- Free-Floating Neon Command Chips -->
     <div class="floating-chip-cloud" id="quick-chips">
         <button class="holo-chip chip-magenta" onclick="inspectNetHunter()">🐉 NetHunter Status</button>
+        <button class="holo-chip chip-cyan" onclick="openCyberTool('portscan')">⚡ Port Scan</button>
+        <button class="holo-chip chip-magenta" onclick="openCyberTool('payload')">🐚 Payloads</button>
+        <button class="holo-chip chip-violet" onclick="openCyberTool('hash')">🔑 Hashes</button>
+        <button class="holo-chip chip-gold" onclick="openCyberTool('mitre')">🎯 MITRE</button>
+        <button class="holo-chip chip-emerald" onclick="openCyberTool('posture')">🛡️ Posture</button>
         <button class="holo-chip chip-cyan" onclick="execQuick('wifi scan')">📡 Wi-Fi Scan</button>
-        <button class="holo-chip chip-emerald" onclick="execQuick('whoami && uname -a')">⚡ Host Identity</button>
-        <button class="holo-chip chip-gold" onclick="execQuick('ifconfig')">🌐 Net Interfaces</button>
-        <button class="holo-chip chip-violet" onclick="execQuick('ping -c 3 8.8.8.8')">📶 Ping Test</button>
+        <button class="holo-chip chip-emerald" onclick="execQuick('whoami && uname -a')">⚡ Host Id</button>
+        <button class="holo-chip chip-gold" onclick="execQuick('ifconfig')">🌐 Net</button>
         <button class="holo-chip chip-cyan" onclick="execQuick('/synth Wi-Fi signal analyzer')">🧮 Synth Tool</button>
     </div>
 
