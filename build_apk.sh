@@ -8,7 +8,10 @@ if [ ! -f "$SDK_DIR/android.jar" ] && [ -f "/root/android_tools/android.jar" ]; 
     SDK_DIR="/root/android_tools"
 fi
 
-KEYSTORE="/root/debug.keystore"
+KEYSTORE="$SCRIPT_DIR/keystore/agentic-essence.keystore"
+if [ ! -f "$KEYSTORE" ] && [ -f "/root/debug.keystore" ]; then
+    KEYSTORE="/root/debug.keystore"
+fi
 if [ ! -f "$KEYSTORE" ] && [ -f "/root/android_tools/debug.keystore" ]; then
     KEYSTORE="/root/android_tools/debug.keystore"
 fi

@@ -12,7 +12,7 @@ def test_holo_manifest_and_resources():
     with open(manifest_path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    assert "package=\"org.antigravity.agenticholo\"" in content
+    assert "package=\"org.antigravity.agenticvox\"" in content
     assert "android.permission.RECORD_AUDIO" in content
     assert "android.permission.INTERNET" in content
     assert "MainActivity" in content
@@ -114,7 +114,7 @@ def test_native_voice_engine_callbacks_and_providers():
     assert "openGoogleKeyPortal" in a_code
     assert "gemini-2.0-flash" in a_code
 
-    java_bridge = os.path.join(HOLO_DIR, "src/org/antigravity/agenticholo/HoloBridgeInterface.java")
+    java_bridge = os.path.join(HOLO_DIR, "src/org/antigravity/agenticvox/HoloBridgeInterface.java")
     with open(java_bridge, "r", encoding="utf-8") as f:
         j_code = f.read()
     assert "openExternalUrl" in j_code

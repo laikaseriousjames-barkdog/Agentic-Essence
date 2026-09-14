@@ -8,7 +8,10 @@ if [ ! -f "$SDK_DIR/android.jar" ] && [ -f "/root/android_tools/android.jar" ]; 
     SDK_DIR="/root/android_tools"
 fi
 
-KEYSTORE="/root/debug.keystore"
+KEYSTORE="$SCRIPT_DIR/keystore/agentic-essence.keystore"
+if [ ! -f "$KEYSTORE" ] && [ -f "/root/debug.keystore" ]; then
+    KEYSTORE="/root/debug.keystore"
+fi
 if [ ! -f "$KEYSTORE" ] && [ -f "/root/android_tools/debug.keystore" ]; then
     KEYSTORE="/root/android_tools/debug.keystore"
 fi
@@ -39,7 +42,7 @@ aapt package -f -m -J "$APP_DIR/src" \
 echo "Step 2: Compiling Java source files with javac..."
 javac -d "$APP_DIR/obj" \
     -cp "$SDK_DIR/android.jar" \
-    "$APP_DIR/src/org/antigravity/agenticholo/"*.java \
+    "$APP_DIR/src/org/antigravity/agenticvox/"*.java \
     --release 8
 
 # Step 3: Compile classes to DEX using D8
@@ -48,7 +51,7 @@ java -cp "$SDK_DIR/r8.jar" com.android.tools.r8.D8 \
     --output "$APP_DIR/bin" \
     --lib "$SDK_DIR/android.jar" \
     --min-api 21 \
-    "$APP_DIR/obj/org/antigravity/agenticholo/"*.class
+    "$APP_DIR/obj/org/antigravity/agenticvox/"*.class
 
 # Step 4: Package resources and assets into APK
 echo "Step 4: Packaging assets and manifest into initial APK..."

@@ -104,7 +104,7 @@ def test_holo_renderer_all_persona_drawers():
 
 def test_native_bridge_cyber_and_voice_methods():
     """Verify native Java bridge has voice and security posture methods."""
-    holo_java = os.path.join(HOLO_DIR, "src/org/antigravity/agenticholo/HoloBridgeInterface.java")
+    holo_java = os.path.join(HOLO_DIR, "src/org/antigravity/agenticvox/HoloBridgeInterface.java")
     app_java = os.path.join(APP_DIR, "src/org/antigravity/agenticessence/WebAppInterface.java")
 
     for path in [holo_java, app_java]:

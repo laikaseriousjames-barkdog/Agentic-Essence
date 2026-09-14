@@ -1,4 +1,4 @@
-package org.antigravity.agenticholo;
+package org.antigravity.agenticvox;
 
 import android.app.Activity;
 import android.content.Context;
