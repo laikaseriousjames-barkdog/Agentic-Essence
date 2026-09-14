@@ -17,10 +17,51 @@ window.HoloVoice = (function() {
     let userVoicePitch = parseFloat(localStorage.getItem('holo_voice_pitch') || '1.0');
     let userVoiceRate = parseFloat(localStorage.getItem('holo_voice_rate') || '1.0');
 
+    // Canonical Tri-Agent Acoustic Presets & Audio Personas
+    const VOICE_PRESETS = {
+        cyber: { id: "cyber", name: "Cyber Operator", style: "Calm British Operator", pitch: 0.88, rate: 1.05, icon: "🎙️", tag: "Cyber" },
+        nova: { id: "nova", name: "Nova Neural", style: "Smooth Melodic Female", pitch: 1.16, rate: 1.02, icon: "✨", tag: "Nova" },
+        sentinel: { id: "sentinel", name: "Deep Sentinel", style: "Resonant Low Baritone", pitch: 0.72, rate: 0.95, icon: "🛡️", tag: "Sentinel" },
+        vocoder: { id: "vocoder", name: "Quantum Vocoder", style: "Cybernetic Synth Vocoder", pitch: 1.35, rate: 1.18, icon: "⚡", tag: "Vocoder" },
+        crisp: { id: "crisp", name: "Architect Crisp", style: "Clean Formal Neutral", pitch: 1.00, rate: 1.00, icon: "🧠", tag: "Crisp" },
+        warm: { id: "warm", name: "Warm Natural", style: "Conversational Human", pitch: 1.05, rate: 0.96, icon: "🌟", tag: "Warm" }
+    };
+
+    const DEFAULT_AGENT_VOICES = {
+        swarm: { preset: 'cyber', pitch: 0.88, rate: 1.05, voiceName: '' },
+        turing: { preset: 'crisp', pitch: 1.00, rate: 1.00, voiceName: '' },
+        knuth: { preset: 'sentinel', pitch: 0.72, rate: 0.95, voiceName: '' }
+    };
+
+    function canonicalAgentKey(k) {
+        const lower = (k || 'swarm').toLowerCase();
+        if (lower === 'planner') return 'swarm';
+        if (lower === 'builder') return 'turing';
+        if (lower === 'auditor') return 'knuth';
+        return lower;
+    }
+
+    function getAgentVoiceConfig(agentKey) {
+        const canonical = canonicalAgentKey(agentKey);
+        const stored = localStorage.getItem('holo_agent_voice_' + canonical);
+        if (stored) {
+            try {
+                return JSON.parse(stored);
+            } catch (e) {}
+        }
+        return DEFAULT_AGENT_VOICES[canonical] || { preset: 'cyber', pitch: 1.0, rate: 1.0, voiceName: '' };
+    }
+
+    function setAgentVoiceConfig(agentKey, config) {
+        const canonical = canonicalAgentKey(agentKey);
+        localStorage.setItem('holo_agent_voice_' + canonical, JSON.stringify(config));
+        if (window.updateDockVoiceTags) window.updateDockVoiceTags();
+    }
+
     const PERSONA_VOICES = {
-        swarm: { pitch: 0.85, rate: 1.05, phrase: "Agentic Swarm online. Ready for tactical directives." },
-        turing: { pitch: 1.00, rate: 0.98, phrase: "Alan Turing online. What formal system shall we analyze?" },
-        knuth: { pitch: 0.92, rate: 0.95, phrase: "Donald Knuth online. What algorithms shall we craft?" },
+        swarm: { pitch: 0.85, rate: 1.05, phrase: "Planner neural swarm online. Ready for tactical directives." },
+        turing: { pitch: 1.00, rate: 0.98, phrase: "Builder logic matrix online. What systems shall we engineer?" },
+        knuth: { pitch: 0.92, rate: 0.95, phrase: "Auditor lattice verified. Ready for algorithmic and security analysis." },
         lovelace: { pitch: 1.18, rate: 1.02, phrase: "Ada Lovelace online. What poetry of science shall we explore?" },
         shadow: { pitch: 0.72, rate: 1.10, phrase: "Shadow Operator online. Attack surface reconnaissance active." },
         sentry: { pitch: 0.88, rate: 1.08, phrase: "Cyber Sentry standing guard. Threat hunting matrix engaged." },
@@ -178,7 +219,31 @@ window.HoloVoice = (function() {
 
         const lower = text.toLowerCase();
 
-        // 1. Direct voice persona switching (12 Personas)
+        // 1. Direct Tri-Agent Voice Summoning
+        if (lower.includes('switch to planner') || lower.includes('activate planner') || lower === 'planner' || lower.includes('hey planner') || lower.includes('switch to swarm') || lower === 'swarm' || lower.includes('activate swarm') || lower.includes('hey swarm')) {
+            window.switchPersona('swarm');
+            speakAgent(PERSONA_VOICES.swarm.phrase);
+            return;
+        }
+        if (lower.includes('switch to builder') || lower.includes('activate builder') || lower === 'builder' || lower.includes('hey builder') || lower.includes('switch to turing') || lower === 'turing' || lower.includes('activate turing')) {
+            window.switchPersona('turing');
+            speakAgent(PERSONA_VOICES.turing.phrase);
+            return;
+        }
+        if (lower.includes('switch to auditor') || lower.includes('activate auditor') || lower === 'auditor' || lower.includes('hey auditor') || lower.includes('switch to knuth') || lower === 'knuth' || lower.includes('activate knuth')) {
+            window.switchPersona('knuth');
+            speakAgent(PERSONA_VOICES.knuth.phrase);
+            return;
+        }
+
+        // Voice Studio trigger
+        if (lower.includes('voice studio') || lower.includes('change voice') || lower.includes('switch voice') || lower.includes('voice settings') || lower.includes('choose voice')) {
+            if (window.openVoiceModal) window.openVoiceModal();
+            speakAgent("Voice Studio opened. Select an acoustic profile or voice for your agents.");
+            return;
+        }
+
+        // Persona Voice Triggers (Compatibility)
         if (lower.includes('switch to shadow') || lower === 'shadow' || lower.includes('activate shadow') || lower.includes('red team')) {
             window.switchPersona('shadow');
             speakAgent(PERSONA_VOICES.shadow.phrase);
@@ -217,21 +282,6 @@ window.HoloVoice = (function() {
         if (lower.includes('switch to archon') || lower === 'archon' || lower.includes('activate archon') || lower.includes('framework commander')) {
             window.switchPersona('archon');
             speakAgent(PERSONA_VOICES.archon.phrase);
-            return;
-        }
-        if (lower.includes('switch to turing') || lower === 'turing' || lower.includes('activate turing')) {
-            window.switchPersona('turing');
-            speakAgent(PERSONA_VOICES.turing.phrase);
-            return;
-        }
-        if (lower.includes('switch to swarm') || lower === 'swarm' || lower.includes('activate swarm') || lower.includes('hey swarm')) {
-            window.switchPersona('swarm');
-            speakAgent(PERSONA_VOICES.swarm.phrase);
-            return;
-        }
-        if (lower.includes('switch to knuth') || lower === 'knuth' || lower.includes('activate knuth')) {
-            window.switchPersona('knuth');
-            speakAgent(PERSONA_VOICES.knuth.phrase);
             return;
         }
         if (lower.includes('switch to lovelace') || lower === 'lovelace' || lower.includes('activate lovelace')) {
@@ -345,22 +395,27 @@ window.HoloVoice = (function() {
         updateVoiceState('speaking');
         
         const persona = window.state ? window.state.persona : 'swarm';
-        const personaName = (persona || 'Swarm').toUpperCase();
+        const agentConfig = getAgentVoiceConfig(persona);
+        const personaName = (persona === 'swarm' ? 'PLANNER' : persona === 'turing' ? 'BUILDER' : persona === 'knuth' ? 'AUDITOR' : (persona || 'Agent')).toUpperCase();
         showTranscript(personaName, text);
 
         // Animate 3D hologram lip-sync & audio energy
         startHoloLipSync();
 
         const profile = PERSONA_VOICES[persona] || PERSONA_VOICES.swarm;
-        const targetPitch = Math.max(0.4, Math.min(2.0, profile.pitch * userVoicePitch));
-        const targetRate = Math.max(0.5, Math.min(2.0, profile.rate * userVoiceRate));
+        const configPitch = (agentConfig && agentConfig.pitch !== undefined) ? agentConfig.pitch : profile.pitch;
+        const configRate = (agentConfig && agentConfig.rate !== undefined) ? agentConfig.rate : profile.rate;
+        const activeVoiceName = (agentConfig && agentConfig.voiceName) ? agentConfig.voiceName : selectedSystemVoiceName;
+
+        const targetPitch = Math.max(0.4, Math.min(2.0, configPitch * userVoicePitch));
+        const targetRate = Math.max(0.5, Math.min(2.0, configRate * userVoiceRate));
 
         // 1. Native Android TTS via HoloBridge
         if (window.HoloBridge && window.HoloBridge.speakPersona) {
             if (window.HoloBridge.setVoicePitch) window.HoloBridge.setVoicePitch(targetPitch);
             if (window.HoloBridge.setVoiceSpeechRate) window.HoloBridge.setVoiceSpeechRate(targetRate);
-            if (selectedSystemVoiceName && window.HoloBridge.setVoice) {
-                window.HoloBridge.setVoice(selectedSystemVoiceName);
+            if (activeVoiceName && window.HoloBridge.setVoice) {
+                window.HoloBridge.setVoice(activeVoiceName);
             }
 
             window.HoloBridge.speakPersona(text, persona);
@@ -393,9 +448,9 @@ window.HoloVoice = (function() {
             utterance.rate = targetRate;
 
             // Apply selected system voice if specified
-            if (selectedSystemVoiceName) {
+            if (activeVoiceName) {
                 const voices = window.speechSynthesis.getVoices();
-                const matched = voices.find(v => v.name === selectedSystemVoiceName || v.voiceURI === selectedSystemVoiceName);
+                const matched = voices.find(v => v.name === activeVoiceName || v.voiceURI === activeVoiceName);
                 if (matched) utterance.voice = matched;
             }
 
@@ -625,6 +680,23 @@ window.HoloVoice = (function() {
         speakAgent(text);
     }
 
+    function auditionAgentVoice(agentKey, sample) {
+        const canonical = canonicalAgentKey(agentKey);
+        const defaultPhrases = {
+            swarm: "Planner online. Swarm neural architecture operational and ready for coordinates.",
+            turing: "Builder online. Logic matrix verified. System code and AST tools ready.",
+            knuth: "Auditor online. Algorithm logic lattice secure. Vulnerability inspection standing by."
+        };
+        const phrase = sample || defaultPhrases[canonical] || PERSONA_VOICES[canonical]?.phrase || "Acoustic voice calibrated.";
+        
+        const prevPersona = window.state ? window.state.persona : 'swarm';
+        if (window.state) window.state.persona = canonical;
+        speakAgent(phrase);
+        setTimeout(() => {
+            if (window.state) window.state.persona = prevPersona;
+        }, 1600);
+    }
+
     return {
         init: init,
         startListening: startListening,
@@ -646,7 +718,12 @@ window.HoloVoice = (function() {
         setVoicePitch: setVoicePitch,
         setVoiceRate: setVoiceRate,
         auditionVoice: auditionVoice,
-        getPersonaVoices: function() { return PERSONA_VOICES; }
+        auditionAgentVoice: auditionAgentVoice,
+        getPersonaVoices: function() { return PERSONA_VOICES; },
+        getVoicePresets: function() { return VOICE_PRESETS; },
+        getAgentVoiceConfig: getAgentVoiceConfig,
+        setAgentVoiceConfig: setAgentVoiceConfig,
+        canonicalAgentKey: canonicalAgentKey
     };
 })();
 

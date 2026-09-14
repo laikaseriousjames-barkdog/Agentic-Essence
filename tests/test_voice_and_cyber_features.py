@@ -133,3 +133,67 @@ def test_cyberdeck_personas_and_cyber_tools():
     assert "runDeckPortScan" in content
     assert "updateDeckPayload" in content
     assert "analyzeDeckHash" in content
+
+
+def test_tri_agent_dock_and_voice_studio_ui():
+    """Verify Tri-Agent floating dock and Voice Studio modal in index.html."""
+    html_path = os.path.join(HOLO_DIR, "assets/www/index.html")
+    assert os.path.isfile(html_path)
+    with open(html_path, "r", encoding="utf-8") as f:
+        html = f.read()
+
+    # Verify Tri-Agent dock
+    assert "holo-agent-dock" in html
+    assert 'data-persona="swarm"' in html
+    assert 'data-persona="turing"' in html
+    assert 'data-persona="knuth"' in html
+    assert "PLANNER" in html
+    assert "BUILDER" in html
+    assert "AUDITOR" in html
+
+    # Verify Voice Studio modal and controls
+    assert 'id="voiceModal"' in html
+    assert "VOICE STUDIO" in html
+    assert "voice-studio-agent-tabs" in html
+    assert 'id="vsTab-swarm"' in html
+    assert 'id="vsTab-turing"' in html
+    assert 'id="vsTab-knuth"' in html
+    assert "voice-presets-grid" in html
+    assert 'id="studioVoiceSelect"' in html
+    assert 'id="studioPitchSlider"' in html
+    assert 'id="studioRateSlider"' in html
+    assert "auditionStudioVoice" in html
+    assert "saveStudioVoice" in html
+
+
+def test_voice_engine_presets_and_agent_tuning():
+    """Verify acoustic presets and per-agent configuration in voice-engine.js."""
+    voice_js_path = os.path.join(HOLO_DIR, "assets/www/voice-engine.js")
+    with open(voice_js_path, "r", encoding="utf-8") as f:
+        code = f.read()
+
+    assert "VOICE_PRESETS" in code
+    assert "getVoicePresets" in code
+    assert "getAgentVoiceConfig" in code
+    assert "setAgentVoiceConfig" in code
+    assert "auditionAgentVoice" in code
+
+    # Spoken triggers for Tri-Agent and Voice Studio
+    assert "switch to planner" in code
+    assert "switch to builder" in code
+    assert "switch to auditor" in code
+    assert "voice studio" in code
+
+
+def test_translucent_glass_hud_styles():
+    """Verify translucent frosted glass HUD styles in styles.css."""
+    css_path = os.path.join(HOLO_DIR, "assets/www/styles.css")
+    with open(css_path, "r", encoding="utf-8") as f:
+        css = f.read()
+
+    assert ".holo-agent-dock" in css
+    assert ".agent-dock-tab" in css
+    assert ".holo-modal-glass" in css
+    assert "backdrop-filter: blur" in css
+    assert ".voice-studio-agent-tabs" in css
+    assert ".voice-preset-card" in css

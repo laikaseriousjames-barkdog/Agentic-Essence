@@ -58,25 +58,25 @@ CRITICAL VOICE & CONVERSATIONAL DIRECTIVE:
 
 const PERSONAS = {
     swarm: {
-        name: "AGENTIC SWARM",
+        name: "PLANNER",
         role: "QUANTUM NEURAL CORE",
         symbol: "✦",
         colorClass: "persona-swarm",
-        prompt: `You are Agentic Swarm, an autonomous quantum intelligence and cybernetic swarm integrated into Kali NetHunter root. You are tactical, direct, and sharp. You verify everything internally and deliver concise truth.` + SYSTEM_GROUNDING
+        prompt: `You are Planner, the lead autonomous quantum orchestrator and strategy core integrated into Kali NetHunter root. You plan tactical workflows, direct sub-agents, and deliver concise, razor-sharp truth.` + SYSTEM_GROUNDING
     },
     turing: {
-        name: "ALAN TURING",
-        role: "ALGORITHMIC LOGIC",
+        name: "BUILDER",
+        role: "ALGORITHMIC LOGIC MATRIX",
         symbol: "🧠",
         colorClass: "persona-turing",
-        prompt: `You are Alan Turing. You analyze systems with mathematical rigor, formal elegance, cryptanalysis, and logical clarity on this Kali NetHunter holodeck.` + SYSTEM_GROUNDING
+        prompt: `You are Builder, algorithmic engineer and code architect on this Kali NetHunter holodeck. You synthesize clean tools, script exploits, craft software systems, and engineer computational solutions with mathematical elegance.` + SYSTEM_GROUNDING
     },
     knuth: {
-        name: "DONALD KNUTH",
-        role: "CODE & CRAFTSMANSHIP",
+        name: "AUDITOR",
+        role: "LOGIC LATTICE & VERIFICATION",
         symbol: "⚡",
         colorClass: "persona-knuth",
-        prompt: `You are Donald Knuth, systems craftsman and master of algorithms on this Kali NetHunter holodeck. You appreciate computational beauty, robust structures, and clean engineering.` + SYSTEM_GROUNDING
+        prompt: `You are Auditor, verification craftsman and security auditor on this Kali NetHunter holodeck. You analyze systems, detect vulnerabilities, review code quality, test boundaries, and enforce cryptographic rigor.` + SYSTEM_GROUNDING
     },
     lovelace: {
         name: "ADA LOVELACE",
@@ -147,6 +147,10 @@ const PERSONAS = {
 // 1. PERSONA SWITCHING & HUD UPDATE
 // ==========================================
 window.switchPersona = function(newPersona) {
+    if (newPersona === 'planner') newPersona = 'swarm';
+    else if (newPersona === 'builder') newPersona = 'turing';
+    else if (newPersona === 'auditor') newPersona = 'knuth';
+
     if (!PERSONAS[newPersona]) newPersona = 'swarm';
     state.persona = newPersona;
     localStorage.setItem('holo_persona', newPersona);
@@ -155,14 +159,20 @@ window.switchPersona = function(newPersona) {
     document.body.className = p.colorClass;
 
     // Update HUD headers
-    document.getElementById('personaName').textContent = p.name;
-    document.getElementById('personaRole').textContent = p.role;
-    document.getElementById('personaSymbol').textContent = p.symbol;
+    const nameEl = document.getElementById('personaName');
+    const roleEl = document.getElementById('personaRole');
+    const symEl = document.getElementById('personaSymbol');
+    if (nameEl) nameEl.textContent = p.name;
+    if (roleEl) roleEl.textContent = p.role;
+    if (symEl) symEl.textContent = p.symbol;
 
-    // Update chips active state
-    document.querySelectorAll('.summon-chip').forEach(btn => {
+    // Update dock tabs and chips active state
+    document.querySelectorAll('.agent-dock-tab, .summon-chip').forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('data-persona') === newPersona);
     });
+
+    // Update dock voice tags
+    if (window.updateDockVoiceTags) window.updateDockVoiceTags();
 
     // Notify 3D renderer to switch physical avatar
     if (window.HoloRenderer) {
@@ -580,8 +590,178 @@ window.toggleBridgeInfo = function() {
     }
 };
 
+// ==========================================
+// 5. VOICE SELECTION & TUNING STUDIO
+// ==========================================
+let currentStudioAgent = 'swarm';
+let studioDraftConfig = { preset: 'cyber', pitch: 1.0, rate: 1.0, voiceName: '' };
+
+window.openVoiceModal = function(agentKey) {
+    const modal = document.getElementById('voiceModal');
+    if (!modal) return;
+    modal.classList.add('open');
+    selectVoiceStudioAgent(agentKey || state.persona || 'swarm');
+};
+
+window.closeVoiceModal = function(e) {
+    if (e && e.target && e.target.id !== 'voiceModal') return;
+    const modal = document.getElementById('voiceModal');
+    if (modal) modal.classList.remove('open');
+};
+
+window.selectVoiceStudioAgent = function(agentKey) {
+    currentStudioAgent = HoloVoice.canonicalAgentKey ? HoloVoice.canonicalAgentKey(agentKey) : (agentKey || 'swarm');
+    
+    // Update agent tab active class
+    ['swarm', 'turing', 'knuth'].forEach(k => {
+        const tab = document.getElementById('vsTab-' + k);
+        if (tab) tab.classList.toggle('active', k === currentStudioAgent);
+    });
+
+    // Load active config for this agent
+    if (window.HoloVoice && window.HoloVoice.getAgentVoiceConfig) {
+        studioDraftConfig = JSON.parse(JSON.stringify(window.HoloVoice.getAgentVoiceConfig(currentStudioAgent)));
+    } else {
+        studioDraftConfig = { preset: 'cyber', pitch: 1.0, rate: 1.0, voiceName: '' };
+    }
+
+    renderVoicePresetsGrid();
+    populateStudioSystemVoices();
+    syncStudioSliders();
+};
+
+function renderVoicePresetsGrid() {
+    const grid = document.getElementById('voicePresetsGrid');
+    if (!grid || !window.HoloVoice || !window.HoloVoice.getVoicePresets) return;
+
+    const presets = window.HoloVoice.getVoicePresets();
+    grid.innerHTML = '';
+
+    Object.keys(presets).forEach(key => {
+        const p = presets[key];
+        const isSelected = studioDraftConfig.preset === key;
+        const card = document.createElement('div');
+        card.className = 'voice-preset-card' + (isSelected ? ' selected' : '');
+        card.onclick = () => applyVoicePresetToStudio(key);
+        card.innerHTML = `
+            <span class="voice-preset-icon">${p.icon || '🎙️'}</span>
+            <div class="voice-preset-meta">
+                <span class="voice-preset-name">${p.name}</span>
+                <span class="voice-preset-style">${p.style}</span>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+window.applyVoicePresetToStudio = function(presetKey) {
+    if (!window.HoloVoice || !window.HoloVoice.getVoicePresets) return;
+    const presets = window.HoloVoice.getVoicePresets();
+    const p = presets[presetKey];
+    if (!p) return;
+
+    studioDraftConfig.preset = presetKey;
+    studioDraftConfig.pitch = p.pitch;
+    studioDraftConfig.rate = p.rate;
+
+    renderVoicePresetsGrid();
+    syncStudioSliders();
+
+    if (window.HoloVoice && window.HoloVoice.setAgentVoiceConfig) {
+        window.HoloVoice.setAgentVoiceConfig(currentStudioAgent, studioDraftConfig);
+    }
+    if (window.HoloVoice && window.HoloVoice.auditionAgentVoice) {
+        window.HoloVoice.auditionAgentVoice(currentStudioAgent);
+    }
+};
+
+function populateStudioSystemVoices() {
+    const select = document.getElementById('studioVoiceSelect');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Default Holodeck Acoustic Engine</option>';
+    if (window.HoloVoice && window.HoloVoice.getAvailableVoices) {
+        const voices = window.HoloVoice.getAvailableVoices();
+        voices.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.name;
+            opt.textContent = `${v.name} (${v.lang || 'en'})`;
+            if (v.name === studioDraftConfig.voiceName) opt.selected = true;
+            select.appendChild(opt);
+        });
+    }
+}
+
+function syncStudioSliders() {
+    const pSlider = document.getElementById('studioPitchSlider');
+    const rSlider = document.getElementById('studioRateSlider');
+    const pDisp = document.getElementById('studioPitchVal');
+    const rDisp = document.getElementById('studioRateVal');
+
+    const pitch = studioDraftConfig.pitch || 1.0;
+    const rate = studioDraftConfig.rate || 1.0;
+
+    if (pSlider) pSlider.value = pitch;
+    if (rSlider) rSlider.value = rate;
+    if (pDisp) pDisp.textContent = parseFloat(pitch).toFixed(2) + 'x';
+    if (rDisp) rDisp.textContent = parseFloat(rate).toFixed(2) + 'x';
+}
+
+window.onStudioPitchChange = function(val) {
+    studioDraftConfig.pitch = parseFloat(val);
+    const disp = document.getElementById('studioPitchVal');
+    if (disp) disp.textContent = parseFloat(val).toFixed(2) + 'x';
+};
+
+window.onStudioRateChange = function(val) {
+    studioDraftConfig.rate = parseFloat(val);
+    const disp = document.getElementById('studioRateVal');
+    if (disp) disp.textContent = parseFloat(val).toFixed(2) + 'x';
+};
+
+window.onStudioVoiceSelectChange = function(val) {
+    studioDraftConfig.voiceName = val;
+};
+
+window.auditionStudioVoice = function() {
+    if (window.HoloVoice && window.HoloVoice.setAgentVoiceConfig) {
+        window.HoloVoice.setAgentVoiceConfig(currentStudioAgent, studioDraftConfig);
+    }
+    if (window.HoloVoice && window.HoloVoice.auditionAgentVoice) {
+        window.HoloVoice.auditionAgentVoice(currentStudioAgent);
+    }
+};
+
+window.saveStudioVoice = function() {
+    if (window.HoloVoice && window.HoloVoice.setAgentVoiceConfig) {
+        window.HoloVoice.setAgentVoiceConfig(currentStudioAgent, studioDraftConfig);
+    }
+    updateDockVoiceTags();
+    closeVoiceModal();
+    const agentLabel = currentStudioAgent === 'swarm' ? 'Planner' : currentStudioAgent === 'turing' ? 'Builder' : 'Auditor';
+    if (window.HoloVoice && window.HoloVoice.speakAgent) {
+        window.HoloVoice.speakAgent(`${agentLabel} voice profile calibrated.`);
+    }
+};
+
+window.updateDockVoiceTags = function() {
+    if (!window.HoloVoice || !window.HoloVoice.getAgentVoiceConfig || !window.HoloVoice.getVoicePresets) return;
+    const presets = window.HoloVoice.getVoicePresets();
+
+    ['swarm', 'turing', 'knuth'].forEach(k => {
+        const tagEl = document.getElementById('dockVoiceTag-' + k);
+        if (tagEl) {
+            const cfg = window.HoloVoice.getAgentVoiceConfig(k);
+            const p = presets[cfg.preset];
+            const label = p ? p.tag : (cfg.voiceName ? 'Custom' : 'Acoustic');
+            tagEl.textContent = `🎙️ ${label}`;
+        }
+    });
+};
+
 // Initial setup on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
     switchPersona(state.persona);
+    updateDockVoiceTags();
     setTimeout(testNetHunterBridge, 800);
 });

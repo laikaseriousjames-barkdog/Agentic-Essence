@@ -39,12 +39,15 @@
         <div class="holo-persona-indicator" id="personaIndicator">
             <span class="persona-symbol" id="personaSymbol">✦</span>
             <div class="persona-details">
-                <span class="persona-name" id="personaName">AGENTIC SWARM</span>
+                <span class="persona-name" id="personaName">PLANNER</span>
                 <span class="persona-role" id="personaRole">QUANTUM NEURAL CORE</span>
             </div>
         </div>
 
         <div class="holo-header-controls">
+            <button class="holo-icon-btn" id="voiceStudioBtn" onclick="openVoiceModal()" title="Voice Studio &amp; Tuning" style="display:flex; align-items:center; gap:5px; width:auto; border-radius:18px; padding:0 12px; font-size:11px; font-weight:700; color:#00f0ff; border-color:rgba(0,240,255,0.35);">
+                <span>🎙️</span><span>VOICES</span>
+            </button>
             <div class="nh-pill" id="nhPill" onclick="toggleBridgeInfo()">
                 <span class="nh-dot"></span>
                 <span class="nh-label">NH: ROOT</span>
@@ -53,43 +56,31 @@
         </div>
     </header>
 
-    <!-- 3. PERSONA QUICK-SUMMON CHIPS (VOICE OR TAP) -->
-    <nav class="holo-summon-bar">
-        <button class="summon-chip active" data-persona="swarm" onclick="switchPersona('swarm')">
-            <span class="dot cyan"></span>SWARM
+    <!-- 3. TRI-AGENT HOLOGRAPHIC FLOATING DOCK (PLANNER • BUILDER • AUDITOR) -->
+    <nav class="holo-agent-dock" id="agentDock">
+        <button class="agent-dock-tab summon-chip active" data-persona="swarm" onclick="switchPersona('swarm')" title="Planner Agent (Quantum Swarm Core)">
+            <div class="agent-tab-badge planner"></div>
+            <div class="agent-tab-info">
+                <span class="agent-tab-role">PLANNER</span>
+                <span class="agent-tab-sub">SWARM CORE</span>
+            </div>
+            <span class="agent-voice-tag" id="dockVoiceTag-swarm">🎙️ Cyber</span>
         </button>
-        <button class="summon-chip" data-persona="turing" onclick="switchPersona('turing')">
-            <span class="dot magenta"></span>TURING
+        <button class="agent-dock-tab summon-chip" data-persona="turing" onclick="switchPersona('turing')" title="Builder Agent (Turing Logic Matrix)">
+            <div class="agent-tab-badge builder"></div>
+            <div class="agent-tab-info">
+                <span class="agent-tab-role">BUILDER</span>
+                <span class="agent-tab-sub">TURING LOGIC</span>
+            </div>
+            <span class="agent-voice-tag" id="dockVoiceTag-turing">🎙️ Crisp</span>
         </button>
-        <button class="summon-chip" data-persona="knuth" onclick="switchPersona('knuth')">
-            <span class="dot gold"></span>KNUTH
-        </button>
-        <button class="summon-chip" data-persona="lovelace" onclick="switchPersona('lovelace')">
-            <span class="dot emerald"></span>LOVELACE
-        </button>
-        <button class="summon-chip" data-persona="shadow" onclick="switchPersona('shadow')">
-            <span class="dot red"></span>SHADOW
-        </button>
-        <button class="summon-chip" data-persona="sentry" onclick="switchPersona('sentry')">
-            <span class="dot blue"></span>SENTRY
-        </button>
-        <button class="summon-chip" data-persona="cipher" onclick="switchPersona('cipher')">
-            <span class="dot purple"></span>CIPHER
-        </button>
-        <button class="summon-chip" data-persona="valkyrie" onclick="switchPersona('valkyrie')">
-            <span class="dot orange"></span>VALKYRIE
-        </button>
-        <button class="summon-chip" data-persona="matrix" onclick="switchPersona('matrix')">
-            <span class="dot green"></span>MATRIX
-        </button>
-        <button class="summon-chip" data-persona="ghost" onclick="switchPersona('ghost')">
-            <span class="dot silver"></span>GHOST
-        </button>
-        <button class="summon-chip" data-persona="glitch" onclick="switchPersona('glitch')">
-            <span class="dot pink"></span>GLITCH
-        </button>
-        <button class="summon-chip" data-persona="archon" onclick="switchPersona('archon')">
-            <span class="dot indigo"></span>ARCHON
+        <button class="agent-dock-tab summon-chip" data-persona="knuth" onclick="switchPersona('knuth')" title="Auditor Agent (Knuth Logic Lattice)">
+            <div class="agent-tab-badge auditor"></div>
+            <div class="agent-tab-info">
+                <span class="agent-tab-role">AUDITOR</span>
+                <span class="agent-tab-sub">KNUTH LATTICE</span>
+            </div>
+            <span class="agent-voice-tag" id="dockVoiceTag-knuth">🎙️ Sentinel</span>
         </button>
     </nav>
 
@@ -101,7 +92,7 @@
     <!-- 5. LIVE VOCAL SUBTITLE & AURA PROJECTION -->
     <div class="vocal-transcript-hud" id="vocalHud">
         <div class="transcript-speaker" id="transcriptSpeaker">OPERATOR</div>
-        <div class="transcript-body" id="transcriptText">Say "Hey Swarm", "Switch to Shadow", "Scan Ports", or "Reverse Shell"...</div>
+        <div class="transcript-body" id="transcriptText">Say "Hey Planner", "Hey Builder", "Hey Auditor", or "Scan Ports"...</div>
     </div>
 
     <!-- 6. THE HOLOGRAPHIC VOICE CORE (VOICE-FIRST INTERACTION) -->
@@ -127,14 +118,77 @@
             <button class="quick-vocal-chip" onclick="SpatialTasks.spawnPortScannerCard()">⚡ Port Scan</button>
             <button class="quick-vocal-chip" onclick="SpatialTasks.spawnPayloadGeneratorCard()">🐚 Payloads</button>
             <button class="quick-vocal-chip" onclick="SpatialTasks.spawnHashAnalyzerCard()">🔑 Hashes</button>
-            <button class="quick-vocal-chip" onclick="SpatialTasks.spawnWifiReconCard()">📡 Wi-Fi Recon</button>
+            <button class="quick-vocal-chip" onclick="SpatialTasks.spawnWifiReconCard()">📡 Wi-Fi</button>
             <button class="quick-vocal-chip" onclick="SpatialTasks.spawnMitreAttackCard()">🎯 MITRE</button>
             <button class="quick-vocal-chip" onclick="SpatialTasks.spawnSecurityPostureCard()">🛡️ Posture</button>
-            <button class="quick-vocal-chip" onclick="SpatialTasks.clearAll()">🧹 Dismiss</button>
+            <button class="quick-vocal-chip" onclick="SpatialTasks.clearAll()" title="Dismiss spatial task cards">🧹 Clear</button>
         </div>
     </footer>
 
-    <!-- 7. TRANSLUCENT HOLOGRAPHIC SETTINGS MODAL -->
+    <!-- 7. TRANSLUCENT VOICE SELECTION & ACOUSTIC STUDIO MODAL -->
+    <div class="holo-modal-backdrop" id="voiceModal" onclick="closeVoiceModal(event)">
+        <div class="holo-modal-glass" onclick="event.stopPropagation()">
+            <div class="modal-head">
+                <div class="modal-title"><span>🎙️</span> AGENTIC VOX · VOICE STUDIO</div>
+                <button class="modal-close" onclick="closeVoiceModal()">✕</button>
+            </div>
+
+            <!-- Agent selector tabs -->
+            <label class="modal-label">SELECT AGENT TO CONFIGURE VOICE</label>
+            <div class="voice-studio-agent-tabs">
+                <button class="vs-agent-tab active" id="vsTab-swarm" onclick="selectVoiceStudioAgent('swarm')">
+                    <span class="vs-agent-title" style="color:var(--neon-cyan);">✦ PLANNER</span>
+                    <span class="vs-agent-desc">QUANTUM SWARM</span>
+                </button>
+                <button class="vs-agent-tab" id="vsTab-turing" onclick="selectVoiceStudioAgent('turing')">
+                    <span class="vs-agent-title" style="color:var(--neon-magenta);">🧠 BUILDER</span>
+                    <span class="vs-agent-desc">TURING LOGIC</span>
+                </button>
+                <button class="vs-agent-tab" id="vsTab-knuth" onclick="selectVoiceStudioAgent('knuth')">
+                    <span class="vs-agent-title" style="color:var(--neon-gold);">⚡ AUDITOR</span>
+                    <span class="vs-agent-desc">KNUTH LATTICE</span>
+                </button>
+            </div>
+
+            <!-- Voice presets grid -->
+            <label class="modal-label">VOICE STYLES &amp; ACOUSTIC PRESETS</label>
+            <div class="voice-presets-grid" id="voicePresetsGrid">
+                <!-- Dynamically populated -->
+            </div>
+
+            <!-- System / Device TTS Voices -->
+            <label class="modal-label">SYSTEM / DEVICE TTS VOICE (OPTIONAL HARDWARE OVERRIDE)</label>
+            <select id="studioVoiceSelect" class="modal-input" onchange="onStudioVoiceSelectChange(this.value)">
+                <option value="">Default Holodeck Acoustic Engine</option>
+            </select>
+
+            <!-- Sliders for Pitch and Rate -->
+            <div class="slider-group">
+                <div class="slider-row">
+                    <div class="slider-label-bar">
+                        <span>Voice Pitch Multiplier</span>
+                        <span id="studioPitchVal" class="slider-val">1.00x</span>
+                    </div>
+                    <input type="range" id="studioPitchSlider" class="holo-slider" min="0.5" max="1.8" step="0.05" value="1.0" oninput="onStudioPitchChange(this.value)">
+                </div>
+                <div class="slider-row">
+                    <div class="slider-label-bar">
+                        <span>Speech Rate Multiplier</span>
+                        <span id="studioRateVal" class="slider-val">1.00x</span>
+                    </div>
+                    <input type="range" id="studioRateSlider" class="holo-slider" min="0.6" max="1.8" step="0.05" value="1.0" oninput="onStudioRateChange(this.value)">
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div style="display:flex; gap:10px; margin-top:14px;">
+                <button class="modal-action-btn" onclick="auditionStudioVoice()" style="flex:1;">🔊 Test Voice</button>
+                <button class="modal-action-btn" onclick="saveStudioVoice()" style="flex:1; background:rgba(0,255,136,0.15); border-color:#00ff88; color:#00ff88;">✓ Apply Voice</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. TRANSLUCENT HOLOGRAPHIC SETTINGS MODAL -->
     <div class="holo-modal-backdrop" id="settingsModal" onclick="closeSettingsModal(event)">
         <div class="holo-modal-glass" onclick="event.stopPropagation()">
             <div class="modal-head">
@@ -149,6 +203,10 @@
                 </div>
             </div>
             <div class="modal-body">
+                <button class="modal-action-btn" onclick="openVoiceModal()" style="width:100%; margin-bottom:14px; background:rgba(0,240,255,0.15); border-color:#00f0ff;">
+                    🎙️ Open Voice Studio &amp; Choose Agent Voices ↗
+                </button>
+
                 <label class="modal-label">INFERENCE ENGINE</label>
                 <select id="providerSelect" class="modal-input" onchange="onProviderChange()">
                     <option value="gemini">Google Gemini 2.0 / 1.5 Flash (Free Tier)</option>
@@ -173,31 +231,30 @@
                     </div>
                 </div>
 
-                <label class="modal-label" style="margin-top:14px;">VOICE AGENT & ACOUSTIC SYNTHESIS</label>
-                <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:10px; margin-bottom:12px;">
-                    <label style="font-size:11px; color:#a0aec0; display:block; margin-bottom:4px;">SYSTEM / DEVICE TTS VOICE</label>
+                <label class="modal-label" style="margin-top:12px;">QUICK VOICE PREVIEWS</label>
+                <div style="background:rgba(0,240,255,0.03); border:1px solid rgba(0,240,255,0.12); border-radius:8px; padding:10px; margin-bottom:12px;">
                     <select id="systemVoiceSelect" class="modal-input" onchange="onSystemVoiceChange(this.value)" style="margin-bottom:8px;">
                         <option value="">Default Persona Voice Profile</option>
                     </select>
 
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <span style="font-size:11px; color:#a0aec0;">Voice Pitch Multiplier</span>
+                        <span style="font-size:11px; color:#a0aec0;">Global Pitch Multiplier</span>
                         <span id="pitchDisplay" style="font-size:11px; color:#00f0ff; font-family:monospace;">1.00x</span>
                     </div>
                     <input type="range" id="voicePitchSlider" min="0.5" max="2.0" step="0.05" value="1.0" oninput="onVoicePitchSlider(this.value)" style="width:100%; accent-color:#00f0ff; margin-bottom:8px;" />
 
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <span style="font-size:11px; color:#a0aec0;">Speech Rate Multiplier</span>
+                        <span style="font-size:11px; color:#a0aec0;">Global Speech Rate</span>
                         <span id="rateDisplay" style="font-size:11px; color:#00f0ff; font-family:monospace;">1.00x</span>
                     </div>
                     <input type="range" id="voiceRateSlider" min="0.5" max="2.0" step="0.05" value="1.0" oninput="onVoiceRateSlider(this.value)" style="width:100%; accent-color:#00f0ff; margin-bottom:8px;" />
 
-                    <button class="modal-action-btn" onclick="testAuditionVoice()" style="width:100%;">🔊 Audition Voice Sample</button>
+                    <button class="modal-action-btn" onclick="testAuditionVoice()" style="width:100%;">🔊 Audition Sample</button>
                 </div>
 
-                <label class="modal-label" style="margin-top:14px;">CONTINUOUS VOICE LISTENER</label>
+                <label class="modal-label">CONTINUOUS VOICE LISTENER</label>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <span style="font-size:13px; color:#a0aec0;">Always listening for voice turns</span>
+                    <span style="font-size:12px; color:#cbd5e1;">Always listening for conversational turns</span>
                     <input type="checkbox" id="continuousVoiceToggle" checked onchange="toggleContinuousVoice(this.checked)" style="accent-color:#00f0ff; width:18px; height:18px;" />
                 </div>
 

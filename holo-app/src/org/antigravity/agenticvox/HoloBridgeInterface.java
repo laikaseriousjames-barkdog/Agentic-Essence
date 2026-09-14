@@ -49,6 +49,9 @@ public class HoloBridgeInterface {
     private boolean mTTSReady = false;
     private SpeechRecognizer mSpeechRecognizer;
     private boolean mIsListening = false;
+    private float mCustomPitch = 1.0f;
+    private float mCustomSpeechRate = 1.0f;
+    private String mSelectedVoiceName = null;
 
     public HoloBridgeInterface(Activity activity, WebView webView) {
         this.mActivity = activity;
@@ -87,46 +90,66 @@ public class HoloBridgeInterface {
         mActivity.runOnUiThread(() -> {
             if (mTTSReady && mTTS != null) {
                 mTTS.stop();
-                // Tune voice profile per persona
-                if ("swarm".equalsIgnoreCase(persona)) {
-                    mTTS.setPitch(0.85f);
-                    mTTS.setSpeechRate(1.05f);
-                } else if ("turing".equalsIgnoreCase(persona)) {
-                    mTTS.setPitch(1.00f);
-                    mTTS.setSpeechRate(0.98f);
-                } else if ("knuth".equalsIgnoreCase(persona)) {
-                    mTTS.setPitch(0.92f);
-                    mTTS.setSpeechRate(0.95f);
+                // Tune voice profile per persona with user custom pitch and rate multipliers
+                float basePitch = 1.00f;
+                float baseRate = 1.00f;
+                if ("swarm".equalsIgnoreCase(persona) || "planner".equalsIgnoreCase(persona)) {
+                    basePitch = 0.85f;
+                    baseRate = 1.05f;
+                } else if ("turing".equalsIgnoreCase(persona) || "builder".equalsIgnoreCase(persona)) {
+                    basePitch = 1.00f;
+                    baseRate = 0.98f;
+                } else if ("knuth".equalsIgnoreCase(persona) || "auditor".equalsIgnoreCase(persona)) {
+                    basePitch = 0.92f;
+                    baseRate = 0.95f;
                 } else if ("lovelace".equalsIgnoreCase(persona)) {
-                    mTTS.setPitch(1.18f);
-                    mTTS.setSpeechRate(1.02f);
+                    basePitch = 1.18f;
+                    baseRate = 1.02f;
                 } else if ("shadow".equalsIgnoreCase(persona)) {
-                    mTTS.setPitch(0.72f);
-                    mTTS.setSpeechRate(1.10f);
+                    basePitch = 0.72f;
+                    baseRate = 1.10f;
                 } else if ("sentry".equalsIgnoreCase(persona)) {
-                    mTTS.setPitch(0.88f);
-                    mTTS.setSpeechRate(1.08f);
+                    basePitch = 0.88f;
+                    baseRate = 1.08f;
                 } else if ("cipher".equalsIgnoreCase(persona)) {
-                    mTTS.setPitch(1.06f);
-                    mTTS.setSpeechRate(0.92f);
+                    basePitch = 1.06f;
+                    baseRate = 0.92f;
                 } else if ("valkyrie".equalsIgnoreCase(persona)) {
-                    mTTS.setPitch(1.22f);
-                    mTTS.setSpeechRate(1.14f);
+                    basePitch = 1.22f;
+                    baseRate = 1.14f;
                 } else if ("matrix".equalsIgnoreCase(persona)) {
-                    mTTS.setPitch(0.62f);
-                    mTTS.setSpeechRate(0.96f);
+                    basePitch = 0.62f;
+                    baseRate = 0.96f;
                 } else if ("ghost".equalsIgnoreCase(persona)) {
-                    mTTS.setPitch(0.78f);
-                    mTTS.setSpeechRate(0.96f);
+                    basePitch = 0.78f;
+                    baseRate = 0.96f;
                 } else if ("glitch".equalsIgnoreCase(persona)) {
-                    mTTS.setPitch(1.38f);
-                    mTTS.setSpeechRate(1.22f);
+                    basePitch = 1.38f;
+                    baseRate = 1.22f;
                 } else if ("archon".equalsIgnoreCase(persona)) {
-                    mTTS.setPitch(0.75f);
-                    mTTS.setSpeechRate(0.90f);
+                    basePitch = 0.75f;
+                    baseRate = 0.90f;
                 } else {
-                    mTTS.setPitch(1.00f);
-                    mTTS.setSpeechRate(1.00f);
+                    basePitch = 1.00f;
+                    baseRate = 1.00f;
+                }
+
+                mTTS.setPitch(Math.max(0.4f, Math.min(2.0f, basePitch * mCustomPitch)));
+                mTTS.setSpeechRate(Math.max(0.4f, Math.min(2.0f, baseRate * mCustomSpeechRate)));
+
+                // Re-apply selected system voice if chosen
+                if (mSelectedVoiceName != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    try {
+                        Set<Voice> voices = mTTS.getVoices();
+                        if (voices != null) {
+                            for (Voice v : voices) {
+                                if (v.getName().equalsIgnoreCase(mSelectedVoiceName)) {
+                                    mTTS.setVoice(v);
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (Exception ignored) {}
                 }
 
                 String utteranceId = "holo_" + System.currentTimeMillis();
@@ -168,6 +191,7 @@ public class HoloBridgeInterface {
 
     @JavascriptInterface
     public boolean setVoice(String voiceName) {
+        mSelectedVoiceName = voiceName;
         if (mTTS != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && voiceName != null) {
             try {
                 Set<Voice> voices = mTTS.getVoices();
@@ -188,6 +212,7 @@ public class HoloBridgeInterface {
 
     @JavascriptInterface
     public void setVoicePitch(float pitch) {
+        mCustomPitch = pitch;
         if (mTTS != null) {
             mTTS.setPitch(pitch);
         }
@@ -195,6 +220,7 @@ public class HoloBridgeInterface {
 
     @JavascriptInterface
     public void setVoiceSpeechRate(float rate) {
+        mCustomSpeechRate = rate;
         if (mTTS != null) {
             mTTS.setSpeechRate(rate);
         }
