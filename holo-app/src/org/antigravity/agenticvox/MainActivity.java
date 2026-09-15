@@ -76,9 +76,10 @@ public class MainActivity extends Activity {
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
 
         mBridge = new HoloBridgeInterface(this, mWebView);
-        // Expose as HoloBridge and AndroidBridge for universal tool compatibility
+        // Expose as HoloBridge, AndroidBridge, and Bridge for universal tool compatibility
         mWebView.addJavascriptInterface(mBridge, "HoloBridge");
         mWebView.addJavascriptInterface(mBridge, "AndroidBridge");
+        mWebView.addJavascriptInterface(mBridge, "Bridge");
 
         mWebView.setWebViewClient(new WebViewClient() {
             @Override

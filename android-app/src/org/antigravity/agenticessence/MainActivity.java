@@ -78,6 +78,8 @@ public class MainActivity extends Activity {
 
         mBridge = new WebAppInterface(this, mWebView);
         mWebView.addJavascriptInterface(mBridge, "AndroidBridge");
+        mWebView.addJavascriptInterface(mBridge, "Bridge");
+        mWebView.addJavascriptInterface(mBridge, "HoloBridge");
 
         mWebView.setWebViewClient(new WebViewClient() {
             @Override
