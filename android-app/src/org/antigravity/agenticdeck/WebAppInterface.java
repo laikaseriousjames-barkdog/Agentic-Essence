@@ -1,4 +1,4 @@
-package org.antigravity.agenticessence;
+package org.antigravity.agenticdeck;
 
 import android.app.Activity;
 import android.app.SearchManager;

@@ -48,7 +48,7 @@ def test_asset_files_integrity():
 
 
 def test_bridge_methods_consistency():
-    java_bridge = os.path.join(APP_DIR, "src/org/antigravity/agenticessence/WebAppInterface.java")
+    java_bridge = os.path.join(APP_DIR, "src/org/antigravity/agenticdeck/WebAppInterface.java")
     with open(java_bridge, "r", encoding="utf-8") as f:
         java_content = f.read()
 

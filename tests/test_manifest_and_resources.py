@@ -14,7 +14,7 @@ def test_manifest_structure():
     root = tree.getroot()
 
     assert root.tag == "manifest"
-    assert root.attrib.get("package") == "org.antigravity.agenticessence"
+    assert root.attrib.get("package") == "org.antigravity.agenticdeck"
 
     app = root.find("application")
     assert app is not None, "<application> missing in AndroidManifest.xml"

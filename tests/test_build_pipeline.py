@@ -23,7 +23,7 @@ def test_apk_badging():
     res = subprocess.run(["aapt", "dump", "badging", APK_PATH], capture_output=True, text=True)
     assert res.returncode == 0, f"aapt dump failed: {res.stderr}"
     stdout = res.stdout
-    assert "package: name='org.antigravity.agenticessence'" in stdout
+    assert "package: name='org.antigravity.agenticdeck'" in stdout
     assert "application-label:'Agentic Essence'" in stdout
     assert "sdkVersion:'21'" in stdout
     assert "targetSdkVersion:'34'" in stdout
