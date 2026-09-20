@@ -36,9 +36,12 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.File;
 import java.io.OutputStream;
+import android.os.Bundle;
 import java.net.HttpURLConnection;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -862,6 +865,12 @@ public class WebAppInterface implements TextToSpeech.OnInitListener {
         String trimmed = cmd.trim();
         String lower = trimmed.toLowerCase(Locale.US);
 
+        // 0. Privileged Shizuku / ADB shell routing
+        if (lower.startsWith("shizuku ") || lower.startsWith("adb ")) {
+            String subCmd = trimmed.substring(trimmed.indexOf(' ') + 1).trim();
+            return runShizukuCommand(subCmd);
+        }
+
         // 1. Direct hardware wireless / network queries
         if (lower.equals("wifi scan") || lower.equals("iwlist scan") || lower.equals("wifiscan") ||
             lower.equals("airodump-ng") || lower.equals("nmcli dev wifi") || lower.startsWith("iwlist ") ||
@@ -974,7 +983,7 @@ public class WebAppInterface implements TextToSpeech.OnInitListener {
                     }
                     if (out.isEmpty() && resJson.has("exit_code")) {
                         int code = resJson.getInt("exit_code");
-                        return code == 0 ? "Command completed successfully in Kali NetHunter (exit code 0)." : "Process exited with code " + code;
+                        return code == 0 ? "[Command completed in Kali NetHunter (exit code 0, empty stdout)]" : "[Process exited with code " + code + "]";
                     }
                     return out.trim();
                 }
@@ -1243,11 +1252,131 @@ public class WebAppInterface implements TextToSpeech.OnInitListener {
 
     @JavascriptInterface
     public boolean isShizukuAvailable() {
+        File rishFile = getRishExecutable();
+        return rishFile != null && rishFile.exists();
+    }
+
+    @JavascriptInterface
+    public boolean isShizukuReady() {
+        if (!isShizukuAvailable()) return false;
         try {
-            Class<?> shizukuClass = Class.forName("moe.shizuku.api.ShizukuService");
-            return shizukuClass != null;
-        } catch (Throwable t) {
+            String out = runShizukuCommand("echo OK");
+            return out != null && out.contains("OK");
+        } catch (Exception e) {
             return false;
         }
+    }
+
+    private synchronized File getRishExecutable() {
+        try {
+            File filesDir = mActivity.getFilesDir();
+            File rishFile = new File(filesDir, "rish");
+            File dexFile = new File(filesDir, "rish_shizuku.dex");
+
+            if (!rishFile.exists() || !dexFile.exists() || rishFile.length() == 0) {
+                try (InputStream in = mActivity.getAssets().open("rish");
+                     OutputStream out = new FileOutputStream(rishFile)) {
+                    byte[] buf = new byte[4096];
+                    int len;
+                    while ((len = in.read(buf)) > 0) out.write(buf, 0, len);
+                }
+                try (InputStream in = mActivity.getAssets().open("rish_shizuku.dex");
+                     OutputStream out = new FileOutputStream(dexFile)) {
+                    byte[] buf = new byte[4096];
+                    int len;
+                    while ((len = in.read(buf)) > 0) out.write(buf, 0, len);
+                }
+            }
+
+            rishFile.setExecutable(true, false);
+            rishFile.setReadable(true, false);
+            dexFile.setReadable(true, false);
+            dexFile.setWritable(false, false);
+
+            return rishFile;
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to prepare rish: " + e.getMessage());
+            return null;
+        }
+    }
+
+    @JavascriptInterface
+    public String runShizukuCommand(String cmd) {
+        if (cmd == null || cmd.trim().isEmpty()) return "ERR: empty command";
+        String trimmed = cmd.trim();
+
+        // 1. Try rish execution directly via private files directory
+        File rishFile = getRishExecutable();
+        if (rishFile != null && rishFile.exists()) {
+            Process process = null;
+            try {
+                ProcessBuilder pb = new ProcessBuilder("/system/bin/sh", rishFile.getAbsolutePath(), "-c", trimmed);
+                pb.directory(mActivity.getFilesDir());
+                pb.environment().put("RISH_APPLICATION_ID", mActivity.getPackageName());
+                pb.redirectErrorStream(false);
+                process = pb.start();
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                int count = 0;
+                while ((line = reader.readLine()) != null && count < 3000) {
+                    sb.append(line).append("\n");
+                    count++;
+                }
+                while ((line = errReader.readLine()) != null && count < 1000) {
+                    sb.append(line).append("\n");
+                    count++;
+                }
+                process.waitFor();
+                String res = sb.toString().trim();
+                if (!res.isEmpty()) {
+                    return res;
+                }
+                int exitCode = process.exitValue();
+                if (exitCode == 0) {
+                    return "[Command completed via Shizuku ADB (exit code 0, empty stdout)]";
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Rish execution failed: " + e.getMessage());
+            } finally {
+                if (process != null) {
+                    try { process.destroy(); } catch (Exception ignored) {}
+                }
+            }
+        }
+
+        // 2. Try Shizuku class reflection if library present
+        try {
+            Class<?> shizukuClass = Class.forName("rikka.shizuku.Shizuku");
+            java.lang.reflect.Method newProcess = shizukuClass.getMethod("newProcess", String[].class, String[].class, String.class);
+            Process process = (Process) newProcess.invoke(null, new String[]{"sh", "-c", trimmed}, null, null);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            int count = 0;
+            while ((line = reader.readLine()) != null && count < 3000) {
+                sb.append(line).append("\n");
+                count++;
+            }
+            while ((line = errReader.readLine()) != null && count < 1000) {
+                sb.append(line).append("\n");
+                count++;
+            }
+            process.waitFor();
+            String res = sb.toString().trim();
+            if (res.isEmpty()) {
+                int exitCode = process.exitValue();
+                return exitCode == 0 ? "[Command completed via Shizuku ADB (exit code 0, empty stdout)]" : "[Shizuku process exited with code " + exitCode + "]";
+            }
+            return res;
+        } catch (Throwable ignored) {}
+
+        // 3. Fallback: try NetHunter or local process
+        String suRes = runSuNetHunterCommand(trimmed);
+        if (suRes != null && !suRes.trim().isEmpty()) return suRes;
+        return runLocalProcess(trimmed);
     }
 }

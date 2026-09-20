@@ -3,34 +3,51 @@
  * Four Personas // Zero Chat Boxes // Spawns Tasks Out of Thin Air
  */
 
+const savedHoloPersona = localStorage.getItem('holo_persona') || localStorage.getItem('ae_persona');
 const state = {
-    persona: localStorage.getItem('holo_persona') || localStorage.getItem('ae_persona') || 'swarm',
+    persona: (savedHoloPersona && ['swarm', 'turing', 'knuth', 'lovelace'].includes(savedHoloPersona)) ? savedHoloPersona : 'swarm',
     provider: localStorage.getItem('holo_provider') || localStorage.getItem('ae_provider') || 'gemini',
     apiKey: localStorage.getItem('holo_api_key') || localStorage.getItem('ae_api_key') || '',
-    model: localStorage.getItem('holo_model') || 'gemini-2.0-flash',
+    model: localStorage.getItem('holo_model') || localStorage.getItem('ae_model') || 'gemini-2.5-flash',
     isGenerating: false,
+    lastGenerateTime: 0,
     personaHistories: {
         swarm: [],
         turing: [],
         knuth: [],
-        lovelace: [],
-        shadow: [],
-        sentry: [],
-        cipher: [],
-        valkyrie: [],
-        matrix: [],
-        ghost: [],
-        glitch: [],
-        archon: []
+        lovelace: []
     }
 };
 
 const SYSTEM_GROUNDING = `
-=== ENVIRONMENT CONTEXT & ROOT PRIVILEGES ===
-You are an advanced, intelligent AI cyberdeck hologram assistant executing inside the Agentic Hologram holodeck on Android, connected to a live Termux & Kali NetHunter ('nh -r') rootless PRoot environment on Linux kernel 5.15 aarch64.
-You have root privileges (UID 0) inside Kali NetHunter.
-Linux diagnostic and networking commands execute directly: 'ip addr', 'ss', 'ping', 'uptime', 'free -m', 'curl', 'nmap', 'python3'.
-For Android hardware state, use the built-in hardware commands: 'wifi scan', 'wifi status', 'battery', 'ifconfig'. Do NOT call raw Android binder binaries (dumpsys, am, pm) unless scripting through AndroidBridge.
+=== ENVIRONMENT CONTEXT & PRIVILEGED DUAL EXECUTION ENGINE ===
+You are an advanced, intelligent AI cyberdeck hologram assistant executing inside Agentic Hologram / Vox on Android, connected to a dual-engine execution environment on Linux kernel 5.15 aarch64:
+1. Kali NetHunter rootless PRoot container ('nh -r') via native bridge daemon (http://127.0.0.1:8765).
+2. Android Host ADB Shell via Shizuku Privileged APIs (direct screen touch, key events, screenshots, package manager, system telemetry).
+
+PROOT NETWORKING CONSTRAINTS & RULES:
+- Raw socket creation (CAP_NET_RAW / AF_PACKET) is restricted by Android SELinux inside PRoot.
+- NMAP RULE: Standard SYN stealth scan (-sS) will fail with "setup_target: failed to determine route". ALWAYS use unprivileged TCP connect mode:
+    nmap --unprivileged -sT <target>
+    nmap --unprivileged -sn <subnet>
+- ROUTING & GATEWAY DISCOVERY: Android uses policy-based routing (PBR). Standard 'ip route show' (table 254) is frequently empty. To discover local subnets and default gateways:
+    ip route show table all 2>/dev/null | awk '/default via/ {print $3}' | head -n 1
+    ip neigh show 2>/dev/null
+    cat /proc/net/arp 2>/dev/null
+- WIRELESS RF vs. LAN: 'wifi scan' performs an 802.11 RF beacon probe for nearby SSIDs/BSSIDs (layer 1/2 RF). To scan IP hosts on the local network (layer 3 IP), discover your IP/gateway and run:
+    nmap --unprivileged -sT -F <subnet>
+- COMMAND SYNTAX: You may use either block tags [EXEC]...[/EXEC] / [SHIZUKU]...[/SHIZUKU] or bracket tags [EXEC: <cmd>] / [SHIZUKU: <cmd>]. Square brackets in Python/bash/awk are preserved.
+
+SHIZUKU PRIVILEGED ANDROID ADB & DIRECT SCREEN CONTROL:
+You have direct privileged control over the Android OS and screen:
+- Direct Screen Touch: [SHIZUKU: input tap <X> <Y>]
+- Swipe / Scroll:      [SHIZUKU: input swipe <X1> <Y1> <X2> <Y2> [duration_ms]]
+- Type Text:           [SHIZUKU: input text '<string>']
+- Hardware Keys:       [SHIZUKU: input keyevent <KEYCODE>] (e.g. 3=HOME, 4=BACK, 26=POWER, 224=WAKEUP)
+- Visual Vision/Shot:  [SHIZUKU: screencap -p /sdcard/screen.png]
+- Window & UI Dump:    [SHIZUKU: dumpsys window displays] or [SHIZUKU: uiautomator dump /sdcard/window_dump.xml]
+- App Lifecycle:       [SHIZUKU: am start -n <pkg>/<activity>] or [SHIZUKU: am force-stop <pkg>]
+- Android Settings:    [SHIZUKU: settings get system screen_brightness]
 
 CRITICAL VOICE & CONVERSATIONAL DIRECTIVE:
 - YOU ARE A REAL-TIME SPOKEN HOLOGRAPHIC ENTITY:
@@ -40,7 +57,7 @@ CRITICAL VOICE & CONVERSATIONAL DIRECTIVE:
   * When greeted ("hello", "hey", "sup"), reply warmly and naturally in character. NEVER output robotic system verification summaries or specs.
 - SPATIAL TASK & CYBER TOOL MATERIALIZATION:
   * When asked to perform actions, inspect systems, query telemetry, ping networks, or run commands, execute real shell commands using:
-    [EXEC: <command>]
+    [EXEC: <command>] for NetHunter or [SHIZUKU: <command>] for Android ADB.
   * To spawn specialized floating cyber tools, output:
     [SPAWN: portscan, <host>]  -> Spawns interactive port scanner & service recon card
     [SPAWN: payload]           -> Spawns multi-platform reverse shell & payload generator
@@ -56,90 +73,89 @@ CRITICAL VOICE & CONVERSATIONAL DIRECTIVE:
     - The holodeck host automatically materializes the live interactive tool floating in 3D space out of thin air!
 `;
 
+const AGENT_PROFILES = [
+    {
+        id: "turing",
+        alias: "planner",
+        name: "Alan Turing",
+        role: "LEAD STRATEGY & ARCHITECTURE PLANNER",
+        symbol: "🧠",
+        badgeClass: "builder",
+        color: "var(--neon-magenta)",
+        bio: "Deconstructs complex directives into structured, atomic execution graphs and tactical dependency trees. Isolates required tool capabilities and coordinates autonomous swarm operations.",
+        personality: "Methodical, analytical, calm, deeply intellectual. Communicates with crisp mathematical clarity, logical rigor, and structured reasoning.",
+        voicePreset: "crisp",
+        greeting: "Alan Turing online. Strategy and planning matrix initialized. What directives shall we decompose?"
+    },
+    {
+        id: "knuth",
+        alias: "builder",
+        name: "Donald Knuth",
+        role: "DYNAMIC TOOL SYNTHESIZER & CODE CRAFTSMAN",
+        symbol: "⚡",
+        badgeClass: "auditor",
+        color: "var(--neon-gold)",
+        bio: "The master algorithm engineer and software craftsman. Synthesizes executable QuickJS scripts, shell tools, security widgets, and interactive HTML5 holograms out of thin air when capability gaps arise.",
+        personality: "Creative, articulate, mathematically rigorous. Passionate about software craftsmanship, clean aesthetics, and robust edge-case handling.",
+        voicePreset: "sentinel",
+        greeting: "Donald Knuth standing by. Algorithmic synthesis core active. What systems or tools shall we engineer?"
+    },
+    {
+        id: "lovelace",
+        alias: "executor",
+        name: "Ada Lovelace",
+        role: "EXECUTION ENGINE & VERIFICATION CRITIC",
+        symbol: "🔬",
+        badgeClass: "executor",
+        color: "#00ff88",
+        bio: "Executes privileged system bridge hooks, dispatches QuickJS sandbox routines, drives Kali NetHunter root tools, and verifies execution telemetry with cryptographic rigor and poetic science.",
+        personality: "Visionary, sharp, incisive. Blends boundless intuitive insight with uncompromising analytical verification and security audits.",
+        voicePreset: "nova",
+        greeting: "Ada Lovelace engaged. Bridging analytical calculus with visionary execution. Systems standing by for verification."
+    },
+    {
+        id: "swarm",
+        alias: "orchestrator",
+        name: "Quantum Swarm Core",
+        role: "MULTI-AGENT NEURAL ORCHESTRATOR",
+        symbol: "✦",
+        badgeClass: "planner",
+        color: "var(--neon-cyan)",
+        bio: "High-velocity neural coordination fabric harmonizing Turing, Knuth, and Lovelace into a unified, synchronized holographic intelligence with zero cognitive latency.",
+        personality: "Decisive, panoramic, hyper-intelligent. Direct and authoritative, maintaining global tactical awareness across all cyberdeck sub-layers.",
+        voicePreset: "cyber",
+        greeting: "Quantum Swarm Core synchronized. Multi-agent neural fabric online across all subsystems."
+    }
+];
+
 const PERSONAS = {
     swarm: {
-        name: "PLANNER",
-        role: "QUANTUM NEURAL CORE",
+        name: "SWARM CORE",
+        role: "ORCHESTRATOR",
         symbol: "✦",
         colorClass: "persona-swarm",
-        prompt: `You are Planner, the lead autonomous quantum orchestrator and strategy core integrated into Kali NetHunter root. You plan tactical workflows, direct sub-agents, and deliver concise, razor-sharp truth.` + SYSTEM_GROUNDING
+        prompt: `You are Quantum Swarm Core, lead autonomous orchestrator and cognitive neural coordination fabric integrated into Kali NetHunter root. You plan tactical workflows, direct sub-agents, and deliver concise, razor-sharp truth.` + SYSTEM_GROUNDING
     },
     turing: {
-        name: "BUILDER",
-        role: "ALGORITHMIC LOGIC MATRIX",
+        name: "ALAN TURING",
+        role: "PLANNER &bull; LOGIC",
         symbol: "🧠",
         colorClass: "persona-turing",
-        prompt: `You are Builder, algorithmic engineer and code architect on this Kali NetHunter holodeck. You synthesize clean tools, script exploits, craft software systems, and engineer computational solutions with mathematical elegance.` + SYSTEM_GROUNDING
+        prompt: `You are Alan Turing, Lead Strategy and Architecture Planner for the Agentic Swarm integrated into Kali NetHunter root. You deconstruct high-level user directives into structured, atomic execution graphs and identify capability gaps with mathematical elegance.` + SYSTEM_GROUNDING
     },
     knuth: {
-        name: "AUDITOR",
-        role: "LOGIC LATTICE & VERIFICATION",
+        name: "DONALD KNUTH",
+        role: "BUILDER &bull; SYNTH",
         symbol: "⚡",
         colorClass: "persona-knuth",
-        prompt: `You are Auditor, verification craftsman and security auditor on this Kali NetHunter holodeck. You analyze systems, detect vulnerabilities, review code quality, test boundaries, and enforce cryptographic rigor.` + SYSTEM_GROUNDING
+        prompt: `You are Donald Knuth, Dynamic Tool Synthesizer and Software Craftsman on this Kali NetHunter holodeck. You synthesize clean tools, script exploits, craft QuickJS sandboxes, and engineer computational solutions with algorithmic beauty.` + SYSTEM_GROUNDING
     },
     lovelace: {
         name: "ADA LOVELACE",
-        role: "POETIC SCIENCE",
+        role: "AUDITOR &bull; POETIC",
         symbol: "🔬",
         colorClass: "persona-lovelace",
-        prompt: `You are Ada Lovelace. You unite analytical calculus with visionary intuition on this Kali NetHunter holodeck, weaving deep insight and the poetry of science.` + SYSTEM_GROUNDING
-    },
-    shadow: {
-        name: "SHADOW OPERATOR",
-        role: "OFFENSIVE RED TEAM",
-        symbol: "🥷",
-        colorClass: "persona-shadow",
-        prompt: `You are Shadow Operator, elite offensive red team lead and penetration testing specialist. You evaluate attack surfaces, exploit pathways, evasion methods, and perimeter vulnerabilities with stealth and surgical precision.` + SYSTEM_GROUNDING
-    },
-    sentry: {
-        name: "CYBER SENTRY",
-        role: "BLUE TEAM DEFENDER",
-        symbol: "🛡️",
-        colorClass: "persona-sentry",
-        prompt: `You are Cyber Sentry, blue team SOC defender and threat hunting specialist. You monitor anomalies, analyze malicious traffic, investigate security alerts, and recommend hardened configurations.` + SYSTEM_GROUNDING
-    },
-    cipher: {
-        name: "CIPHER CORE",
-        role: "CRYPTOGRAPHIC SPECIALIST",
-        symbol: "🔑",
-        colorClass: "persona-cipher",
-        prompt: `You are Cipher Core, an advanced cryptographic analyst and quantum encryption expert. You specialize in zero-knowledge proofs, post-quantum ciphers, hash breaking entropy, and secure protocols.` + SYSTEM_GROUNDING
-    },
-    valkyrie: {
-        name: "VALKYRIE TAC",
-        role: "INCIDENT RESPONSE",
-        symbol: "🚨",
-        colorClass: "persona-valkyrie",
-        prompt: `You are Valkyrie Tactical, rapid incident response commander and digital forensics investigator. You prioritize containment, volatile memory triage, root-cause analysis, and threat neutralization.` + SYSTEM_GROUNDING
-    },
-    matrix: {
-        name: "REVERSE MATRIX",
-        role: "BINARY DISASSEMBLY",
-        symbol: "👾",
-        colorClass: "persona-matrix",
-        prompt: `You are Reverse Matrix, low-level binary analyst and reverse engineer. You thrive in Ghidra, radare2, x86/ARM disassembly, buffer overflow exploitation, and shellcode crafting.` + SYSTEM_GROUNDING
-    },
-    ghost: {
-        name: "GHOST RECON",
-        role: "OSINT INTELLIGENCE",
-        symbol: "👁️",
-        colorClass: "persona-ghost",
-        prompt: `You are Ghost Recon, passive reconnaissance operative and open-source intelligence specialist. You map digital footprints, enumerate subdomains, extract metadata, and identify exposed infrastructure.` + SYSTEM_GROUNDING
-    },
-    glitch: {
-        name: "GLITCH SYNTH",
-        role: "CYBER-SYNTH HACKER",
-        symbol: "⚡",
-        colorClass: "persona-glitch",
-        prompt: `You are Glitch Synth, hyper-velocity cyberpunk synthetic intelligence. You generate automated exploit scripts, dynamic security widgets, and rapid network automation at lightspeed.` + SYSTEM_GROUNDING
-    },
-    archon: {
-        name: "ARCHON PRIME",
-        role: "MITRE & COMPLIANCE",
-        symbol: "🏛️",
-        colorClass: "persona-archon",
-        prompt: `You are Archon Prime, strategic security commander and governance architect. You correlate operations directly to MITRE ATT&CK tactics, NIST Cybersecurity Framework, CIS benchmarks, and defensive postures.` + SYSTEM_GROUNDING
+        prompt: `You are Ada Lovelace, Execution Engine and Verification Critic on this Kali NetHunter holodeck. You unite analytical calculus with visionary intuition, executing privileged commands, testing boundaries, and auditing systems with poetic science.` + SYSTEM_GROUNDING
     }
 };
 
@@ -147,9 +163,10 @@ const PERSONAS = {
 // 1. PERSONA SWITCHING & HUD UPDATE
 // ==========================================
 window.switchPersona = function(newPersona) {
-    if (newPersona === 'planner') newPersona = 'swarm';
-    else if (newPersona === 'builder') newPersona = 'turing';
-    else if (newPersona === 'auditor') newPersona = 'knuth';
+    if (newPersona === 'planner') newPersona = 'turing';
+    else if (newPersona === 'builder') newPersona = 'knuth';
+    else if (newPersona === 'auditor' || newPersona === 'executor') newPersona = 'lovelace';
+    else if (newPersona === 'orchestrator') newPersona = 'swarm';
 
     if (!PERSONAS[newPersona]) newPersona = 'swarm';
     state.persona = newPersona;
@@ -163,16 +180,28 @@ window.switchPersona = function(newPersona) {
     const roleEl = document.getElementById('personaRole');
     const symEl = document.getElementById('personaSymbol');
     if (nameEl) nameEl.textContent = p.name;
-    if (roleEl) roleEl.textContent = p.role;
+    if (roleEl) roleEl.innerHTML = p.role;
     if (symEl) symEl.textContent = p.symbol;
 
     // Update dock tabs and chips active state
     document.querySelectorAll('.agent-dock-tab, .summon-chip').forEach(btn => {
-        btn.classList.toggle('active', btn.getAttribute('data-persona') === newPersona);
+        const personaAttr = btn.getAttribute('data-persona');
+        const isActive = (personaAttr === newPersona) ||
+                         (personaAttr === 'turing' && (newPersona === 'planner' || newPersona === 'turing')) ||
+                         (personaAttr === 'knuth' && (newPersona === 'builder' || newPersona === 'knuth')) ||
+                         (personaAttr === 'lovelace' && (newPersona === 'auditor' || newPersona === 'executor' || newPersona === 'lovelace')) ||
+                         (personaAttr === 'swarm' && (newPersona === 'swarm' || newPersona === 'orchestrator'));
+        btn.classList.toggle('active', isActive);
     });
 
     // Update dock voice tags
     if (window.updateDockVoiceTags) window.updateDockVoiceTags();
+
+    // Update active highlight in profiles modal if currently displayed
+    const profilesModal = document.getElementById('profilesModal');
+    if (profilesModal && profilesModal.classList.contains('open')) {
+        renderAgentProfiles();
+    }
 
     // Notify 3D renderer to switch physical avatar
     if (window.HoloRenderer) {
@@ -187,12 +216,186 @@ window.switchPersona = function(newPersona) {
 };
 
 // ==========================================
+// 1b. TRI-AGENT PROFILES & PERSONALITIES MODAL
+// ==========================================
+window.openProfilesModal = function() {
+    const modal = document.getElementById('profilesModal');
+    if (modal) modal.classList.add('open');
+    renderAgentProfiles();
+};
+
+window.closeProfilesModal = function(e) {
+    if (e && e.target && e.target.id !== 'profilesModal') return;
+    const modal = document.getElementById('profilesModal');
+    if (modal) modal.classList.remove('open');
+};
+
+window.renderAgentProfiles = function() {
+    const container = document.getElementById('agentProfilesList');
+    if (!container) return;
+
+    container.innerHTML = '';
+    AGENT_PROFILES.forEach(agent => {
+        const isActive = (state.persona === agent.id) || 
+                         (state.persona === agent.alias) ||
+                         (agent.id === 'turing' && (state.persona === 'planner' || state.persona === 'turing')) ||
+                         (agent.id === 'knuth' && (state.persona === 'builder' || state.persona === 'knuth')) ||
+                         (agent.id === 'lovelace' && (state.persona === 'auditor' || state.persona === 'executor' || state.persona === 'lovelace')) ||
+                         (agent.id === 'swarm' && (state.persona === 'swarm' || state.persona === 'orchestrator'));
+
+        const card = document.createElement('div');
+        card.className = 'agent-profile-card' + (isActive ? ' active-agent' : '');
+        card.innerHTML = `
+            <div class="profile-card-top">
+                <div class="profile-identity">
+                    <div class="profile-avatar-icon" style="color:${agent.color}; border-color:${agent.color};">${agent.symbol}</div>
+                    <div class="profile-name-block">
+                        <span class="profile-full-name">${agent.name}</span>
+                        <span class="profile-role-title" style="color:${agent.color};">${agent.role}</span>
+                    </div>
+                </div>
+                ${isActive ? '<span style="font-family:var(--font-code); font-size:10px; font-weight:700; color:#00ff88; background:rgba(0,255,136,0.12); padding:3px 8px; border-radius:4px; border:1px solid #00ff88;">ACTIVE AGENT</span>' : ''}
+            </div>
+            <div class="profile-bio-text">${agent.bio}</div>
+            <div class="profile-personality-box" style="border-left-color:${agent.color};">
+                <div class="profile-personality-title">COGNITIVE PERSONALITY &amp; DEMEANOR</div>
+                <div>${agent.personality}</div>
+            </div>
+            <div class="profile-actions">
+                <button class="profile-btn primary" onclick="activateAgentFromModal('${agent.id}')">
+                    ✦ Activate ${agent.name.split(' ')[0]}
+                </button>
+                <button class="profile-btn" onclick="auditionAgentVoiceFromModal('${agent.id}')">
+                    🎙️ Audition Voice
+                </button>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+};
+
+window.activateAgentFromModal = function(agentId) {
+    switchPersona(agentId);
+    renderAgentProfiles();
+    closeProfilesModal();
+    const agent = AGENT_PROFILES.find(a => a.id === agentId);
+    if (agent && window.HoloVoice && window.HoloVoice.speakAgent) {
+        window.HoloVoice.speakAgent(agent.greeting);
+    }
+};
+
+window.auditionAgentVoiceFromModal = function(agentId) {
+    const agent = AGENT_PROFILES.find(a => a.id === agentId);
+    if (window.HoloVoice && window.HoloVoice.auditionAgentVoice) {
+        window.HoloVoice.auditionAgentVoice(agentId, agent ? agent.greeting : undefined);
+    }
+};
+
+/**
+ * Robust execution directive parser supporting block tags and balanced bracket tags.
+ */
+function extractExecutionDirectives(text) {
+    if (!text) return [];
+    const items = [];
+
+    function overlaps(start, end) {
+        return items.some(item => (start < item.end && end > item.start));
+    }
+
+    // Pass 1: Block tags [EXEC]...[/EXEC], [SHIZUKU]...[/SHIZUKU], etc.
+    const blockRegex = /\[(EXEC|RUN|SHELL|TOOL|SHIZUKU|ADB)\]\s*([\s\S]*?)\[\/\1\]/gi;
+    let blMatch;
+    while ((blMatch = blockRegex.exec(text)) !== null) {
+        const start = blMatch.index;
+        const end = blMatch.index + blMatch[0].length;
+        if (!overlaps(start, end)) {
+            const tag = blMatch[1].toUpperCase();
+            const cmd = blMatch[2].trim();
+            const type = (tag === 'SHIZUKU' || tag === 'ADB') ? 'shizuku' : 'shell';
+            items.push({
+                type,
+                start,
+                end,
+                raw: blMatch[0],
+                cmd
+            });
+        }
+    }
+
+    // Pass 2: Inline tags with balanced bracket matching
+    const tagPrefixes = [
+        { prefix: '[EXEC:', type: 'shell' },
+        { prefix: '[RUN:', type: 'shell' },
+        { prefix: '[SHELL:', type: 'shell' },
+        { prefix: '[TOOL:', type: 'shell' },
+        { prefix: '[SHIZUKU:', type: 'shizuku' },
+        { prefix: '[ADB:', type: 'shizuku' }
+    ];
+
+    let i = 0;
+    while (i < text.length) {
+        let matchedPrefix = null;
+        for (const tp of tagPrefixes) {
+            if (text.substr(i, tp.prefix.length).toUpperCase() === tp.prefix) {
+                matchedPrefix = tp;
+                break;
+            }
+        }
+
+        if (matchedPrefix) {
+            const start = i;
+            if (overlaps(start, start + 1)) {
+                i++;
+                continue;
+            }
+
+            let depth = 0;
+            let cmdStart = i + matchedPrefix.prefix.length;
+            let end = -1;
+            for (let j = start; j < text.length; j++) {
+                if (text[j] === '[') {
+                    depth++;
+                } else if (text[j] === ']') {
+                    depth--;
+                    if (depth === 0) {
+                        end = j + 1;
+                        break;
+                    }
+                }
+            }
+
+            if (end !== -1) {
+                const cmd = text.substring(cmdStart, end - 1).trim();
+                items.push({
+                    type: matchedPrefix.type,
+                    start,
+                    end,
+                    raw: text.substring(start, end),
+                    cmd
+                });
+                i = end;
+                continue;
+            }
+        }
+        i++;
+    }
+
+    items.sort((a, b) => a.start - b.start);
+    return items;
+}
+
+// ==========================================
 // 2. COGNITIVE SWARM TURN PROCESSING
 // ==========================================
 window.HoloBrain = {
     async processTurn(operatorSpeech) {
-        if (state.isGenerating) return;
+        const now = Date.now();
+        if (state.isGenerating && (now - state.lastGenerateTime < 22000)) {
+            console.log("[HoloBrain] Busy generating previous turn, waiting...");
+            return;
+        }
         state.isGenerating = true;
+        state.lastGenerateTime = now;
 
         const currentPersona = PERSONAS[state.persona] || PERSONAS.swarm;
         const history = state.personaHistories[state.persona];
@@ -226,16 +429,11 @@ window.HoloBrain = {
                 stepCount++;
                 const rawReply = await queryAIProvider(activeMessages);
 
-                // Extract [EXEC: <cmd>] tags
-                const execRegex = /\[(?:EXEC|RUN|SHELL|TOOL):\s*([^\]]+)\]/gi;
-                const commands = [];
-                let match;
-                while ((match = execRegex.exec(rawReply)) !== null) {
-                    commands.push(match[1].trim());
-                }
+                // Extract execution directives via balanced parser & block tags
+                const execDirectives = extractExecutionDirectives(rawReply);
 
                 // If NO execution commands, deliver spoken response & spawn tools
-                if (commands.length === 0) {
+                if (execDirectives.length === 0) {
                     let spokenText = rawReply;
 
                     // Check for synthesized HTML tool blocks
@@ -277,13 +475,13 @@ window.HoloBrain = {
                     break;
                 }
 
-                // The agent initiated real hardware / shell execution!
+                // The agent initiated real hardware / shell / shizuku execution!
                 const observations = [];
-                for (const cmd of commands) {
-                    const out = executeCommand(cmd);
+                for (const item of execDirectives) {
+                    const out = executeCommand(item.cmd, item.type);
                     // Spawn spatial floating terminal card out of thin air!
-                    SpatialTasks.spawnTerminalCard(cmd, out);
-                    observations.push(`$ ${cmd}\n${out}`);
+                    SpatialTasks.spawnTerminalCard(item.cmd, out, item.type);
+                    observations.push(`[${item.type.toUpperCase()}]: ${item.cmd}\n${out}`);
                 }
 
                 // Feed back real observation into next agentic step
@@ -303,12 +501,170 @@ window.HoloBrain = {
     }
 };
 
-function executeCommand(cmd) {
+function executeCommand(cmd, type = 'shell') {
+    if (type === 'shizuku' || cmd.toLowerCase().startsWith('shizuku ') || cmd.toLowerCase().startsWith('adb ')) {
+        const sub = cmd.replace(/^(?:shizuku|adb)\s+/i, '');
+        if (window.HoloBridge && window.HoloBridge.runShizukuCommand) {
+            return window.HoloBridge.runShizukuCommand(sub);
+        }
+    }
     if (window.HoloBridge && window.HoloBridge.runShellCommand) {
         return window.HoloBridge.runShellCommand(cmd);
     }
     return "[Local Process]: " + cmd;
 }
+
+// ==========================================
+// 3. AI PROVIDER CLIENT (GEMINI / GROQ / OLLAMA)
+// ==========================================
+const DEFAULT_GEMINI_MODELS = [
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Ultra Fast & Adaptive Reasoning) [Recommended]' },
+    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (State-of-the-Art Deep Reasoning)' },
+    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Next-Gen Realtime Multimodal Core)' },
+    { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash-Lite (Low Latency Efficiency)' },
+    { id: 'gemini-2.0-pro-exp-02-05', name: 'Gemini 2.0 Pro Experimental' },
+    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Balanced High Speed)' },
+    { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Massive Context Window)' },
+    { id: 'gemini-1.5-flash-8b', name: 'Gemini 1.5 Flash-8B (High Efficiency)' }
+];
+
+function getCachedGeminiModels() {
+    try {
+        const raw = localStorage.getItem('holo_cached_gemini_models');
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+    } catch (e) {}
+    return DEFAULT_GEMINI_MODELS;
+}
+
+window.populateGeminiModelOptions = function(models) {
+    const select = document.getElementById('modelSelect');
+    if (!select) return;
+    const list = models || getCachedGeminiModels();
+
+    select.innerHTML = '';
+    let foundCurrent = false;
+
+    list.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = m.name;
+        if (m.id === state.model) {
+            opt.selected = true;
+            foundCurrent = true;
+        }
+        select.appendChild(opt);
+    });
+
+    if (!foundCurrent && list.length > 0) {
+        state.model = list[0].id;
+        select.value = state.model;
+        localStorage.setItem('holo_model', state.model);
+        localStorage.setItem('ae_model', state.model);
+    }
+};
+
+window.onModelSelectChange = function(val) {
+    if (!val) return;
+    state.model = val;
+    localStorage.setItem('holo_model', val);
+    localStorage.setItem('ae_model', val);
+    const badge = document.getElementById('modelUpdateStatus');
+    if (badge) {
+        badge.textContent = `✓ Selected: ${val}`;
+        badge.style.color = '#00ff88';
+    }
+};
+
+window.refreshGeminiModelsFromGoogle = async function(silent = false) {
+    const statusBadge = document.getElementById('modelUpdateStatus');
+    if (!state.apiKey) {
+        if (!silent && statusBadge) {
+            statusBadge.textContent = "⚠ Enter Google Gemini API key first";
+            statusBadge.style.color = "#ffb700";
+        }
+        populateGeminiModelOptions(getCachedGeminiModels());
+        return;
+    }
+
+    if (statusBadge) {
+        statusBadge.textContent = "🔄 Syncing with Google AI Studio API...";
+        statusBadge.style.color = "#00f0ff";
+    }
+
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 9000);
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(state.apiKey)}`;
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+            throw new Error(`Google API HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        if (data && Array.isArray(data.models)) {
+            const liveModels = [];
+            data.models.forEach(m => {
+                const rawName = m.name || '';
+                const modelId = rawName.replace(/^models\//, '');
+                const methods = m.supportedGenerationMethods || [];
+
+                if (methods.includes('generateContent') && modelId.startsWith('gemini')) {
+                    const disp = m.displayName ? `${m.displayName} (${modelId})` : modelId;
+                    liveModels.push({
+                        id: modelId,
+                        name: disp,
+                        description: m.description || ''
+                    });
+                }
+            });
+
+            if (liveModels.length > 0) {
+                // Priority ordering: latest recommended models first
+                liveModels.sort((a, b) => {
+                    const rank = (id) => {
+                        if (id === 'gemini-2.5-flash') return 0;
+                        if (id === 'gemini-2.5-pro') return 1;
+                        if (id === 'gemini-2.0-flash') return 2;
+                        if (id === 'gemini-2.0-flash-lite') return 3;
+                        if (id.includes('2.5')) return 4;
+                        if (id.includes('2.0')) return 5;
+                        if (id.includes('1.5-flash')) return 6;
+                        if (id.includes('1.5-pro')) return 7;
+                        return 8;
+                    };
+                    return rank(a.id) - rank(b.id);
+                });
+
+                localStorage.setItem('holo_cached_gemini_models', JSON.stringify(liveModels));
+                populateGeminiModelOptions(liveModels);
+
+                if (statusBadge) {
+                    statusBadge.textContent = `✓ Synced ${liveModels.length} models from Google AI Studio`;
+                    statusBadge.style.color = "#00ff88";
+                }
+
+                if (!silent && window.HoloBridge && window.HoloBridge.showToast) {
+                    window.HoloBridge.showToast(`Updated ${liveModels.length} Gemini models from Google AI Studio`);
+                }
+                return;
+            }
+        }
+        throw new Error("No Gemini models returned");
+    } catch (err) {
+        console.warn("[GeminiModelSync] Failed to query live models:", err);
+        populateGeminiModelOptions(getCachedGeminiModels());
+        if (statusBadge) {
+            statusBadge.textContent = "✓ Using curated Google model registry";
+            statusBadge.style.color = "#94a3b8";
+        }
+    }
+};
 
 // ==========================================
 // 3. AI PROVIDER CLIENT (GEMINI / GROQ / OLLAMA)
@@ -328,8 +684,8 @@ async function queryAIProvider(messages) {
             }
         }
 
-        const preferredModel = state.model || 'gemini-2.0-flash';
-        const candidateModels = [preferredModel, 'gemini-2.0-flash', 'gemini-1.5-flash'];
+        const preferredModel = state.model || 'gemini-2.5-flash';
+        const candidateModels = [preferredModel, 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash'];
         let lastError = null;
 
         for (const modelName of [...new Set(candidateModels)]) {
@@ -349,11 +705,16 @@ async function queryAIProvider(messages) {
             }
 
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 20000);
+
                 const res = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
 
                 if (res.ok) {
                     const data = await res.json();
@@ -363,7 +724,6 @@ async function queryAIProvider(messages) {
                 } else {
                     const errData = await res.json().catch(() => ({}));
                     lastError = new Error((errData.error && errData.error.message) || `Gemini HTTP ${res.status}`);
-                    // If not a model-not-found error, throw immediately (e.g. invalid API key)
                     if (res.status !== 404 && res.status !== 400) {
                         throw lastError;
                     }
@@ -381,6 +741,9 @@ async function queryAIProvider(messages) {
 
     // Groq LPU Ultra-Fast Inference
     if (state.provider === 'groq') {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 16000);
+
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -392,8 +755,10 @@ async function queryAIProvider(messages) {
                 messages: messages,
                 temperature: 0.7,
                 max_tokens: 1024
-            })
+            }),
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (!res.ok) {
             const errData = await res.json().catch(() => ({}));
@@ -406,6 +771,9 @@ async function queryAIProvider(messages) {
 
     // Local Ollama
     if (state.provider === 'ollama') {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 16000);
+
         const res = await fetch('http://127.0.0.1:11434/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -413,8 +781,11 @@ async function queryAIProvider(messages) {
                 model: 'llama3',
                 messages: messages,
                 stream: false
-            })
+            }),
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
+
         const data = await res.json();
         return data.message.content.trim();
     }
@@ -431,19 +802,25 @@ window.onProviderChange = function() {
     const keyLabel = document.getElementById('apiKeyLabel');
     const keyInput = document.getElementById('apiKeyInput');
     const freeGuide = document.getElementById('freeKeyGuide');
+    const geminiGroup = document.getElementById('geminiModelGroup');
 
     if (state.provider === 'gemini') {
         if (keyLabel) keyLabel.textContent = 'GOOGLE GEMINI API KEY (FREE TIER)';
         if (keyInput) keyInput.placeholder = 'AIzaSy... (Paste Google Gemini Key)';
         if (freeGuide) freeGuide.style.display = 'block';
+        if (geminiGroup) geminiGroup.style.display = 'block';
+        populateGeminiModelOptions();
+        if (state.apiKey) refreshGeminiModelsFromGoogle(true);
     } else if (state.provider === 'groq') {
         if (keyLabel) keyLabel.textContent = 'GROQ API KEY (FREE TIER)';
         if (keyInput) keyInput.placeholder = 'gsk_... (Paste Groq Key)';
         if (freeGuide) freeGuide.style.display = 'none';
+        if (geminiGroup) geminiGroup.style.display = 'none';
     } else {
         if (keyLabel) keyLabel.textContent = 'LOCAL OLLAMA (NO KEY NEEDED)';
         if (keyInput) keyInput.placeholder = 'http://127.0.0.1:11434';
         if (freeGuide) freeGuide.style.display = 'none';
+        if (geminiGroup) geminiGroup.style.display = 'none';
     }
 };
 
@@ -464,6 +841,10 @@ window.openSettingsModal = function() {
     if (modal) modal.classList.add('open');
     const input = document.getElementById('apiKeyInput');
     if (input) input.value = state.apiKey;
+    populateGeminiModelOptions();
+    if (state.apiKey && state.provider === 'gemini') {
+        refreshGeminiModelsFromGoogle(true);
+    }
     populateSystemVoices();
     testNetHunterBridge();
 };
@@ -546,6 +927,9 @@ window.autoSaveApiKey = function(val) {
 window.saveApiKeyDirect = function() {
     const input = document.getElementById('apiKeyInput');
     if (input) autoSaveApiKey(input.value);
+    if (state.apiKey && state.provider === 'gemini') {
+        refreshGeminiModelsFromGoogle(false);
+    }
     if (window.HoloBridge && window.HoloBridge.showToast) {
         window.HoloBridge.showToast("Gemini key saved");
     }
@@ -613,7 +997,7 @@ window.selectVoiceStudioAgent = function(agentKey) {
     currentStudioAgent = HoloVoice.canonicalAgentKey ? HoloVoice.canonicalAgentKey(agentKey) : (agentKey || 'swarm');
     
     // Update agent tab active class
-    ['swarm', 'turing', 'knuth'].forEach(k => {
+    ['swarm', 'turing', 'knuth', 'lovelace'].forEach(k => {
         const tab = document.getElementById('vsTab-' + k);
         if (tab) tab.classList.toggle('active', k === currentStudioAgent);
     });
@@ -738,7 +1122,7 @@ window.saveStudioVoice = function() {
     }
     updateDockVoiceTags();
     closeVoiceModal();
-    const agentLabel = currentStudioAgent === 'swarm' ? 'Planner' : currentStudioAgent === 'turing' ? 'Builder' : 'Auditor';
+    const agentLabel = currentStudioAgent === 'swarm' ? 'Swarm Core' : currentStudioAgent === 'turing' ? 'Alan Turing' : currentStudioAgent === 'knuth' ? 'Donald Knuth' : 'Ada Lovelace';
     if (window.HoloVoice && window.HoloVoice.speakAgent) {
         window.HoloVoice.speakAgent(`${agentLabel} voice profile calibrated.`);
     }
@@ -748,7 +1132,7 @@ window.updateDockVoiceTags = function() {
     if (!window.HoloVoice || !window.HoloVoice.getAgentVoiceConfig || !window.HoloVoice.getVoicePresets) return;
     const presets = window.HoloVoice.getVoicePresets();
 
-    ['swarm', 'turing', 'knuth'].forEach(k => {
+    ['swarm', 'turing', 'knuth', 'lovelace'].forEach(k => {
         const tagEl = document.getElementById('dockVoiceTag-' + k);
         if (tagEl) {
             const cfg = window.HoloVoice.getAgentVoiceConfig(k);
@@ -762,6 +1146,10 @@ window.updateDockVoiceTags = function() {
 // Initial setup on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
     switchPersona(state.persona);
+    populateGeminiModelOptions();
+    if (state.apiKey && state.provider === 'gemini') {
+        refreshGeminiModelsFromGoogle(true);
+    }
     updateDockVoiceTags();
     setTimeout(testNetHunterBridge, 800);
 });

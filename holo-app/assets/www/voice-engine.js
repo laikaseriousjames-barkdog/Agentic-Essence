@@ -30,14 +30,16 @@ window.HoloVoice = (function() {
     const DEFAULT_AGENT_VOICES = {
         swarm: { preset: 'cyber', pitch: 0.88, rate: 1.05, voiceName: '' },
         turing: { preset: 'crisp', pitch: 1.00, rate: 1.00, voiceName: '' },
-        knuth: { preset: 'sentinel', pitch: 0.72, rate: 0.95, voiceName: '' }
+        knuth: { preset: 'sentinel', pitch: 0.80, rate: 0.95, voiceName: '' },
+        lovelace: { preset: 'nova', pitch: 1.10, rate: 1.02, voiceName: '' }
     };
 
     function canonicalAgentKey(k) {
         const lower = (k || 'swarm').toLowerCase();
-        if (lower === 'planner') return 'swarm';
-        if (lower === 'builder') return 'turing';
-        if (lower === 'auditor') return 'knuth';
+        if (lower === 'planner') return 'turing';
+        if (lower === 'builder') return 'knuth';
+        if (lower === 'auditor' || lower === 'executor') return 'lovelace';
+        if (lower === 'orchestrator') return 'swarm';
         return lower;
     }
 
@@ -59,18 +61,10 @@ window.HoloVoice = (function() {
     }
 
     const PERSONA_VOICES = {
-        swarm: { pitch: 0.85, rate: 1.05, phrase: "Planner neural swarm online. Ready for tactical directives." },
-        turing: { pitch: 1.00, rate: 0.98, phrase: "Builder logic matrix online. What systems shall we engineer?" },
-        knuth: { pitch: 0.92, rate: 0.95, phrase: "Auditor lattice verified. Ready for algorithmic and security analysis." },
-        lovelace: { pitch: 1.18, rate: 1.02, phrase: "Ada Lovelace online. What poetry of science shall we explore?" },
-        shadow: { pitch: 0.72, rate: 1.10, phrase: "Shadow Operator online. Attack surface reconnaissance active." },
-        sentry: { pitch: 0.88, rate: 1.08, phrase: "Cyber Sentry standing guard. Threat hunting matrix engaged." },
-        cipher: { pitch: 1.06, rate: 0.92, phrase: "Cipher Core decrypted and active. Ready for cryptographic operations." },
-        valkyrie: { pitch: 1.22, rate: 1.14, phrase: "Valkyrie Tactical initialized. Emergency triage standing by." },
-        matrix: { pitch: 0.62, rate: 0.96, phrase: "Reverse Matrix engaged. Disassembler and shellcode engine ready." },
-        ghost: { pitch: 0.78, rate: 0.96, phrase: "Ghost Recon cloaked. Passive OSINT collection started." },
-        glitch: { pitch: 1.38, rate: 1.22, phrase: "Glitch Synth booted! High-velocity cyber automation spinning up." },
-        archon: { pitch: 0.75, rate: 0.90, phrase: "Archon Prime commanding. Framework compliance and threat posture active." }
+        swarm: { pitch: 0.88, rate: 1.05, phrase: "Quantum Swarm Core synchronized. Multi-agent neural fabric online." },
+        turing: { pitch: 1.00, rate: 1.00, phrase: "Alan Turing online. Strategy and planning matrix initialized." },
+        knuth: { pitch: 0.88, rate: 0.96, phrase: "Donald Knuth standing by. Algorithmic synthesis and code tools active." },
+        lovelace: { pitch: 1.12, rate: 1.02, phrase: "Ada Lovelace engaged. Systems ready for execution and verification." }
     };
 
     // DOM References
@@ -206,6 +200,26 @@ window.HoloVoice = (function() {
         }
     }
 
+    function isLikelyNoise(input) {
+        if (!input) return true;
+        const clean = input.trim().toLowerCase().replace(/[.,!?;:'\"-]/g, '');
+        if (clean.length < 2) return true;
+
+        const allowedShort = new Set(['hi', 'ok', 'go', 'no', 'up', 'on', 'yo', 'me']);
+        if (clean.length === 2 && !allowedShort.has(clean)) return true;
+
+        const noiseSet = new Set([
+            'uh', 'um', 'ah', 'oh', 'er', 'mm', 'hmm', 'hm', 'mhm',
+            'huh', 'shh', 'sh', 'ha', 'heh', 'psst', 'cough', 'sniff', 'gasp'
+        ]);
+        if (noiseSet.has(clean)) return true;
+
+        // Repeated single letter like "aaaa", "...."
+        if (/^(.)\1+$/.test(clean) && clean.length <= 4) return true;
+
+        return false;
+    }
+
     // ========================================================
     // VOICE TURN DISPATCHER & NATURAL INTENT ROUTING
     // ========================================================
@@ -213,26 +227,51 @@ window.HoloVoice = (function() {
         const text = rawText.trim();
         if (!text) return;
 
+        // Filter out small noises, breaths, coughs, and filler phonemes
+        if (isLikelyNoise(text)) {
+            console.log("[HoloVoice] Ignored ambient noise:", text);
+            pulseEqualizer(false);
+            updateVoiceState('idle');
+            if (isContinuous && !isSpeaking) {
+                setTimeout(() => {
+                    if (!isListening && !isSpeaking) startListening();
+                }, 350);
+            }
+            return;
+        }
+
         stopListening();
         updateVoiceState('processing');
         showTranscript('OPERATOR', text);
 
         const lower = text.toLowerCase();
 
-        // 1. Direct Tri-Agent Voice Summoning
-        if (lower.includes('switch to planner') || lower.includes('activate planner') || lower === 'planner' || lower.includes('hey planner') || lower.includes('switch to swarm') || lower === 'swarm' || lower.includes('activate swarm') || lower.includes('hey swarm')) {
-            window.switchPersona('swarm');
-            speakAgent(PERSONA_VOICES.swarm.phrase);
+        // 0. Agent Profiles Modal Trigger
+        if (lower.includes('agent profile') || lower.includes('show profile') || lower.includes('profiles') || lower.includes('personalities') || lower.includes('who are you') || lower.includes('list agents')) {
+            if (window.openProfilesModal) window.openProfilesModal();
+            speakAgent("Tri-agent profiles and cognitive personalities displayed.");
             return;
         }
-        if (lower.includes('switch to builder') || lower.includes('activate builder') || lower === 'builder' || lower.includes('hey builder') || lower.includes('switch to turing') || lower === 'turing' || lower.includes('activate turing')) {
+
+        // 1. Direct Tri-Agent Voice Summoning
+        if (lower.includes('switch to planner') || lower.includes('activate planner') || lower === 'planner' || lower.includes('hey planner') || lower.includes('switch to turing') || lower === 'turing' || lower.includes('activate turing') || lower.includes('hey turing') || lower.includes('alan turing')) {
             window.switchPersona('turing');
             speakAgent(PERSONA_VOICES.turing.phrase);
             return;
         }
-        if (lower.includes('switch to auditor') || lower.includes('activate auditor') || lower === 'auditor' || lower.includes('hey auditor') || lower.includes('switch to knuth') || lower === 'knuth' || lower.includes('activate knuth')) {
+        if (lower.includes('switch to builder') || lower.includes('activate builder') || lower === 'builder' || lower.includes('hey builder') || lower.includes('switch to knuth') || lower === 'knuth' || lower.includes('activate knuth') || lower.includes('hey knuth') || lower.includes('donald knuth')) {
             window.switchPersona('knuth');
             speakAgent(PERSONA_VOICES.knuth.phrase);
+            return;
+        }
+        if (lower.includes('switch to auditor') || lower.includes('activate auditor') || lower === 'auditor' || lower.includes('hey auditor') || lower.includes('switch to lovelace') || lower === 'lovelace' || lower.includes('activate lovelace') || lower.includes('hey lovelace') || lower.includes('ada lovelace') || lower.includes('executor')) {
+            window.switchPersona('lovelace');
+            speakAgent(PERSONA_VOICES.lovelace.phrase);
+            return;
+        }
+        if (lower.includes('switch to swarm') || lower === 'swarm' || lower.includes('activate swarm') || lower.includes('hey swarm') || lower.includes('orchestrator')) {
+            window.switchPersona('swarm');
+            speakAgent(PERSONA_VOICES.swarm.phrase);
             return;
         }
 
@@ -240,48 +279,6 @@ window.HoloVoice = (function() {
         if (lower.includes('voice studio') || lower.includes('change voice') || lower.includes('switch voice') || lower.includes('voice settings') || lower.includes('choose voice')) {
             if (window.openVoiceModal) window.openVoiceModal();
             speakAgent("Voice Studio opened. Select an acoustic profile or voice for your agents.");
-            return;
-        }
-
-        // Persona Voice Triggers (Compatibility)
-        if (lower.includes('switch to shadow') || lower === 'shadow' || lower.includes('activate shadow') || lower.includes('red team')) {
-            window.switchPersona('shadow');
-            speakAgent(PERSONA_VOICES.shadow.phrase);
-            return;
-        }
-        if (lower.includes('switch to sentry') || lower === 'sentry' || lower.includes('activate sentry') || lower.includes('blue team')) {
-            window.switchPersona('sentry');
-            speakAgent(PERSONA_VOICES.sentry.phrase);
-            return;
-        }
-        if (lower.includes('switch to cipher') || lower === 'cipher' || lower.includes('activate cipher') || lower.includes('cryptography')) {
-            window.switchPersona('cipher');
-            speakAgent(PERSONA_VOICES.cipher.phrase);
-            return;
-        }
-        if (lower.includes('switch to valkyrie') || lower === 'valkyrie' || lower.includes('activate valkyrie') || lower.includes('incident response')) {
-            window.switchPersona('valkyrie');
-            speakAgent(PERSONA_VOICES.valkyrie.phrase);
-            return;
-        }
-        if (lower.includes('switch to matrix') || lower === 'matrix' || lower.includes('activate matrix') || lower.includes('reverse engineer')) {
-            window.switchPersona('matrix');
-            speakAgent(PERSONA_VOICES.matrix.phrase);
-            return;
-        }
-        if (lower.includes('switch to ghost') || lower === 'ghost' || lower.includes('activate ghost') || lower.includes('osint')) {
-            window.switchPersona('ghost');
-            speakAgent(PERSONA_VOICES.ghost.phrase);
-            return;
-        }
-        if (lower.includes('switch to glitch') || lower === 'glitch' || lower.includes('activate glitch')) {
-            window.switchPersona('glitch');
-            speakAgent(PERSONA_VOICES.glitch.phrase);
-            return;
-        }
-        if (lower.includes('switch to archon') || lower === 'archon' || lower.includes('activate archon') || lower.includes('framework commander')) {
-            window.switchPersona('archon');
-            speakAgent(PERSONA_VOICES.archon.phrase);
             return;
         }
         if (lower.includes('switch to lovelace') || lower === 'lovelace' || lower.includes('activate lovelace')) {
@@ -391,13 +388,25 @@ window.HoloVoice = (function() {
     // ========================================================
     function speakAgent(text) {
         if (!text) return;
+
+        // Clean any markdown formatting, bracket tags, and raw URLs for natural speech
+        const cleanText = text
+            .replace(/<[^>]*>/g, '')
+            .replace(/```[\s\S]*?```/g, '')
+            .replace(/`[^`]*`/g, '')
+            .replace(/\[(?:EXEC|RUN|SPAWN|TOOL|SHELL)[^\]]*\]/gi, '')
+            .replace(/https?:\/\/\S+/gi, '')
+            .replace(/[*_#~]/g, '')
+            .trim();
+        if (!cleanText) return;
+
         isSpeaking = true;
         updateVoiceState('speaking');
         
         const persona = window.state ? window.state.persona : 'swarm';
         const agentConfig = getAgentVoiceConfig(persona);
-        const personaName = (persona === 'swarm' ? 'PLANNER' : persona === 'turing' ? 'BUILDER' : persona === 'knuth' ? 'AUDITOR' : (persona || 'Agent')).toUpperCase();
-        showTranscript(personaName, text);
+        const personaName = (persona === 'swarm' ? 'SWARM CORE' : persona === 'turing' ? 'ALAN TURING' : persona === 'knuth' ? 'DONALD KNUTH' : persona === 'lovelace' ? 'ADA LOVELACE' : (persona || 'Agent')).toUpperCase();
+        showTranscript(personaName, cleanText);
 
         // Animate 3D hologram lip-sync & audio energy
         startHoloLipSync();
@@ -407,8 +416,9 @@ window.HoloVoice = (function() {
         const configRate = (agentConfig && agentConfig.rate !== undefined) ? agentConfig.rate : profile.rate;
         const activeVoiceName = (agentConfig && agentConfig.voiceName) ? agentConfig.voiceName : selectedSystemVoiceName;
 
-        const targetPitch = Math.max(0.4, Math.min(2.0, configPitch * userVoicePitch));
-        const targetRate = Math.max(0.5, Math.min(2.0, configRate * userVoiceRate));
+        // Realistic pitch and rate bounds to prevent metallic/alien distortion
+        const targetPitch = Math.max(0.70, Math.min(1.35, configPitch * userVoicePitch));
+        const targetRate = Math.max(0.80, Math.min(1.25, configRate * userVoiceRate));
 
         // 1. Native Android TTS via HoloBridge
         if (window.HoloBridge && window.HoloBridge.speakPersona) {
@@ -418,7 +428,7 @@ window.HoloVoice = (function() {
                 window.HoloBridge.setVoice(activeVoiceName);
             }
 
-            window.HoloBridge.speakPersona(text, persona);
+            window.HoloBridge.speakPersona(cleanText, persona);
 
             // Poll for when speaking ends
             const checkEnd = setInterval(() => {
@@ -429,7 +439,7 @@ window.HoloVoice = (function() {
             }, 250);
 
             // Safety timeout based on word count
-            const words = text.split(/\s+/).length;
+            const words = cleanText.split(/\s+/).length;
             const approxDurationMs = Math.max(1600, words * 380);
             setTimeout(() => {
                 clearInterval(checkEnd);
@@ -441,8 +451,7 @@ window.HoloVoice = (function() {
         // 2. Fallback Web Speech Synthesis
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
-            const clean = text.replace(/<[^>]*>/g, '').replace(/```[\s\S]*?```/g, '').replace(/[#*_`]/g, '');
-            const utterance = new SpeechSynthesisUtterance(clean);
+            const utterance = new SpeechSynthesisUtterance(cleanText);
             
             utterance.pitch = targetPitch;
             utterance.rate = targetRate;
@@ -573,16 +582,22 @@ window.HoloVoice = (function() {
             pulseEqualizer(true);
         }
     }
+    function onNativeSpeechFinished() {
+        onSpeechFinished();
+    }
     function onNativeError(errorCode) {
         console.log("[HoloVoice] Native speech error code:", errorCode);
         pulseEqualizer(false);
         updateVoiceState('idle');
+        isListening = false;
+        // Fast restart on normal speech timeout (6) or no match (7)
+        const restartDelay = (errorCode === 8) ? 1000 : 350;
         if (isContinuous && !isSpeaking) {
             setTimeout(() => {
                 if (!isListening && !isSpeaking) {
                     startListening();
                 }
-            }, 800);
+            }, restartDelay);
         }
     }
     function onNativeAudioLevel(rmsdB) {
@@ -683,9 +698,10 @@ window.HoloVoice = (function() {
     function auditionAgentVoice(agentKey, sample) {
         const canonical = canonicalAgentKey(agentKey);
         const defaultPhrases = {
-            swarm: "Planner online. Swarm neural architecture operational and ready for coordinates.",
-            turing: "Builder online. Logic matrix verified. System code and AST tools ready.",
-            knuth: "Auditor online. Algorithm logic lattice secure. Vulnerability inspection standing by."
+            swarm: "Quantum Swarm Core synchronized. Multi-agent neural fabric online.",
+            turing: "Alan Turing online. Strategy and planning matrix initialized.",
+            knuth: "Donald Knuth standing by. Algorithmic synthesis and code tools active.",
+            lovelace: "Ada Lovelace engaged. Systems ready for execution and verification."
         };
         const phrase = sample || defaultPhrases[canonical] || PERSONA_VOICES[canonical]?.phrase || "Acoustic voice calibrated.";
         
@@ -708,6 +724,7 @@ window.HoloVoice = (function() {
         onNativeSpeechResult: onNativeSpeechResult,
         onNativeSpeechDetected: onNativeSpeechDetected,
         onNativePartialResult: onNativePartialResult,
+        onNativeSpeechFinished: onNativeSpeechFinished,
         onNativeError: onNativeError,
         onNativeAudioLevel: onNativeAudioLevel,
         onNativeStateChange: onNativeStateChange,

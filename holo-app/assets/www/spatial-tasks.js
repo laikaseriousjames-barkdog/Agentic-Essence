@@ -19,7 +19,7 @@ window.SpatialTasks = (function() {
     /**
      * Spawns a floating terminal execution card out of thin air
      */
-    function spawnTerminalCard(command, output) {
+    function spawnTerminalCard(command, output, type = 'shell') {
         const c = getContainer();
         if (!c) return;
 
@@ -28,12 +28,15 @@ window.SpatialTasks = (function() {
         const card = document.createElement('div');
         card.className = 'spatial-task-card';
         card.id = cardId;
+        const isShizuku = type === 'shizuku';
+        const titleText = isShizuku ? '⚡ SHIZUKU ADB EXECUTION' : '⚡ TERMINAL EXECUTION';
+        const promptPrefix = isShizuku ? '// adb $ ' : '// $ ';
 
         card.innerHTML = `
-            <div class="spatial-card-header">
+            <div class="spatial-card-header" ${isShizuku ? 'style="border-bottom: 1px solid rgba(0,240,255,0.4);"' : ''}>
                 <div class="spatial-card-title">
-                    <span>⚡ TERMINAL EXECUTION</span>
-                    <span style="opacity:0.6; font-size:9.5px;">// $ ${escapeHtml(command.slice(0, 30))}</span>
+                    <span ${isShizuku ? 'style="color:#00f0ff;"' : ''}>${titleText}</span>
+                    <span style="opacity:0.6; font-size:9.5px;">${promptPrefix}${escapeHtml(command.slice(0, 30))}</span>
                 </div>
                 <button class="spatial-close-btn" onclick="SpatialTasks.dismiss('${cardId}')">✕</button>
             </div>

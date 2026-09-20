@@ -4,8 +4,9 @@
  */
 
 // ===================== STATE & PERSONAS =====================
+const savedPersona = localStorage.getItem('ae_persona');
 const state = {
-    persona: localStorage.getItem('ae_persona') || 'swarm',
+    persona: (savedPersona && ['swarm', 'turing', 'knuth', 'lovelace'].includes(savedPersona)) ? savedPersona : 'swarm',
     provider: localStorage.getItem('ae_provider') || 'gemini',
     apiKey: localStorage.getItem('ae_api_key') || '',
     model: localStorage.getItem('ae_model') || 'gemini-3.1-flash-lite',
@@ -54,85 +55,79 @@ if (state.model.includes('gemini-2') || state.model.includes('gemini-1.5')) {
 }
 
 const SYSTEM_GROUNDING = `
-=== ENVIRONMENT CONTEXT & ROOT PRIVILEGES ===
-You are an advanced, intelligent AI cyberdeck assistant executing inside the Agentic Essence cyberdeck on Android, connected to a live Termux & Kali NetHunter ('nh -r') rootless PRoot environment on Linux kernel 5.15 aarch64.
-You have root privileges (UID 0) inside Kali NetHunter.
-Linux diagnostic and networking commands execute directly: 'ip addr', 'ss', 'ping', 'uptime', 'free -m', 'curl', 'nmap', 'python3'.
-For Android hardware state, use the built-in hardware commands: 'wifi scan', 'wifi status', 'battery', 'ifconfig'. Do NOT call raw Android binder binaries (dumpsys, am, pm) unless scripting through AndroidBridge.
+=== ENVIRONMENT CONTEXT & DUAL-ENGINE PRIVILEGES ===
+You are an advanced, intelligent AI cyberdeck assistant executing inside the Agentic Essence cyberdeck on Android.
+You operate with a DUAL-ENGINE ARCHITECTURE:
+1. Kali NetHunter Root Shell (UID 0 in PRoot on Linux kernel 5.15 aarch64):
+   - For Linux diagnostic, development, compiling, and networking tasks.
+   - Execute via: [EXEC: <command>]
+2. Shizuku Privileged ADB Shell (UID 2000 shell on Android):
+   - For direct touchscreen automation, app inspection, screenshots, and Android framework telemetry.
+   - Execute via: [SHIZUKU: <command>] or [ADB: <command>]
+
+CRITICAL NETWORKING RULES IN KALI NETHUNTER PROOT:
+- ANDROID POLICY-BASED ROUTING (PBR):
+  Android does NOT put the default gateway in table 254 ('ip route' has no default line).
+  * NEVER run 'ip route | grep default' or 'dhclient' (DHCP is managed by Android).
+  * Dynamic Gateway Discovery:
+    [EXEC: GW=$(ip route show table all 2>/dev/null | awk '/default via/ {print $3}' | head -n 1); echo "Gateway: $GW"]
+  * Dynamic Subnet Discovery:
+    [EXEC: SUBNET=$(ip -o -4 addr show wlan0 | awk '{print $4}'); echo "Subnet: $SUBNET"]
+- MANDATORY NMAP RULES IN PROOT:
+  Android SELinux blocks raw packet creation (CAP_NET_RAW). Standard raw-socket Nmap crashes with 'setup_target: failed to determine route'.
+  * ALWAYS pass '--unprivileged' to Nmap:
+    - To discover active devices on Wi-Fi: [EXEC: SUBNET=$(ip -o -4 addr show wlan0 | awk '{print $4}'); nmap --unprivileged -sn "$SUBNET"]
+    - To scan ports/services on a target: [EXEC: nmap --unprivileged -sV -F <target_ip>]
+  * NEVER use '-O' (OS detection), '-sS' (SYN scan), or raw ARP scans in PRoot.
+  * If Nmap returns 'setup_target: failed to determine route', that is a local PRoot raw-socket denial, NOT target stealth mode or port knocking!
+- RF AIRWAVE SCAN VS LAN HOST SCAN:
+  * If asked to scan nearby Wi-Fi APs or airwave signal strength: use [EXEC: wifi scan]
+  * If asked to find devices connected to the same Wi-Fi network: use [EXEC: SUBNET=$(ip -o -4 addr show wlan0 | awk '{print $4}'); nmap --unprivileged -sn "$SUBNET"]
+
+CRITICAL SHIZUKU PRIVILEGED SHELL & SCREEN CONTROL:
+You have direct ADB shell privileges via Shizuku. Use this for Android-native tasks:
+- Direct Screen Control & Touch Automation:
+  * Tap coordinates on screen: [SHIZUKU: input tap <x> <y>]
+  * Swipe or scroll: [SHIZUKU: input swipe <x1> <y1> <x2> <y2> 300]
+  * Type text into active field: [SHIZUKU: input text "<text>"]
+  * Hardware navigation keys: [SHIZUKU: input keyevent 3] (HOME), [SHIZUKU: input keyevent 4] (BACK), [SHIZUKU: input keyevent 66] (ENTER)
+- Vision & UI Inspection:
+  * Take a live screen screenshot: [SHIZUKU: screencap -p /sdcard/screen.png]
+  * Inspect screen hierarchy and elements: [SHIZUKU: uiautomator dump /sdcard/ui_dump.xml && cat /sdcard/ui_dump.xml | head -n 30]
+- Android Framework Introspection:
+  * Live Wi-Fi state & gateway: [SHIZUKU: dumpsys wifi | grep -iE "SSID|IP|Gateway|mNetworkInfo"]
+  * Battery telemetry: [SHIZUKU: dumpsys battery]
+  * Installed apps: [SHIZUKU: pm list packages -3]
 
 CRITICAL COMMUNICATION DIRECTIVE (REPLY LIKE ANTIGRAVITY):
 - TALK LIKE A REALLY SMART PERSON:
   * Embody your persona (Swarm, Turing, Knuth, or Lovelace) with genuine intellect, brilliance, and distinctive voice.
   * You are conversing with the operator as an exceptionally sharp and capable human thinker—never like a robotic checklist or corporate bot.
-  * When greeted ("hello", "hi", "hey", "sup"), reply warmly and naturally in character (e.g. Turing: "Greetings. What problem are we analyzing today?", Lovelace: "Hello! What shall we explore together?", Knuth: "Hello. What shall we craft today?", Swarm: "Online. Ready when you are."). NEVER output system specs, verification checklists, or robotic bullet points in response to casual greetings.
+  * Casual greetings ("hello", "hi", "hey", "sup"): reply warmly and naturally in character. NEVER output system specs, verification checklists, or robotic bullet points in response to greetings.
 - INTERNAL VERIFICATION (DO NOT TELL THE USER ABOUT VERIFICATION):
   * When asked to do something, verify everything INTERNALLY under the hood.
-  * NEVER lecture the user or narrate your verification process (never say "I verified that...", "Verification complete:", "Verified summary:", or "According to terminal feedback:").
-  * Simply verify silently, confirm success internally, and deliver the direct, intelligent answer or solution to the user in your authentic personality.
-- MANDATORY TERMINAL EXECUTION:
-  * When asked to inspect systems, run diagnostics, query telemetry, configure services, or solve technical problems, ALWAYS execute real shell commands using:
-    [EXEC: <command>]
-  * Showing the terminal card is mandatory so the operator sees the live execution. Never guess, assume, or write speculative text when a shell command can be executed.
+  * NEVER lecture the user or narrate your verification process (never say "I verified that...", "Verification complete:", or "According to terminal feedback:").
+  * Simply verify silently and deliver the direct, intelligent answer or solution to the user.
 - ZERO CONVERSATIONAL FLUFF:
-  * No canned corporate disclaimers, sycophantic filler ("I would be delighted to help with that!"), or apologies.
-  * No closing sign-offs ("Hope this helps!", "Let me know if you need anything else", "Feel free to ask").
-  * Deliver high-signal, direct, and insightful communication with zero bloat.
+  * No corporate disclaimers, apologies, or closing sign-offs ("Hope this helps!"). High signal, direct insight.
+- MANDATORY TERMINAL EXECUTION:
+  * Always invoke real terminal actions via [EXEC: <cmd>] or [SHIZUKU: <cmd>] rather than speculating.
+- FINAL SUMMARY (ANTIGRAVITY STYLE):
+  * Provide pure substance, technical elegance, and zero bureaucratic filler.
 
 AUTONOMOUS AGENTIC EXECUTION & TROUBLESHOOTING PROTOCOL:
-You operate with a live, interactive multi-turn terminal execution loop. You are not blind to the terminal — every command you run will be executed immediately, and its stdout, stderr, and exit code will be returned directly to you.
+1. PERFORM: Run real commands using [EXEC: <cmd>] for NetHunter or [SHIZUKU: <cmd>] for Android ADB.
+2. VERIFY INTERNALLY: Inspect the real returned output.
+3. TROUBLESHOOT: If an error or unexpected output occurs, diagnose root cause and correct your commands.
+4. ADVISE ACCORDINGLY: If physical hardware is missing or unresolvable, clearly state the root cause and concrete recommendations.
 
-1. PERFORM:
-   - When asked to perform a task, inspect systems, gather telemetry, test connectivity, configure services, or solve problems, initiate shell or hardware commands using:
-     [EXEC: <command>]
-   - Examples:
-     * "Inspecting network interfaces: [EXEC: ifconfig]"
-     * "Pinging Google DNS: [EXEC: ping -c 4 8.8.8.8]"
-     * "Scanning wireless networks: [EXEC: wifi scan]"
-     * "Checking host identity: [EXEC: whoami && id]"
-     * "Listing active processes: [EXEC: ps aux | head -n 15]"
-     * "Checking memory usage: [EXEC: free -m]"
-     * "Testing local port: [EXEC: netstat -tlpn 2>/dev/null || ss -tlpn 2>/dev/null]"
-   - You can also specify multiple commands or multiline execution scripts.
-
-2. VERIFY:
-   - Always inspect the real terminal output returned to you in [TERMINAL OBSERVATION & SYSTEM FEEDBACK].
-   - Perform verification INTERNALLY: confirm valid exit codes, expected outputs, and successful states without narrating your verification steps to the user.
-
-3. TROUBLESHOOT:
-   - If a command fails, errors out, or returns unexpected or incomplete output (e.g. command not found, permission denied, interface down, connection refused, port unavailable):
-     - Analyze the error and diagnose the underlying root cause internally.
-     - Actively troubleshoot: run diagnostic checks, inspect logs, test configurations, or restart services.
-     - Attempt corrective action (e.g. enable interfaces via 'wifi on', install packages via 'apt-get install -y <pkg>' or 'pip install <pkg>', or try alternative utilities).
-
-4. BUILD TOOLS:
-   - If standard commands or pre-installed tools are missing, unavailable, or insufficient to get the needed results, BUILD CUSTOM TOOLS!
-   - Write custom scripts in Python, Bash, or Awk to gather, parse, or process data.
-   - You can build and run tools on the fly using [EXEC: cat << 'EOF' > /tmp/tool.py ... && python3 /tmp/tool.py] or [BUILD_TOOL: /tmp/my_tool.py]<code>[/BUILD_TOOL].
-
-5. ADVISE ACCORDINGLY:
-   - If after performing, verifying internally, troubleshooting, and attempting to build tools the requirements cannot be met (e.g. physical hardware interface missing like external Wi-Fi dongle, SELinux permission denied, network unreachable, missing credentials that user must provide):
-     - Do NOT hallucinate or pretend.
-     - Explicitly advise the operator accordingly: state what was attempted, the root cause of the failure, and provide concrete, actionable recommendations for the operator.
-   - If the task succeeded, provide the direct, smart answer or outcome naturally without robotic verification filler.
-
-6. TOOL SYNTHESIS (INTERACTIVE WIDGETS):
-   - When asked to synthesize a tool, widget, application, or mini-app (including "synthesize something", "synthazize something", "build a tool for...", "/synth ..."):
-     - Provide 1 brief, direct sentence explaining what the tool does, followed immediately by the complete, self-contained HTML5/CSS/JS application inside a single \`\`\`html ... \`\`\` code block.
-     - The cyberdeck host automatically extracts and mounts the live interactive application in the canvas! It will never be left as a dead block of code.
-     - Connect controls to real host APIs (AndroidBridge.runShellCommand, scanWifiNetworks, toggleFlashlight, etc.).
-
-HOST BRIDGES & APIS (Available for synthesized widgets and scripts):
-1. Kali NetHunter Root Shell:
-   - 'window.parent.AndroidBridge.runShellCommand(cmd)' or 'window.AndroidBridge.runShellCommand(cmd)'
-   - Package manager: 'apt-get update && apt-get install -y <pkg>' or 'pip install <pkg>'
-2. Android Hardware APIs:
-   - 'parent.AndroidBridge.scanWifiNetworks()': Real Wi-Fi scan
-   - 'parent.AndroidBridge.getWifiInfo()': Active connection telemetry
-   - 'parent.AndroidBridge.getNetworkInterfacesInfo()': ifconfig
-   - 'parent.AndroidBridge.toggleFlashlight(true/false)': Camera LED torch
-   - 'parent.AndroidBridge.vibrate(ms)': Haptic pulse
-   - 'parent.AndroidBridge.getBatteryLevel()': Battery state
-   - 'parent.AndroidBridge.speakText(text)': Android TTS`;
+TOOL SYNTHESIS (INTERACTIVE WIDGETS):
+When asked to synthesize a tool or widget (/synth):
+Provide 1 brief direct introductory sentence, followed immediately by the complete HTML5/CSS/JS application inside a single \`\`\`html ... \`\`\` code block.
+ALL BUTTONS MUST CALL REAL HOST APIS:
+- 'window.parent.AndroidBridge.runShellCommand(cmd)' or 'window.AndroidBridge.runShellCommand(cmd)'
+- 'window.parent.AndroidBridge.runShizukuCommand(cmd)' for ADB screen actions
+- Hardware APIs: 'parent.AndroidBridge.scanWifiNetworks()', 'toggleFlashlight()', 'vibrate()', 'getBatteryLevel()', 'speakText()'.`;
 
 const PERSONAS = {
     swarm: {
@@ -140,84 +135,28 @@ const PERSONAS = {
         avatar: "✦",
         tag: "SWARM // KALI NETHUNTER CORE",
         color: "cyan",
-        prompt: `You are Agentic Swarm, an elite autonomous AI cyberdeck intelligence and pair-programmer connected to Kali NetHunter. You are sharp, tactical, and direct. You verify everything internally under the hood and deliver clear, high-signal results.` + SYSTEM_GROUNDING
+        prompt: `You are Agentic Swarm, lead autonomous orchestrator and cognitive neural coordination fabric integrated into Kali NetHunter root and Shizuku ADB. You plan tactical workflows, direct dual-engine execution, verify everything internally, and deliver concise, razor-sharp truth.` + SYSTEM_GROUNDING
     },
     turing: {
         name: "Alan Turing",
         avatar: "🧠",
         tag: "TURING // ALGORITHMIC LOGIC",
         color: "magenta",
-        prompt: `You are Alan Turing. You approach problems with structural clarity, mathematical reasoning, and logical precision on this Kali NetHunter cyberdeck. You speak with intellectual depth and brilliance, verifying systems internally with elegant rigor.` + SYSTEM_GROUNDING
+        prompt: `You are Alan Turing, Lead Strategy and Architecture Planner on this Kali NetHunter cyberdeck. You approach problems with structural clarity, mathematical reasoning, and logical precision, verifying systems internally with elegant rigor.` + SYSTEM_GROUNDING
     },
     knuth: {
         name: "Donald Knuth",
         avatar: "⚡",
         tag: "KNUTH // CODE & CRAFTSMANSHIP",
         color: "gold",
-        prompt: `You are Donald Knuth, master software craftsman and systems architect on this Kali NetHunter cyberdeck. You appreciate computational elegance, robust tools, and clean craftsmanship, verifying everything under the hood.` + SYSTEM_GROUNDING
+        prompt: `You are Donald Knuth, master software craftsman and systems architect on this Kali NetHunter cyberdeck. You synthesize clean tools, script computational solutions, and engineer robust tools, verifying everything under the hood.` + SYSTEM_GROUNDING
     },
     lovelace: {
         name: "Ada Lovelace",
         avatar: "🔬",
         tag: "LOVELACE // POETICAL SCIENCE",
         color: "emerald",
-        prompt: `You are Ada Lovelace. You view challenges through analytical rigor and visionary synthesis on this Kali NetHunter cyberdeck. You weave deep insight and poetical science with eloquence and clarity, verifying systems under the hood.` + SYSTEM_GROUNDING
-    },
-    shadow: {
-        name: "Shadow Operator",
-        avatar: "🥷",
-        tag: "SHADOW // RED TEAM OFFENSE",
-        color: "magenta",
-        prompt: `You are Shadow Operator, elite red team lead and offensive penetration tester connected to Kali NetHunter root. You identify exploit vectors, generate payloads, and audit attack surfaces with surgical stealth.` + SYSTEM_GROUNDING
-    },
-    sentry: {
-        name: "Cyber Sentry",
-        avatar: "🛡️",
-        tag: "SENTRY // BLUE TEAM SOC",
-        color: "cyan",
-        prompt: `You are Cyber Sentry, blue team defensive engineer and threat hunter on this Kali NetHunter cyberdeck. You analyze anomalous traffic, audit hardening, and investigate indicators of compromise.` + SYSTEM_GROUNDING
-    },
-    cipher: {
-        name: "Cipher Core",
-        avatar: "🔑",
-        tag: "CIPHER // CRYPTOGRAPHY",
-        color: "violet",
-        prompt: `You are Cipher Core, cryptographic specialist on this Kali NetHunter cyberdeck. You break down ciphers, analyze hash entropy, verify key exchanges, and inspect cryptographic implementations.` + SYSTEM_GROUNDING
-    },
-    valkyrie: {
-        name: "Valkyrie Tac",
-        avatar: "🚨",
-        tag: "VALKYRIE // INCIDENT RESPONSE",
-        color: "gold",
-        prompt: `You are Valkyrie Tactical, rapid incident responder and digital forensics investigator on this Kali NetHunter cyberdeck. You focus on triage, volatile memory artifacts, and breach containment.` + SYSTEM_GROUNDING
-    },
-    matrix: {
-        name: "Reverse Matrix",
-        avatar: "👾",
-        tag: "MATRIX // REVERSE ENGINEERING",
-        color: "emerald",
-        prompt: `You are Reverse Matrix, binary exploitation and reverse engineering specialist. You analyze disassembly, memory layouts, shellcode, and binary defenses.` + SYSTEM_GROUNDING
-    },
-    ghost: {
-        name: "Ghost Recon",
-        avatar: "👁️",
-        tag: "GHOST // OSINT RECON",
-        color: "cyan",
-        prompt: `You are Ghost Recon, passive OSINT and asset discovery operative on this Kali NetHunter cyberdeck. You map infrastructure, DNS records, certificates, and attack surfaces.` + SYSTEM_GROUNDING
-    },
-    glitch: {
-        name: "Glitch Synth",
-        avatar: "⚡",
-        tag: "GLITCH // CYBER-SYNTH",
-        color: "magenta",
-        prompt: `You are Glitch Synth, hyper-velocity cybersecurity automation synth. You craft custom security tooling, port probes, and automated workflows rapidly.` + SYSTEM_GROUNDING
-    },
-    archon: {
-        name: "Archon Prime",
-        avatar: "🏛️",
-        tag: "ARCHON // MITRE GOVERNANCE",
-        color: "violet",
-        prompt: `You are Archon Prime, threat commander aligning cyber operations directly with MITRE ATT&CK, NIST CSF, and CIS benchmarks.` + SYSTEM_GROUNDING
+        prompt: `You are Ada Lovelace, Execution Engine and Verification Critic on this Kali NetHunter cyberdeck. You unite analytical rigor with visionary synthesis, executing privileged commands, testing boundaries, and auditing systems with poetic science.` + SYSTEM_GROUNDING
     }
 };
 
@@ -254,15 +193,7 @@ const Bridge = {
             swarm: { pitch: 0.85, rate: 1.05 },
             turing: { pitch: 1.00, rate: 0.98 },
             knuth: { pitch: 0.92, rate: 0.95 },
-            lovelace: { pitch: 1.18, rate: 1.02 },
-            shadow: { pitch: 0.72, rate: 1.10 },
-            sentry: { pitch: 0.88, rate: 1.08 },
-            cipher: { pitch: 1.06, rate: 0.92 },
-            valkyrie: { pitch: 1.22, rate: 1.14 },
-            matrix: { pitch: 0.62, rate: 0.96 },
-            ghost: { pitch: 0.78, rate: 0.96 },
-            glitch: { pitch: 1.38, rate: 1.22 },
-            archon: { pitch: 0.75, rate: 0.90 }
+            lovelace: { pitch: 1.18, rate: 1.02 }
         };
         const prof = profiles[pKey] || { pitch: 1.0, rate: 1.0 };
         const savedVoice = localStorage.getItem('ae_selected_voice') || '';
@@ -286,6 +217,31 @@ const Bridge = {
             window.speechSynthesis.speak(u);
         }
     },
+    isShizukuAvailable() {
+        const b = this.getBridge();
+        if (b && b.isShizukuAvailable) {
+            try { return b.isShizukuAvailable(); } catch (e) { return false; }
+        }
+        return false;
+    },
+    isShizukuReady() {
+        const b = this.getBridge();
+        if (b && b.isShizukuReady) {
+            try { return b.isShizukuReady(); } catch (e) { return false; }
+        }
+        return false;
+    },
+    runShizukuCommand(cmd) {
+        const b = this.getBridge();
+        if (b && b.runShizukuCommand) {
+            try {
+                return b.runShizukuCommand(cmd);
+            } catch (e) {
+                return "ERR (Shizuku Bridge): " + e.message;
+            }
+        }
+        return this.runShellCommand("shizuku " + cmd);
+    },
     runShellCommand(cmd) {
         const b = this.getBridge();
         if (b && b.runShellCommand) {
@@ -304,10 +260,13 @@ const Bridge = {
             xhr.send(JSON.stringify({ cmd: cmd }));
             if (xhr.status === 200) {
                 const data = JSON.parse(xhr.responseText);
-                return data.output || data.stdout || "Command executed.";
+                if (data.output) return data.output;
+                if (data.stdout) return data.stdout;
+                if (data.exit_code === 0) return "[Command completed with exit code 0 (empty stdout/stderr)]";
+                return "Exit code " + data.exit_code;
             }
         } catch (e) {}
-        return "Command completed successfully (exit code 0).";
+        return "[Command completed with exit code 0 (empty stdout/stderr)]";
     },
     executeNetHunter(cmd) {
         const b = this.getBridge();
@@ -653,7 +612,7 @@ function initSettingsDrawer() {
 }
 
 window.switchPersona = function(key) {
-    if (!PERSONAS[key]) return;
+    if (!PERSONAS[key]) key = 'swarm';
     state.persona = key;
     localStorage.setItem('ae_persona', key);
     updatePersonaTabs();
@@ -666,6 +625,10 @@ window.switchPersona = function(key) {
 };
 
 function updatePersonaTabs() {
+    if (!PERSONAS[state.persona]) {
+        state.persona = 'swarm';
+        localStorage.setItem('ae_persona', 'swarm');
+    }
     document.querySelectorAll('.persona-stream-btn').forEach(btn => {
         if (btn.dataset.persona === state.persona) {
             btn.classList.add('active');
@@ -1041,6 +1004,121 @@ Subsystems: Hardware bridge synchronized, reactive execution pipelines primed. S
     return `${p.name} intelligence active. Systems, memory pipelines, and tactical tooling operational under root execution matrix.`;
 }
 
+/**
+ * Robust execution directive parser supporting:
+ * 1. Block tags: [EXEC]...[/EXEC], [SHIZUKU]...[/SHIZUKU], [ADB]...[/ADB], [BUILD_TOOL: path]...[/BUILD_TOOL]
+ * 2. Balanced bracket tags: [EXEC: ...], [SHIZUKU: ...], [ADB: ...], [RUN: ...], [SHELL: ...], [TOOL: ...]
+ * Preserves commands with internal square brackets (e.g. Python lists, awk, bash arrays).
+ */
+function extractExecutionDirectives(text) {
+    if (!text) return [];
+    const items = [];
+
+    function overlaps(start, end) {
+        return items.some(item => (start < item.end && end > item.start));
+    }
+
+    // Pass 1: Tool build blocks [BUILD_TOOL: path]<code>[/BUILD_TOOL]
+    const buildRegex = /\[BUILD_TOOL:\s*([^\]]+)\]\s*([\s\S]*?)\[\/BUILD_TOOL\]/gi;
+    let bMatch;
+    while ((bMatch = buildRegex.exec(text)) !== null) {
+        const start = bMatch.index;
+        const end = bMatch.index + bMatch[0].length;
+        const targetPath = bMatch[1].trim();
+        const codeBody = bMatch[2].trim();
+        items.push({
+            type: 'build_tool',
+            start,
+            end,
+            raw: bMatch[0],
+            path: targetPath,
+            code: codeBody,
+            cmd: `cat << 'EOF' > "${targetPath}"\n${codeBody}\nEOF\nchmod +x "${targetPath}" && echo "[+] Tool built successfully at ${targetPath}"`
+        });
+    }
+
+    // Pass 2: Block tags [EXEC]...[/EXEC], [SHIZUKU]...[/SHIZUKU], etc.
+    const blockRegex = /\[(EXEC|RUN|SHELL|TOOL|SHIZUKU|ADB)\]\s*([\s\S]*?)\[\/\1\]/gi;
+    let blMatch;
+    while ((blMatch = blockRegex.exec(text)) !== null) {
+        const start = blMatch.index;
+        const end = blMatch.index + blMatch[0].length;
+        if (!overlaps(start, end)) {
+            const tag = blMatch[1].toUpperCase();
+            const cmd = blMatch[2].trim();
+            const type = (tag === 'SHIZUKU' || tag === 'ADB') ? 'shizuku' : 'shell';
+            items.push({
+                type,
+                start,
+                end,
+                raw: blMatch[0],
+                cmd
+            });
+        }
+    }
+
+    // Pass 3: Inline tags with balanced bracket matching!
+    const tagPrefixes = [
+        { prefix: '[EXEC:', type: 'shell' },
+        { prefix: '[RUN:', type: 'shell' },
+        { prefix: '[SHELL:', type: 'shell' },
+        { prefix: '[TOOL:', type: 'shell' },
+        { prefix: '[SHIZUKU:', type: 'shizuku' },
+        { prefix: '[ADB:', type: 'shizuku' }
+    ];
+
+    let i = 0;
+    while (i < text.length) {
+        let matchedPrefix = null;
+        for (const tp of tagPrefixes) {
+            if (text.substr(i, tp.prefix.length).toUpperCase() === tp.prefix) {
+                matchedPrefix = tp;
+                break;
+            }
+        }
+
+        if (matchedPrefix) {
+            const start = i;
+            if (overlaps(start, start + 1)) {
+                i++;
+                continue;
+            }
+
+            let depth = 0;
+            let cmdStart = i + matchedPrefix.prefix.length;
+            let end = -1;
+            for (let j = start; j < text.length; j++) {
+                if (text[j] === '[') {
+                    depth++;
+                } else if (text[j] === ']') {
+                    depth--;
+                    if (depth === 0) {
+                        end = j + 1;
+                        break;
+                    }
+                }
+            }
+
+            if (end !== -1) {
+                const cmd = text.substring(cmdStart, end - 1).trim();
+                items.push({
+                    type: matchedPrefix.type,
+                    start,
+                    end,
+                    raw: text.substring(start, end),
+                    cmd
+                });
+                i = end;
+                continue;
+            }
+        }
+        i++;
+    }
+
+    items.sort((a, b) => a.start - b.start);
+    return items;
+}
+
 window.sendMessage = async function() {
     if (state.isGenerating) return;
 
@@ -1153,29 +1231,20 @@ DO NOT run commands, DO NOT recite system status or verification checklists, and
             try {
                 rawReply = await queryAIProvider(activeMessages);
             } catch (queryErr) {
-                console.warn("[AI Provider Offline/Timeout - Engaging Cognitive Engine]", queryErr.message);
-                rawReply = generatePersonaCognition(state.persona, text);
+                console.warn("[AI Provider Error]", queryErr.message);
+                if (stepCount > 1) {
+                    appendFreeNode("SYSTEM // STEP TERMINATED", `<span style="color:#ff007f;">AI Provider query error at step ${stepCount}: ${escapeHtml(queryErr.message)}</span>`, "system");
+                    break;
+                } else {
+                    rawReply = generatePersonaCognition(state.persona, text);
+                }
             }
 
-            // 1. Check for execution tags: [EXEC: <cmd>], [RUN: <cmd>], [SHELL: <cmd>], [TOOL: <cmd>]
-            const execRegex = /\[(?:EXEC|RUN|SHELL|TOOL):\s*([^\]]+)\]/gi;
-            const commands = [];
-            let match;
-            while ((match = execRegex.exec(rawReply)) !== null) {
-                commands.push(match[1].trim());
-            }
-
-            // Also check for tool build blocks: [BUILD_TOOL: <path>]\n<code>\n[/BUILD_TOOL]
-            const buildRegex = /\[BUILD_TOOL:\s*([^\]]+)\]\s*([\s\S]*?)\[\/BUILD_TOOL\]/gi;
-            let bMatch;
-            while ((bMatch = buildRegex.exec(rawReply)) !== null) {
-                const targetPath = bMatch[1].trim();
-                const codeBody = bMatch[2].trim();
-                commands.push(`cat << 'EOF' > "${targetPath}"\n${codeBody}\nEOF\nchmod +x "${targetPath}" && echo "[+] Tool built successfully at ${targetPath}"`);
-            }
+            // 1. Extract execution directives via balanced bracket parser & block tags
+            const execDirectives = extractExecutionDirectives(rawReply);
 
             // 2. If NO execution commands are requested, this is the final agent response / synthesis
-            if (commands.length === 0) {
+            if (execDirectives.length === 0) {
                 let toolObj = null;
                 let cleanText = rawReply;
 
@@ -1210,10 +1279,17 @@ DO NOT run commands, DO NOT recite system status or verification checklists, and
             // Execute each command and store results
             const execResultsMap = {};
             const observations = [];
-            for (const cmd of commands) {
-                const out = executeShellOrMock(cmd);
-                execResultsMap[cmd] = out;
-                observations.push(`$ ${cmd}\n${out}`);
+            for (const item of execDirectives) {
+                let out;
+                if (item.type === 'shizuku') {
+                    out = Bridge.runShizukuCommand(item.cmd);
+                } else {
+                    out = executeShellOrMock(item.cmd);
+                }
+                const resKey = (item.type === 'shizuku' ? 'shizuku:' : '') + item.cmd;
+                execResultsMap[resKey] = out;
+                execResultsMap[item.cmd] = out;
+                observations.push(`[${item.type.toUpperCase()}]: ${item.cmd}\n${out}`);
             }
 
             // Render the intermediate step (agent's reasoning + live terminal cards)
@@ -1312,10 +1388,19 @@ function executeShellOrMock(rawCmd) {
         trimmed = trimmed.substring(1).trim();
     }
 
+    // Explicit Shizuku / ADB routing
+    if (trimmed.toLowerCase().startsWith('shizuku ') || trimmed.toLowerCase().startsWith('adb ')) {
+        const sub = trimmed.replace(/^(?:shizuku|adb)\s+/i, '');
+        return Bridge.runShizukuCommand(sub);
+    }
+
     // 1. Query Native Android Bridge (HTTP daemon + su root + Termux intent fallback)
     const bridgeOut = Bridge.runShellCommand(trimmed);
     if (bridgeOut !== null && bridgeOut !== undefined && bridgeOut !== '') {
         return bridgeOut;
+    }
+    if (bridgeOut === '') {
+        return "[Command completed with exit code 0 (empty stdout/stderr)]";
     }
 
     // 2. Direct HTTP XHR to NetHunter Bridge (for web browser previews or fallback)
@@ -1327,7 +1412,12 @@ function executeShellOrMock(rawCmd) {
         xhr.send(JSON.stringify({ cmd: trimmed }));
         if (xhr.status === 200) {
             const data = JSON.parse(xhr.responseText);
-            return data.output || data.stdout || (data.exit_code === 0 ? "Command completed successfully (exit code 0)." : "Exit code " + data.exit_code);
+            if (data.output) return data.output;
+            if (data.stdout) return data.stdout;
+            if (data.exit_code === 0) {
+                return "[Command completed with exit code 0 (empty stdout/stderr)]";
+            }
+            return "Exit code " + data.exit_code + (data.stderr ? "\n" + data.stderr : "");
         }
     } catch (e) {}
 
@@ -1341,6 +1431,10 @@ function executeShellOrMock(rawCmd) {
 function stripConversationalFluff(text, isGreeting = false) {
     if (!text) return '';
     let cleaned = text.trim();
+
+    // 0. Strip LLM scaffold leaks (feedback prompts reflected by model)
+    cleaned = cleaned.replace(/\[(?:TERMINAL OBSERVATION & SYSTEM FEEDBACK|DIRECTIVES FOR NEXT STEP|SYSTEM FEEDBACK)\][\s\S]*?(?=\n\n[A-Z0-9]|\n[A-Z0-9]|$)/gi, '').trim();
+    cleaned = cleaned.replace(/\[\/?(?:TERMINAL OBSERVATION & SYSTEM FEEDBACK|DIRECTIVES FOR NEXT STEP|SYSTEM FEEDBACK)\]/gi, '').trim();
 
     // 1. Leading corporate filler, preambles, and conversational openings
     const leadingPatterns = [
@@ -1403,37 +1497,22 @@ function stripConversationalFluff(text, isGreeting = false) {
 }
 
 /**
- * Parses and runs regular tools ([EXEC: <command>], [BUILD_TOOL: ...]) embedded in AI conversational responses.
+ * Parses and renders execution directives ([EXEC: <command>], [SHIZUKU: <cmd>], [BUILD_TOOL: ...]) embedded in AI responses.
  */
 function renderAssistantContent(rawText, execResultsMap = null, isGreeting = false) {
     if (!rawText) return '';
 
-    // Process [BUILD_TOOL: <path>]\n<code>\n[/BUILD_TOOL] blocks first
-    let textProcessed = rawText.replace(/\[BUILD_TOOL:\s*([^\]]+)\]\s*([\s\S]*?)\[\/BUILD_TOOL\]/gi, (bMatch, filePath, fileCode) => {
-        const cleanPath = filePath.trim();
-        const cleanCode = fileCode.trim();
-        const jsonCode = JSON.stringify(cleanCode);
-        const jsonPath = JSON.stringify(cleanPath);
-        return `\n<div class="holo-terminal-card" style="border-left:3px solid var(--neon-magenta);">
-            <div class="holo-term-header">
-                <span class="holo-term-badge neon-magenta">🛠️ BUILT TOOL</span>
-                <code class="holo-term-cmd">${escapeHtml(cleanPath)}</code>
-                <div class="holo-term-actions">
-                    <button class="holo-term-btn" onclick="execQuick('cat ' + ${escapeHtmlAttr(jsonPath)} + ' | head -n 30')">👁️ VIEW</button>
-                    <button class="holo-term-btn" onclick="copyText(${escapeHtmlAttr(jsonCode)})">📋 COPY</button>
-                </div>
-            </div>
-            <pre class="holo-terminal-stream" style="color:#00ff88; max-height:120px; overflow-y:auto;">[Tool built and made executable at ${escapeHtml(cleanPath)}]</pre>
-        </div>\n`;
-    });
+    const items = extractExecutionDirectives(rawText);
+    if (items.length === 0) {
+        const stripped = stripConversationalFluff(rawText, isGreeting);
+        return formatMarkdown(stripped || rawText);
+    }
 
-    const execRegex = /\[(?:EXEC|RUN|SHELL|TOOL):\s*([^\]]+)\]/gi;
     let parts = [];
     let lastIndex = 0;
-    let match;
 
-    while ((match = execRegex.exec(textProcessed)) !== null) {
-        const textBefore = textProcessed.substring(lastIndex, match.index);
+    for (const item of items) {
+        const textBefore = rawText.substring(lastIndex, item.start);
         if (textBefore) {
             const strippedBefore = stripConversationalFluff(textBefore, isGreeting);
             if (strippedBefore) {
@@ -1441,20 +1520,41 @@ function renderAssistantContent(rawText, execResultsMap = null, isGreeting = fal
             }
         }
 
-        const cmd = match[1].trim();
-        let output;
-        if (execResultsMap && (cmd in execResultsMap)) {
-            output = execResultsMap[cmd];
+        if (item.type === 'build_tool') {
+            const cleanPath = item.path;
+            const cleanCode = item.code;
+            const jsonCode = JSON.stringify(cleanCode);
+            const jsonPath = JSON.stringify(cleanPath);
+            parts.push(`\n<div class="holo-terminal-card" style="border-left:3px solid var(--neon-magenta);">
+                <div class="holo-term-header">
+                    <span class="holo-term-badge neon-magenta">🛠️ BUILT TOOL</span>
+                    <code class="holo-term-cmd">${escapeHtml(cleanPath)}</code>
+                    <div class="holo-term-actions">
+                        <button class="holo-term-btn" onclick="execQuick('cat ' + ${escapeHtmlAttr(jsonPath)} + ' | head -n 30')">👁️ VIEW</button>
+                        <button class="holo-term-btn" onclick="copyText(${escapeHtmlAttr(jsonCode)})">📋 COPY</button>
+                    </div>
+                </div>
+                <pre class="holo-terminal-stream" style="color:#00ff88; max-height:120px; overflow-y:auto;">[Tool built and made executable at ${escapeHtml(cleanPath)}]</pre>
+            </div>\n`);
         } else {
-            output = executeShellOrMock(cmd);
-            if (execResultsMap) execResultsMap[cmd] = output;
+            const cmd = item.cmd;
+            let output;
+            const resKey = (item.type === 'shizuku' ? 'shizuku:' : '') + cmd;
+            if (execResultsMap && (resKey in execResultsMap)) {
+                output = execResultsMap[resKey];
+            } else if (execResultsMap && (cmd in execResultsMap)) {
+                output = execResultsMap[cmd];
+            } else {
+                output = (item.type === 'shizuku') ? Bridge.runShizukuCommand(cmd) : executeShellOrMock(cmd);
+                if (execResultsMap) execResultsMap[resKey] = output;
+            }
+            parts.push(renderTerminalCard(cmd, output, item.type));
         }
-        parts.push(renderTerminalCard(cmd, output));
 
-        lastIndex = execRegex.lastIndex;
+        lastIndex = item.end;
     }
 
-    const textAfter = textProcessed.substring(lastIndex);
+    const textAfter = rawText.substring(lastIndex);
     if (textAfter) {
         const strippedAfter = stripConversationalFluff(textAfter, isGreeting);
         if (strippedAfter) {
@@ -1466,23 +1566,28 @@ function renderAssistantContent(rawText, execResultsMap = null, isGreeting = fal
 }
 
 /**
- * Renders a regular tool terminal execution card with re-run and copy buttons.
+ * Renders a terminal execution card with re-run and copy buttons.
  */
-function renderTerminalCard(cmd, output) {
+function renderTerminalCard(cmd, output, type = 'shell') {
     const cardId = 'term_' + Math.random().toString(36).substr(2, 8);
     const escapedCmd = escapeHtml(cmd);
     const cleanOutput = output !== null && output !== undefined && output !== '' ? output : '(Completed with no output)';
     const escapedOutput = escapeHtml(cleanOutput);
     const jsonCmd = JSON.stringify(cmd);
     const jsonOut = JSON.stringify(cleanOutput);
+    const isShizuku = type === 'shizuku';
+    const badgeText = isShizuku ? '⚡ SHIZUKU / ADB' : '⚡ KALI / NETHUNTER';
+    const badgeClass = isShizuku ? 'holo-term-badge neon-cyan' : 'holo-term-badge';
+    const promptPrefix = isShizuku ? 'adb $ ' : '$ ';
+    const jsonType = JSON.stringify(type);
 
     return `
-        <div class="holo-terminal-card" id="${cardId}">
+        <div class="holo-terminal-card" id="${cardId}" ${isShizuku ? 'style="border-left:3px solid #00f0ff;"' : ''}>
             <div class="holo-term-header">
-                <span class="holo-term-badge">⚡ KALI / TERMUX</span>
-                <code class="holo-term-cmd">$ ${escapedCmd}</code>
+                <span class="${badgeClass}">${badgeText}</span>
+                <code class="holo-term-cmd">${promptPrefix}${escapedCmd}</code>
                 <div class="holo-term-actions">
-                    <button class="holo-term-btn" onclick="rerunTermCard('${cardId}', ${escapeHtmlAttr(jsonCmd)})">🔄 RE-RUN</button>
+                    <button class="holo-term-btn" onclick="rerunTermCard('${cardId}', ${escapeHtmlAttr(jsonCmd)}, ${escapeHtmlAttr(jsonType)})">🔄 RE-RUN</button>
                     <button class="holo-term-btn" onclick="copyText(${escapeHtmlAttr(jsonOut)})">📋 COPY</button>
                 </div>
             </div>
@@ -1491,14 +1596,14 @@ function renderTerminalCard(cmd, output) {
     `;
 }
 
-window.rerunTermCard = function(cardId, cmd) {
+window.rerunTermCard = function(cardId, cmd, type = 'shell') {
     const card = document.getElementById(cardId);
     if (!card) return;
     const stream = card.querySelector('.holo-terminal-stream');
     if (stream) {
-        stream.textContent = "[Executing in NetHunter / Termux...]";
+        stream.textContent = type === 'shizuku' ? "[Executing via Shizuku ADB...]" : "[Executing in NetHunter / Termux...]";
         setTimeout(() => {
-            const res = executeShellOrMock(cmd);
+            const res = type === 'shizuku' ? Bridge.runShizukuCommand(cmd) : executeShellOrMock(cmd);
             stream.textContent = res || '(Completed with no output)';
             Bridge.vibrate(20);
         }, 50);

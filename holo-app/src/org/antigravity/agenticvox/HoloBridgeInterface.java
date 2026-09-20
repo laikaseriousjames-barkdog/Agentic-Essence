@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
@@ -19,6 +20,7 @@ import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
@@ -27,9 +29,12 @@ import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import android.net.Uri;
 import android.speech.tts.Voice;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStream;
+import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -53,6 +58,7 @@ public class HoloBridgeInterface {
     private boolean mTTSReady = false;
     private SpeechRecognizer mSpeechRecognizer;
     private boolean mIsListening = false;
+    private volatile boolean mIsSpeakingPersona = false;
     private float mCustomPitch = 1.0f;
     private float mCustomSpeechRate = 1.0f;
     private String mSelectedVoiceName = null;
@@ -69,7 +75,28 @@ public class HoloBridgeInterface {
                 if (status == TextToSpeech.SUCCESS) {
                     mTTS.setLanguage(Locale.US);
                     mTTSReady = true;
-                    Log.d(TAG, "TextToSpeech initialized successfully");
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+                        mTTS.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                            @Override
+                            public void onStart(String utteranceId) {
+                                mIsSpeakingPersona = true;
+                                evaluateJs("if(window.HoloVoice && window.HoloVoice.onNativeSpeechStarted) HoloVoice.onNativeSpeechStarted();");
+                            }
+
+                            @Override
+                            public void onDone(String utteranceId) {
+                                mIsSpeakingPersona = false;
+                                evaluateJs("if(window.HoloVoice && window.HoloVoice.onNativeSpeechFinished) HoloVoice.onNativeSpeechFinished();");
+                            }
+
+                            @Override
+                            public void onError(String utteranceId) {
+                                mIsSpeakingPersona = false;
+                                evaluateJs("if(window.HoloVoice && window.HoloVoice.onNativeSpeechFinished) HoloVoice.onNativeSpeechFinished();");
+                            }
+                        });
+                    }
+                    Log.d(TAG, "TextToSpeech initialized successfully with UtteranceProgressListener");
                 } else {
                     Log.w(TAG, "TextToSpeech initialization failed");
                 }
@@ -157,12 +184,14 @@ public class HoloBridgeInterface {
                 }
 
                 String utteranceId = "holo_" + System.currentTimeMillis();
+                mIsSpeakingPersona = true;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     mTTS.speak(cleanText, TextToSpeech.QUEUE_FLUSH, null, utteranceId);
                 } else {
                     mTTS.speak(cleanText, TextToSpeech.QUEUE_FLUSH, null);
                 }
             } else {
+                mIsSpeakingPersona = false;
                 // Fallback to JS speech synthesis trigger
                 evaluateJs("window.onNativeTTSFallback('" + cleanText.replace("'", "\\'") + "')");
             }
@@ -293,6 +322,7 @@ public class HoloBridgeInterface {
 
     @JavascriptInterface
     public void stopSpeaking() {
+        mIsSpeakingPersona = false;
         mActivity.runOnUiThread(() -> {
             if (mTTS != null) {
                 mTTS.stop();
@@ -302,7 +332,7 @@ public class HoloBridgeInterface {
 
     @JavascriptInterface
     public boolean isSpeaking() {
-        return mTTS != null && mTTS.isSpeaking();
+        return mIsSpeakingPersona || (mTTS != null && mTTS.isSpeaking());
     }
 
     @JavascriptInterface
@@ -314,55 +344,74 @@ public class HoloBridgeInterface {
                     return;
                 }
 
-                if (mSpeechRecognizer != null) {
-                    mSpeechRecognizer.destroy();
+                // If currently speaking, don't start listening to avoid echo loops
+                if (isSpeaking()) {
+                    Log.d(TAG, "Speech recognizer paused because TTS is actively speaking");
+                    return;
                 }
 
-                mSpeechRecognizer = SpeechRecognizer.createSpeechRecognizer(mActivity);
+                if (mSpeechRecognizer == null) {
+                    mSpeechRecognizer = SpeechRecognizer.createSpeechRecognizer(mActivity);
+                    mSpeechRecognizer.setRecognitionListener(new RecognitionListener() {
+                        @Override public void onReadyForSpeech(Bundle params) {
+                            mIsListening = true;
+                            evaluateJs("if(window.HoloVoice) HoloVoice.onNativeStateChange('listening')");
+                        }
+                        @Override public void onBeginningOfSpeech() {
+                            evaluateJs("if(window.HoloVoice) HoloVoice.onNativeSpeechDetected()");
+                        }
+                        @Override public void onRmsChanged(float rmsdB) {
+                            evaluateJs("if(window.HoloVoice) HoloVoice.onNativeAudioLevel(" + rmsdB + ")");
+                        }
+                        @Override public void onBufferReceived(byte[] buffer) {}
+                        @Override public void onEndOfSpeech() {
+                            mIsListening = false;
+                            evaluateJs("if(window.HoloVoice) HoloVoice.onNativeStateChange('processing')");
+                        }
+                        @Override public void onError(int error) {
+                            mIsListening = false;
+                            evaluateJs("if(window.HoloVoice) HoloVoice.onNativeError(" + error + ")");
+                        }
+                        @Override public void onResults(Bundle results) {
+                            mIsListening = false;
+                            ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                            if (matches != null && !matches.isEmpty()) {
+                                String raw = matches.get(0).trim();
+                                String lower = raw.toLowerCase().replaceAll("[.,!?;:'\"-]", "").trim();
+                                // Filter out 1-char noise and ambient filler sounds (breaths, clicks, filler)
+                                if (lower.length() > 1 && !lower.equals("uh") && !lower.equals("um") && !lower.equals("ah") && !lower.equals("mm") && !lower.equals("er") && !lower.equals("sh")) {
+                                    String spoken = raw.replace("'", "\\'");
+                                    evaluateJs("if(window.HoloVoice) HoloVoice.onNativeSpeechResult('" + spoken + "')");
+                                } else {
+                                    evaluateJs("if(window.HoloVoice) HoloVoice.onNativeStateChange('idle')");
+                                }
+                            }
+                        }
+                        @Override public void onPartialResults(Bundle partialResults) {
+                            ArrayList<String> matches = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                            if (matches != null && !matches.isEmpty()) {
+                                String raw = matches.get(0).trim();
+                                String lower = raw.toLowerCase().replaceAll("[.,!?;:'\"-]", "").trim();
+                                if (lower.length() > 1 && !lower.equals("uh") && !lower.equals("um") && !lower.equals("ah")) {
+                                    String partial = raw.replace("'", "\\'");
+                                    evaluateJs("if(window.HoloVoice) HoloVoice.onNativePartialResult('" + partial + "')");
+                                }
+                            }
+                        }
+                        @Override public void onEvent(int eventType, Bundle params) {}
+                    });
+                }
+
                 Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
                 intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
                 intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.US.toString());
                 intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
                 intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+                intent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 1500L);
+                intent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 1800L);
+                intent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1400L);
 
-                mSpeechRecognizer.setRecognitionListener(new RecognitionListener() {
-                    @Override public void onReadyForSpeech(Bundle params) {
-                        mIsListening = true;
-                        evaluateJs("if(window.HoloVoice) HoloVoice.onNativeStateChange('listening')");
-                    }
-                    @Override public void onBeginningOfSpeech() {
-                        evaluateJs("if(window.HoloVoice) HoloVoice.onNativeSpeechDetected()");
-                    }
-                    @Override public void onRmsChanged(float rmsdB) {
-                        evaluateJs("if(window.HoloVoice) HoloVoice.onNativeAudioLevel(" + rmsdB + ")");
-                    }
-                    @Override public void onBufferReceived(byte[] buffer) {}
-                    @Override public void onEndOfSpeech() {
-                        mIsListening = false;
-                        evaluateJs("if(window.HoloVoice) HoloVoice.onNativeStateChange('processing')");
-                    }
-                    @Override public void onError(int error) {
-                        mIsListening = false;
-                        evaluateJs("if(window.HoloVoice) HoloVoice.onNativeError(" + error + ")");
-                    }
-                    @Override public void onResults(Bundle results) {
-                        mIsListening = false;
-                        ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                        if (matches != null && !matches.isEmpty()) {
-                            String spoken = matches.get(0).replace("'", "\\'");
-                            evaluateJs("if(window.HoloVoice) HoloVoice.onNativeSpeechResult('" + spoken + "')");
-                        }
-                    }
-                    @Override public void onPartialResults(Bundle partialResults) {
-                        ArrayList<String> matches = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                        if (matches != null && !matches.isEmpty()) {
-                            String partial = matches.get(0).replace("'", "\\'");
-                            evaluateJs("if(window.HoloVoice) HoloVoice.onNativePartialResult('" + partial + "')");
-                        }
-                    }
-                    @Override public void onEvent(int eventType, Bundle params) {}
-                });
-
+                mSpeechRecognizer.cancel();
                 mSpeechRecognizer.startListening(intent);
             } catch (Exception e) {
                 Log.e(TAG, "Failed to start speech recognizer: " + e.getMessage());
@@ -589,6 +638,134 @@ public class HoloBridgeInterface {
                 Log.e(TAG, "Failed to open external URL: " + e.getMessage());
             }
         });
+    }
+
+    @JavascriptInterface
+    public boolean isShizukuAvailable() {
+        File rishFile = getRishExecutable();
+        return rishFile != null && rishFile.exists();
+    }
+
+    @JavascriptInterface
+    public boolean isShizukuReady() {
+        if (!isShizukuAvailable()) return false;
+        try {
+            String out = runShizukuCommand("echo OK");
+            return out != null && out.contains("OK");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private synchronized File getRishExecutable() {
+        try {
+            File filesDir = mActivity.getFilesDir();
+            File rishFile = new File(filesDir, "rish");
+            File dexFile = new File(filesDir, "rish_shizuku.dex");
+
+            if (!rishFile.exists() || !dexFile.exists() || rishFile.length() == 0) {
+                try (InputStream in = mActivity.getAssets().open("rish");
+                     OutputStream out = new FileOutputStream(rishFile)) {
+                    byte[] buf = new byte[4096];
+                    int len;
+                    while ((len = in.read(buf)) > 0) out.write(buf, 0, len);
+                }
+                try (InputStream in = mActivity.getAssets().open("rish_shizuku.dex");
+                     OutputStream out = new FileOutputStream(dexFile)) {
+                    byte[] buf = new byte[4096];
+                    int len;
+                    while ((len = in.read(buf)) > 0) out.write(buf, 0, len);
+                }
+            }
+
+            rishFile.setExecutable(true, false);
+            rishFile.setReadable(true, false);
+            dexFile.setReadable(true, false);
+            dexFile.setWritable(false, false);
+
+            return rishFile;
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to prepare rish: " + e.getMessage());
+            return null;
+        }
+    }
+
+    @JavascriptInterface
+    public String runShizukuCommand(String cmd) {
+        if (cmd == null || cmd.trim().isEmpty()) return "ERR: empty command";
+        String trimmed = cmd.trim();
+
+        // 1. Try rish execution directly via private files directory
+        File rishFile = getRishExecutable();
+        if (rishFile != null && rishFile.exists()) {
+            Process process = null;
+            try {
+                ProcessBuilder pb = new ProcessBuilder("/system/bin/sh", rishFile.getAbsolutePath(), "-c", trimmed);
+                pb.directory(mActivity.getFilesDir());
+                pb.environment().put("RISH_APPLICATION_ID", mActivity.getPackageName());
+                pb.redirectErrorStream(false);
+                process = pb.start();
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                int count = 0;
+                while ((line = reader.readLine()) != null && count < 3000) {
+                    sb.append(line).append("\n");
+                    count++;
+                }
+                while ((line = errReader.readLine()) != null && count < 1000) {
+                    sb.append(line).append("\n");
+                    count++;
+                }
+                process.waitFor();
+                String res = sb.toString().trim();
+                if (!res.isEmpty()) {
+                    return res;
+                }
+                int exitCode = process.exitValue();
+                if (exitCode == 0) {
+                    return "[Command completed via Shizuku ADB (exit code 0, empty stdout)]";
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Rish execution failed: " + e.getMessage());
+            } finally {
+                if (process != null) {
+                    try { process.destroy(); } catch (Exception ignored) {}
+                }
+            }
+        }
+
+        // 2. Try Shizuku class reflection if library present
+        try {
+            Class<?> shizukuClass = Class.forName("rikka.shizuku.Shizuku");
+            java.lang.reflect.Method newProcess = shizukuClass.getMethod("newProcess", String[].class, String[].class, String.class);
+            Process process = (Process) newProcess.invoke(null, new String[]{"sh", "-c", trimmed}, null, null);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            int count = 0;
+            while ((line = reader.readLine()) != null && count < 3000) {
+                sb.append(line).append("\n");
+                count++;
+            }
+            while ((line = errReader.readLine()) != null && count < 1000) {
+                sb.append(line).append("\n");
+                count++;
+            }
+            process.waitFor();
+            String res = sb.toString().trim();
+            if (res.isEmpty()) {
+                int exitCode = process.exitValue();
+                return exitCode == 0 ? "[Command completed via Shizuku ADB (exit code 0, empty stdout)]" : "[Shizuku process exited with code " + exitCode + "]";
+            }
+            return res;
+        } catch (Throwable ignored) {}
+
+        // 3. Fallback to normal shell command
+        return runShellCommand(trimmed);
     }
 
     @JavascriptInterface

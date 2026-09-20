@@ -36,15 +36,18 @@
             </div>
         </div>
 
-        <div class="holo-persona-indicator" id="personaIndicator">
+        <div class="holo-persona-indicator" id="personaIndicator" onclick="openProfilesModal()" style="cursor:pointer;" title="View Tri-Agent Profiles &amp; Personalities">
             <span class="persona-symbol" id="personaSymbol">✦</span>
             <div class="persona-details">
-                <span class="persona-name" id="personaName">PLANNER</span>
-                <span class="persona-role" id="personaRole">QUANTUM NEURAL CORE</span>
+                <span class="persona-name" id="personaName">ALAN TURING</span>
+                <span class="persona-role" id="personaRole">LEAD STRATEGY &amp; ARCHITECTURE PLANNER</span>
             </div>
         </div>
 
         <div class="holo-header-controls">
+            <button class="holo-icon-btn" id="profilesBtn" onclick="openProfilesModal()" title="Tri-Agent Profiles &amp; Personalities" style="display:flex; align-items:center; gap:5px; width:auto; border-radius:18px; padding:0 12px; font-size:11px; font-weight:700; color:#e0aaff; border-color:rgba(224,170,255,0.35);">
+                <span>👥</span><span>AGENTS</span>
+            </button>
             <button class="holo-icon-btn" id="voiceStudioBtn" onclick="openVoiceModal()" title="Voice Studio &amp; Tuning" style="display:flex; align-items:center; gap:5px; width:auto; border-radius:18px; padding:0 12px; font-size:11px; font-weight:700; color:#00f0ff; border-color:rgba(0,240,255,0.35);">
                 <span>🎙️</span><span>VOICES</span>
             </button>
@@ -56,31 +59,39 @@
         </div>
     </header>
 
-    <!-- 3. TRI-AGENT HOLOGRAPHIC FLOATING DOCK (PLANNER • BUILDER • AUDITOR) -->
+    <!-- 3. TRI-AGENT HOLOGRAPHIC FLOATING DOCK (ALAN TURING • DONALD KNUTH • ADA LOVELACE) -->
     <nav class="holo-agent-dock" id="agentDock">
-        <button class="agent-dock-tab summon-chip active" data-persona="swarm" onclick="switchPersona('swarm')" title="Planner Agent (Quantum Swarm Core)">
-            <div class="agent-tab-badge planner"></div>
-            <div class="agent-tab-info">
-                <span class="agent-tab-role">PLANNER</span>
-                <span class="agent-tab-sub">SWARM CORE</span>
-            </div>
-            <span class="agent-voice-tag" id="dockVoiceTag-swarm">🎙️ Cyber</span>
-        </button>
-        <button class="agent-dock-tab summon-chip" data-persona="turing" onclick="switchPersona('turing')" title="Builder Agent (Turing Logic Matrix)">
+        <button class="agent-dock-tab summon-chip" data-persona="turing" onclick="switchPersona('turing')" title="Alan Turing: Lead Strategy &amp; Architecture Planner">
             <div class="agent-tab-badge builder"></div>
             <div class="agent-tab-info">
-                <span class="agent-tab-role">BUILDER</span>
-                <span class="agent-tab-sub">TURING LOGIC</span>
+                <span class="agent-tab-role">ALAN TURING</span>
+                <span class="agent-tab-sub">PLANNER &bull; LOGIC</span>
             </div>
             <span class="agent-voice-tag" id="dockVoiceTag-turing">🎙️ Crisp</span>
         </button>
-        <button class="agent-dock-tab summon-chip" data-persona="knuth" onclick="switchPersona('knuth')" title="Auditor Agent (Knuth Logic Lattice)">
+        <button class="agent-dock-tab summon-chip" data-persona="knuth" onclick="switchPersona('knuth')" title="Donald Knuth: Dynamic Tool Synthesizer &amp; Code Craftsman">
             <div class="agent-tab-badge auditor"></div>
             <div class="agent-tab-info">
-                <span class="agent-tab-role">AUDITOR</span>
-                <span class="agent-tab-sub">KNUTH LATTICE</span>
+                <span class="agent-tab-role">DONALD KNUTH</span>
+                <span class="agent-tab-sub">BUILDER &bull; SYNTH</span>
             </div>
             <span class="agent-voice-tag" id="dockVoiceTag-knuth">🎙️ Sentinel</span>
+        </button>
+        <button class="agent-dock-tab summon-chip" data-persona="lovelace" onclick="switchPersona('lovelace')" title="Ada Lovelace: Execution Engine &amp; Poetic Science">
+            <div class="agent-tab-badge executor"></div>
+            <div class="agent-tab-info">
+                <span class="agent-tab-role">ADA LOVELACE</span>
+                <span class="agent-tab-sub">AUDITOR &bull; POETIC</span>
+            </div>
+            <span class="agent-voice-tag" id="dockVoiceTag-lovelace">🎙️ Nova</span>
+        </button>
+        <button class="agent-dock-tab summon-chip active" data-persona="swarm" onclick="switchPersona('swarm')" title="Quantum Swarm Core: Orchestrator">
+            <div class="agent-tab-badge planner"></div>
+            <div class="agent-tab-info">
+                <span class="agent-tab-role">SWARM CORE</span>
+                <span class="agent-tab-sub">ORCHESTRATOR</span>
+            </div>
+            <span class="agent-voice-tag" id="dockVoiceTag-swarm">🎙️ Cyber</span>
         </button>
     </nav>
 
@@ -136,17 +147,21 @@
             <!-- Agent selector tabs -->
             <label class="modal-label">SELECT AGENT TO CONFIGURE VOICE</label>
             <div class="voice-studio-agent-tabs">
-                <button class="vs-agent-tab active" id="vsTab-swarm" onclick="selectVoiceStudioAgent('swarm')">
-                    <span class="vs-agent-title" style="color:var(--neon-cyan);">✦ PLANNER</span>
-                    <span class="vs-agent-desc">QUANTUM SWARM</span>
-                </button>
                 <button class="vs-agent-tab" id="vsTab-turing" onclick="selectVoiceStudioAgent('turing')">
-                    <span class="vs-agent-title" style="color:var(--neon-magenta);">🧠 BUILDER</span>
-                    <span class="vs-agent-desc">TURING LOGIC</span>
+                    <span class="vs-agent-title" style="color:var(--neon-magenta);">🧠 ALAN TURING</span>
+                    <span class="vs-agent-desc">PLANNER &bull; LOGIC</span>
                 </button>
                 <button class="vs-agent-tab" id="vsTab-knuth" onclick="selectVoiceStudioAgent('knuth')">
-                    <span class="vs-agent-title" style="color:var(--neon-gold);">⚡ AUDITOR</span>
-                    <span class="vs-agent-desc">KNUTH LATTICE</span>
+                    <span class="vs-agent-title" style="color:var(--neon-gold);">⚡ DONALD KNUTH</span>
+                    <span class="vs-agent-desc">BUILDER &bull; SYNTH</span>
+                </button>
+                <button class="vs-agent-tab" id="vsTab-lovelace" onclick="selectVoiceStudioAgent('lovelace')">
+                    <span class="vs-agent-title" style="color:#00ff88;">🔬 ADA LOVELACE</span>
+                    <span class="vs-agent-desc">AUDITOR &bull; POETIC</span>
+                </button>
+                <button class="vs-agent-tab active" id="vsTab-swarm" onclick="selectVoiceStudioAgent('swarm')">
+                    <span class="vs-agent-title" style="color:var(--neon-cyan);">✦ SWARM CORE</span>
+                    <span class="vs-agent-desc">ORCHESTRATION</span>
                 </button>
             </div>
 
@@ -188,6 +203,19 @@
         </div>
     </div>
 
+    <!-- 7b. TRI-AGENT PROFILES & PERSONALITIES MODAL -->
+    <div class="holo-modal-backdrop" id="profilesModal" onclick="closeProfilesModal(event)">
+        <div class="holo-modal-glass" onclick="event.stopPropagation()" style="max-width:540px;">
+            <div class="modal-head">
+                <div class="modal-title"><span>👥</span> TRI-AGENT PROFILES &amp; PERSONALITIES</div>
+                <button class="modal-close" onclick="closeProfilesModal()">✕</button>
+            </div>
+            <div class="agent-profiles-list" id="agentProfilesList">
+                <!-- Dynamically populated by renderAgentProfiles() in app.js -->
+            </div>
+        </div>
+    </div>
+
     <!-- 8. TRANSLUCENT HOLOGRAPHIC SETTINGS MODAL -->
     <div class="holo-modal-backdrop" id="settingsModal" onclick="closeSettingsModal(event)">
         <div class="holo-modal-glass" onclick="event.stopPropagation()">
@@ -203,13 +231,18 @@
                 </div>
             </div>
             <div class="modal-body">
-                <button class="modal-action-btn" onclick="openVoiceModal()" style="width:100%; margin-bottom:14px; background:rgba(0,240,255,0.15); border-color:#00f0ff;">
-                    🎙️ Open Voice Studio &amp; Choose Agent Voices ↗
-                </button>
+                <div style="display:flex; gap:10px; margin-bottom:14px;">
+                    <button class="modal-action-btn" onclick="openProfilesModal()" style="flex:1; background:rgba(224,170,255,0.15); border-color:#e0aaff; color:#e0aaff;">
+                        👥 Agent Profiles &amp; Personalities ↗
+                    </button>
+                    <button class="modal-action-btn" onclick="openVoiceModal()" style="flex:1; background:rgba(0,240,255,0.15); border-color:#00f0ff;">
+                        🎙️ Voice Studio ↗
+                    </button>
+                </div>
 
                 <label class="modal-label">INFERENCE ENGINE</label>
                 <select id="providerSelect" class="modal-input" onchange="onProviderChange()">
-                    <option value="gemini">Google Gemini 2.0 / 1.5 Flash (Free Tier)</option>
+                    <option value="gemini">Google Gemini 2.5 / 2.0 / 1.5 (Dynamic Google API)</option>
                     <option value="groq">Groq LPU (Ultra-Fast Cloud)</option>
                     <option value="ollama">Ollama Local Cyberdeck</option>
                 </select>
@@ -228,6 +261,27 @@
                         1. Tap <a href="javascript:void(0)" onclick="openGoogleKeyPortal()" style="color:#00f0ff; font-weight:700;">Get Free Key ↗</a> to open Google AI Studio.<br>
                         2. Sign in with any Google account &amp; click <strong>"Create API Key"</strong>.<br>
                         3. Copy the key, paste it above, and tap <strong>SAVE</strong>. (Zero cost, no credit card required).
+                    </div>
+                </div>
+
+                <div id="geminiModelGroup">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; margin-bottom:4px;">
+                        <label class="modal-label" style="margin:0;">GEMINI MODEL (LIVE GOOGLE API SYNC)</label>
+                        <button class="modal-link-btn" onclick="refreshGeminiModelsFromGoogle()" title="Query Google AI Studio for new models" style="background:rgba(0,240,255,0.12); border:1px solid #00f0ff; color:#00f0ff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:4px; cursor:pointer;">🔄 Update Models</button>
+                    </div>
+                    <select id="modelSelect" class="modal-input" onchange="onModelSelectChange(this.value)">
+                        <option value="gemini-2.5-flash">Gemini 2.5 Flash (Ultra Fast &amp; Adaptive Reasoning) [Recommended]</option>
+                        <option value="gemini-2.5-pro">Gemini 2.5 Pro (State-of-the-Art Reasoning)</option>
+                        <option value="gemini-2.0-flash">Gemini 2.0 Flash (Next-Gen Realtime Core)</option>
+                        <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash-Lite (Low Latency Efficiency)</option>
+                        <option value="gemini-2.0-pro-exp-02-05">Gemini 2.0 Pro Experimental</option>
+                        <option value="gemini-1.5-flash">Gemini 1.5 Flash (Balanced High Speed)</option>
+                        <option value="gemini-1.5-pro">Gemini 1.5 Pro (Massive Context Window)</option>
+                        <option value="gemini-1.5-flash-8b">Gemini 1.5 Flash-8B (High Efficiency)</option>
+                    </select>
+                    <div class="model-sync-bar">
+                        <span id="modelUpdateStatus" class="model-sync-badge">✓ Synced with Google AI Studio</span>
+                        <span style="font-size:10px; color:#94a3b8;">Auto-updates as Google releases new models</span>
                     </div>
                 </div>
 

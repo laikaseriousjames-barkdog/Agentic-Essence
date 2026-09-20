@@ -9,13 +9,16 @@ HOLO_DIR = os.path.join(REPO_DIR, "holo-app")
 APP_DIR = os.path.join(REPO_DIR, "android-app")
 
 EXPECTED_PERSONAS = [
-    "swarm", "turing", "knuth", "lovelace",
+    "swarm", "turing", "knuth", "lovelace"
+]
+
+PRUNED_LEGACY_PERSONAS = [
     "shadow", "sentry", "cipher", "valkyrie",
     "matrix", "ghost", "glitch", "archon"
 ]
 
 def test_holo_personas_completeness():
-    """Verify all 12 personas are defined in holo-app app.js."""
+    """Verify only the 4 core personas are defined in holo-app app.js."""
     app_js_path = os.path.join(HOLO_DIR, "assets/www/app.js")
     assert os.path.isfile(app_js_path)
     with open(app_js_path, "r", encoding="utf-8") as f:
@@ -23,29 +26,23 @@ def test_holo_personas_completeness():
 
     for p in EXPECTED_PERSONAS:
         assert f"{p}: {{" in content or f'"{p}": {{' in content, f"Missing persona {p} in holo-app app.js"
+    for p in PRUNED_LEGACY_PERSONAS:
+        assert f"{p}: {{" not in content and f'"{p}": {{' not in content, f"Pruned persona {p} should not be in holo-app app.js"
 
 
 def test_voice_engine_acoustic_profiles_and_triggers():
-    """Verify acoustic profiles and spoken triggers exist in voice-engine.js."""
+    """Verify acoustic profiles exist in voice-engine.js for core personas."""
     voice_js_path = os.path.join(HOLO_DIR, "assets/www/voice-engine.js")
     assert os.path.isfile(voice_js_path)
     with open(voice_js_path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    # Verify all 12 personas have defined acoustic tuning in PERSONA_VOICES
+    # Verify core personas have defined acoustic tuning in PERSONA_VOICES
     assert "PERSONA_VOICES" in content
     for p in EXPECTED_PERSONAS:
         assert p in content, f"Persona {p} missing in voice-engine.js"
-
-    # Verify voice triggers
-    assert "switch to shadow" in content
-    assert "switch to sentry" in content
-    assert "switch to cipher" in content
-    assert "switch to valkyrie" in content
-    assert "switch to matrix" in content
-    assert "switch to ghost" in content
-    assert "switch to glitch" in content
-    assert "switch to archon" in content
+    for p in PRUNED_LEGACY_PERSONAS:
+        assert f"switch to {p}" not in content, f"Pruned voice trigger for {p} found"
 
     # Verify cyber operation triggers
     assert "scan port" in content
@@ -197,3 +194,70 @@ def test_translucent_glass_hud_styles():
     assert "backdrop-filter: blur" in css
     assert ".voice-studio-agent-tabs" in css
     assert ".voice-preset-card" in css
+
+
+def test_tri_agent_profiles_and_personalities():
+    """Verify Tri-Agent profiles metadata, bios, and personalities in app.js and index.html."""
+    app_js_path = os.path.join(HOLO_DIR, "assets/www/app.js")
+    with open(app_js_path, "r", encoding="utf-8") as f:
+        app_js = f.read()
+
+    assert "AGENT_PROFILES" in app_js
+    assert "Alan Turing" in app_js
+    assert "Donald Knuth" in app_js
+    assert "Ada Lovelace" in app_js
+    assert "openProfilesModal" in app_js
+    assert "closeProfilesModal" in app_js
+    assert "renderAgentProfiles" in app_js
+    assert "personality" in app_js
+
+    html_path = os.path.join(HOLO_DIR, "assets/www/index.html")
+    with open(html_path, "r", encoding="utf-8") as f:
+        html = f.read()
+
+    assert 'id="profilesModal"' in html
+    assert 'id="agentProfilesList"' in html
+    assert "openProfilesModal" in html
+
+
+def test_dynamic_gemini_models_and_google_api_sync():
+    """Verify Gemini dynamic model registry and live Google AI Studio API sync."""
+    app_js_path = os.path.join(HOLO_DIR, "assets/www/app.js")
+    with open(app_js_path, "r", encoding="utf-8") as f:
+        app_js = f.read()
+
+    assert "DEFAULT_GEMINI_MODELS" in app_js
+    assert "gemini-2.5-flash" in app_js
+    assert "gemini-2.5-pro" in app_js
+    assert "gemini-2.0-flash" in app_js
+    assert "refreshGeminiModelsFromGoogle" in app_js
+    assert "populateGeminiModelOptions" in app_js
+    assert "onModelSelectChange" in app_js
+    assert "https://generativelanguage.googleapis.com/v1beta/models" in app_js
+
+    html_path = os.path.join(HOLO_DIR, "assets/www/index.html")
+    with open(html_path, "r", encoding="utf-8") as f:
+        html = f.read()
+
+    assert 'id="geminiModelGroup"' in html
+    assert 'id="modelSelect"' in html
+    assert "refreshGeminiModelsFromGoogle" in html
+    assert "gemini-2.5-flash" in html
+
+
+def test_speech_noise_filtering_and_tts_handshake():
+    """Verify ambient noise filtering and native TTS completion handshake."""
+    voice_js_path = os.path.join(HOLO_DIR, "assets/www/voice-engine.js")
+    with open(voice_js_path, "r", encoding="utf-8") as f:
+        voice_js = f.read()
+
+    assert "isLikelyNoise" in voice_js
+    assert "onNativeSpeechFinished" in voice_js
+
+    holo_java = os.path.join(HOLO_DIR, "src/org/antigravity/agenticvox/HoloBridgeInterface.java")
+    with open(holo_java, "r", encoding="utf-8") as f:
+        java_code = f.read()
+
+    assert "onNativeSpeechFinished" in java_code
+    assert "onDone" in java_code
+
