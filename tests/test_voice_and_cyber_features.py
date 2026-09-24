@@ -331,4 +331,35 @@ def test_free_copy_paste_model_and_live_verification():
         assert "copyToClipboard" in java_src
 
 
+def test_terminal_styling_and_gemini_auto_discovery():
+    """Verify terminal-style coloring palette and Gemini 3 auto-discovery across both apps."""
+    for base in [HOLO_DIR, APP_DIR]:
+        app_js_path = os.path.join(base, "assets/www/app.js")
+        styles_css_path = os.path.join(base, "assets/www/styles.css")
+        with open(app_js_path, "r", encoding="utf-8") as f:
+            js = f.read()
+        with open(styles_css_path, "r", encoding="utf-8") as f:
+            css = f.read()
+
+        # Verify active Gemini 3.8 Flash model support in JS
+        assert "gemini-3.8-flash" in js
+        # Verify candidate fallback list includes modern flash models
+        assert "gemini-3.5-flash-lite" in js
+        # Verify terminal colors in CSS
+        assert "#00ff88" in css
+
+    # Verify android-app specific terminal variables and discovery functions
+    ae_js = os.path.join(APP_DIR, "assets/www/app.js")
+    with open(ae_js, "r", encoding="utf-8") as f:
+        js = f.read()
+    assert "fetchLiveGoogleModels" in js
+
+    ae_css = os.path.join(APP_DIR, "assets/www/styles.css")
+    with open(ae_css, "r", encoding="utf-8") as f:
+        css = f.read()
+    assert "--term-green" in css
+    assert "--term-amber" in css
+
+
+
 

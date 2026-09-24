@@ -4,11 +4,13 @@
  */
 
 const savedHoloPersona = localStorage.getItem('holo_persona') || localStorage.getItem('ae_persona');
+const savedHoloModel = localStorage.getItem('holo_model') || localStorage.getItem('ae_model');
+const initialHoloModel = (savedHoloModel && !savedHoloModel.includes('1.5') && !savedHoloModel.includes('2.0')) ? savedHoloModel : 'gemini-3.8-flash';
 const state = {
     persona: (savedHoloPersona && ['swarm', 'turing', 'knuth', 'lovelace'].includes(savedHoloPersona)) ? savedHoloPersona : 'swarm',
     provider: localStorage.getItem('holo_provider') || localStorage.getItem('ae_provider') || 'gemini',
     apiKey: localStorage.getItem('holo_api_key') || localStorage.getItem('ae_api_key') || '',
-    model: localStorage.getItem('holo_model') || localStorage.getItem('ae_model') || 'gemini-2.5-flash',
+    model: initialHoloModel,
     isGenerating: false,
     lastGenerateTime: 0,
     personaHistories: {
@@ -19,9 +21,9 @@ const state = {
     }
 };
 
-if (!state.model || state.model.includes('gemini-3')) {
-    state.model = 'gemini-2.5-flash';
-    localStorage.setItem('holo_model', 'gemini-2.5-flash');
+if (!state.model || state.model.includes('1.5') || state.model.includes('2.0')) {
+    state.model = 'gemini-3.8-flash';
+    localStorage.setItem('holo_model', 'gemini-3.8-flash');
 }
 
 const SYSTEM_GROUNDING = `
@@ -695,7 +697,7 @@ window.pasteApiKeyFromClipboard = async function() {
 window.testAIConnectionLive = async function() {
     const prov = state.provider || 'gemini';
     const key = (state.apiKey || '').replace(/^["']|["']$/g, '').trim();
-    const model = (state.model || 'gemini-2.5-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
+    let model = (state.model || 'gemini-3.8-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
     const badge = document.getElementById('modelUpdateStatus');
     const statusBox = document.getElementById('apiKeySaveStatus');
 
@@ -704,7 +706,7 @@ window.testAIConnectionLive = async function() {
         if (statusBox) { statusBox.style.display = 'block'; statusBox.textContent = text; statusBox.style.color = color; }
     };
 
-    updateStatus(`⚡ Testing ${prov.toUpperCase()} (${model})...`, '#00f0ff');
+    updateStatus(`⚡ Testing ${prov.toUpperCase()} (${model})...`, '#00ff88');
 
     if (prov === 'gemini') {
         if (!key) {
@@ -714,7 +716,20 @@ window.testAIConnectionLive = async function() {
             return;
         }
         try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+            let targetModel = model;
+            if (window.refreshGeminiModelsFromGoogle) {
+                await refreshGeminiModelsFromGoogle(true).catch(() => {});
+                const cached = getCachedGeminiModels();
+                if (cached && cached.length > 0) {
+                    const hasModel = cached.some(m => m.id === targetModel);
+                    if (!hasModel && (targetModel.includes('1.5') || targetModel.includes('2.0') || targetModel.includes('2.5'))) {
+                        targetModel = cached[0].id;
+                        autoSaveModel(targetModel);
+                    }
+                }
+            }
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${encodeURIComponent(key)}`;
             const controller = new AbortController();
             const tid = setTimeout(() => controller.abort(), 12000);
             const res = await fetch(url, {
@@ -729,19 +744,19 @@ window.testAIConnectionLive = async function() {
             clearTimeout(tid);
 
             if (res.ok) {
-                updateStatus(`✓ Connected to Google Gemini (${model})!`, '#00ff88');
-                if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(`✓ Gemini connected: ${model}`);
-                if (window.HoloVoice && window.HoloVoice.speakAgent) HoloVoice.speakAgent(`Neural link verified on model ${model}.`);
+                updateStatus(`✓ Connected to Google Gemini (${targetModel})!`, '#00ff88');
+                if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(`✓ Gemini connected: ${targetModel}`);
+                if (window.HoloVoice && window.HoloVoice.speakAgent) HoloVoice.speakAgent(`Neural link verified on model ${targetModel}.`);
             } else {
                 const errData = await res.json().catch(() => ({}));
                 const msg = errData?.error?.message || `HTTP ${res.status}`;
-                updateStatus(`⚠ Error: ${msg}`, '#ff4444');
+                updateStatus(`⚠ Error: ${msg}`, '#ffb700');
                 if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(`Gemini Error: ${msg}`);
                 if (window.HoloVoice && window.HoloVoice.speakAgent) HoloVoice.speakAgent("Gemini connection failed: " + msg);
             }
         } catch (e) {
             const msg = e.name === 'AbortError' ? 'Connection timed out' : e.message;
-            updateStatus(`⚠ Error: ${msg}`, '#ff4444');
+            updateStatus(`⚠ Error: ${msg}`, '#ffb700');
             if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(`Error: ${msg}`);
         }
     } else if (prov === 'groq') {
@@ -851,15 +866,17 @@ window.refreshGeminiModelsFromGoogle = async function(silent = false) {
                 // Priority ordering: latest recommended models first
                 liveModels.sort((a, b) => {
                     const rank = (id) => {
-                        if (id === 'gemini-2.5-flash') return 0;
-                        if (id === 'gemini-2.5-pro') return 1;
-                        if (id === 'gemini-2.0-flash') return 2;
-                        if (id === 'gemini-2.0-flash-lite') return 3;
-                        if (id.includes('2.5')) return 4;
-                        if (id.includes('2.0')) return 5;
-                        if (id.includes('1.5-flash')) return 6;
-                        if (id.includes('1.5-pro')) return 7;
-                        return 8;
+                        if (id === 'gemini-3.8-flash') return 0;
+                        if (id === 'gemini-3.5-flash-lite') return 1;
+                        if (id === 'gemini-3.5-flash') return 2;
+                        if (id.includes('3.8')) return 3;
+                        if (id.includes('3.5')) return 4;
+                        if (id.includes('3.1')) return 5;
+                        if (id.includes('3-')) return 6;
+                        if (id === 'gemini-2.5-flash') return 7;
+                        if (id.includes('2.5')) return 8;
+                        if (id.includes('2.0')) return 9;
+                        return 10;
                     };
                     return rank(a.id) - rank(b.id);
                 });
@@ -930,15 +947,24 @@ async function queryAIProvider(messages) {
             sanitizedContents.push({ role: 'user', parts: [{ text: 'Hello.' }] });
         }
 
-        const userModel = (state.model || 'gemini-2.5-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
-        const preferredModel = (userModel && !userModel.includes('gemini-3')) ? userModel : 'gemini-2.5-flash';
-        const candidateModels = [preferredModel, 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-        const uniqueModels = [...new Set(candidateModels)];
+        const userModel = (state.model || 'gemini-3.8-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
+        const candidateModels = [
+            userModel,
+            'gemini-3.8-flash',
+            'gemini-3.5-flash-lite',
+            'gemini-3.5-flash',
+            'gemini-3.1-pro-preview',
+            'gemini-2.5-flash',
+            'gemini-2.0-flash',
+            'gemini-1.5-flash'
+        ];
+        let uniqueModels = [...new Set(candidateModels.filter(Boolean))];
         let lastError = null;
+        let attemptedAutoDiscovery = false;
 
-        for (const rawModel of uniqueModels) {
+        for (let idx = 0; idx < uniqueModels.length; idx++) {
+            const rawModel = uniqueModels[idx];
             const modelName = rawModel.trim().replace(/^models\//, '');
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(key)}`;
             const payload = {
                 contents: sanitizedContents,
                 generationConfig: {
@@ -953,50 +979,87 @@ async function queryAIProvider(messages) {
                 };
             }
 
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 25000);
+            for (const ver of ['v1beta', 'v1']) {
+                const url = `https://generativelanguage.googleapis.com/${ver}/models/${modelName}:generateContent?key=${encodeURIComponent(key)}`;
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
 
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-                        return data.candidates[0].content.parts[0].text.trim();
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                            if (modelName !== userModel) {
+                                state.model = modelName;
+                                localStorage.setItem('holo_model', modelName);
+                                const mInput = document.getElementById('modelInput');
+                                if (mInput) mInput.value = modelName;
+                            }
+                            return data.candidates[0].content.parts[0].text.trim();
+                        }
+                        if (data?.candidates?.[0]?.finishReason) {
+                            return `[Gemini finished with reason: ${data.candidates[0].finishReason}]`;
+                        }
+                    } else {
+                        const errData = await res.json().catch(() => ({}));
+                        const errMsg = (errData.error && errData.error.message) ? errData.error.message : `Gemini HTTP ${res.status}`;
+                        lastError = new Error(`Gemini (${modelName}): ${errMsg}`);
+                        if (errMsg.includes('API key not valid') || errMsg.includes('API_KEY_INVALID')) {
+                            throw new Error(`Google API key is not valid: ${errMsg}. Please enter a valid Gemini API key in Settings.`);
+                        }
+                        if (res.status === 429) {
+                            throw new Error(`Google Gemini quota or rate limit exceeded: ${errMsg}`);
+                        }
+
+                        if ((res.status === 404 || res.status === 400) && !attemptedAutoDiscovery) {
+                            attemptedAutoDiscovery = true;
+                            try {
+                                if (window.refreshGeminiModelsFromGoogle) {
+                                    await refreshGeminiModelsFromGoogle(true).catch(() => {});
+                                    const cached = getCachedGeminiModels();
+                                    if (cached && cached.length > 0) {
+                                        const newModels = cached.map(d => d.id).filter(id => !uniqueModels.includes(id));
+                                        if (newModels.length > 0) {
+                                            uniqueModels.splice(idx + 1, 0, ...newModels);
+                                            if (idx === 0) {
+                                                state.model = newModels[0];
+                                                localStorage.setItem('holo_model', state.model);
+                                                const mInput = document.getElementById('modelInput');
+                                                if (mInput) mInput.value = state.model;
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (discErr) {
+                                console.warn("[Auto-Discovery]", discErr);
+                            }
+                        }
+
+                        if (res.status === 404 || res.status === 403 || res.status === 400) {
+                            continue;
+                        }
+                        throw lastError;
                     }
-                    if (data?.candidates?.[0]?.finishReason) {
-                        return `[Gemini finished with reason: ${data.candidates[0].finishReason}]`;
+                } catch (fetchErr) {
+                    lastError = fetchErr;
+                    if (fetchErr.name === 'AbortError') {
+                        lastError = new Error(`Gemini request timed out on model ${modelName}`);
                     }
-                } else {
-                    const errData = await res.json().catch(() => ({}));
-                    const errMsg = (errData.error && errData.error.message) ? errData.error.message : `Gemini HTTP ${res.status}`;
-                    lastError = new Error(`Gemini (${modelName}): ${errMsg}`);
-                    if (errMsg.includes('API key not valid') || errMsg.includes('API_KEY_INVALID')) {
-                        throw new Error(`Google API key is not valid: ${errMsg}`);
+                    if (fetchErr.message && (fetchErr.message.includes('API key is not valid') || fetchErr.message.includes('quota or rate limit exceeded'))) {
+                        throw fetchErr;
                     }
-                    if (res.status === 429) {
-                        throw new Error(`Google Gemini quota or rate limit exceeded: ${errMsg}`);
-                    }
-                    if (res.status === 404 || res.status === 403 || res.status === 400) {
-                        continue;
-                    }
-                    throw lastError;
-                }
-            } catch (fetchErr) {
-                lastError = fetchErr;
-                if (fetchErr.name === 'AbortError') {
-                    lastError = new Error(`Gemini request timed out on model ${modelName}`);
                 }
             }
         }
 
-        throw lastError || new Error("Failed to query Google Gemini API. Please check your API key and network.");
+        throw new Error(`Google Gemini could not connect using model '${userModel}'. ${lastError ? lastError.message : 'Please check your API key and verify permitted models in Google AI Studio.'}`);
     }
 
     // Groq LPU Ultra-Fast Inference

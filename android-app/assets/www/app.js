@@ -5,11 +5,13 @@
 
 // ===================== STATE & PERSONAS =====================
 const savedPersona = localStorage.getItem('ae_persona');
+const savedModel = localStorage.getItem('ae_model');
+const initialModel = (savedModel && !savedModel.includes('1.5') && !savedModel.includes('2.0')) ? savedModel : 'gemini-3.8-flash';
 const state = {
     persona: (savedPersona && ['swarm', 'turing', 'knuth', 'lovelace'].includes(savedPersona)) ? savedPersona : 'swarm',
     provider: localStorage.getItem('ae_provider') || 'gemini',
     apiKey: localStorage.getItem('ae_api_key') || '',
-    model: localStorage.getItem('ae_model') || 'gemini-2.5-flash',
+    model: initialModel,
     customUrl: localStorage.getItem('ae_custom_url') || '',
     ttsEnabled: localStorage.getItem('ae_tts') === 'true',
     hapticsEnabled: localStorage.getItem('ae_haptics') !== 'false',
@@ -419,11 +421,10 @@ function initHoloCanvas() {
     });
 
     const NEON_PALETTE = [
-        { r: 0, g: 240, b: 255 },   // Electric Cyan
-        { r: 255, g: 0, b: 127 },   // Cyber Magenta
-        { r: 139, g: 0, b: 255 },   // Laser Violet
-        { r: 0, g: 255, b: 136 },   // Neon Emerald
-        { r: 255, g: 183, b: 0 }    // Solar Gold
+        { r: 0, g: 255, b: 136 },   // Phosphor Terminal Green
+        { r: 0, g: 230, b: 120 },   // Deep Matrix Green
+        { r: 0, g: 240, b: 200 },   // Terminal Cyan-Green
+        { r: 255, g: 183, b: 0 }    // Terminal Amber (accent)
     ];
 
     const NODE_COUNT = Math.min(48, Math.floor((width * height) / 16000));
@@ -648,7 +649,8 @@ window.onProviderChange = function() {
 
     if (prov === 'gemini') {
         label.textContent = "GEMINI API KEY";
-        autoSaveModel("gemini-2.5-flash");
+        autoSaveModel("gemini-3.8-flash");
+        if (state.apiKey) fetchLiveGoogleModels(state.apiKey);
     } else if (prov === 'groq') {
         label.textContent = "GROQ API KEY";
         autoSaveModel("llama-3.3-70b-versatile");
@@ -661,6 +663,72 @@ window.onProviderChange = function() {
     }
 };
 
+window.fetchLiveGoogleModels = async function(apiKey) {
+    const key = (apiKey || state.apiKey || '').replace(/^["']|["']$/g, '').trim();
+    if (!key) return [];
+
+    for (const ver of ['v1beta', 'v1']) {
+        try {
+            const controller = new AbortController();
+            const tid = setTimeout(() => controller.abort(), 8000);
+            const res = await fetch(`https://generativelanguage.googleapis.com/${ver}/models?key=${encodeURIComponent(key)}`, {
+                signal: controller.signal
+            });
+            clearTimeout(tid);
+            if (!res.ok) continue;
+            const data = await res.json();
+            if (data && Array.isArray(data.models)) {
+                const live = [];
+                data.models.forEach(m => {
+                    const id = (m.name || '').replace(/^models\//, '');
+                    const methods = m.supportedGenerationMethods || [];
+                    if (methods.includes('generateContent') && id.includes('gemini')) {
+                        live.push({
+                            id: id,
+                            name: m.displayName ? `${m.displayName} (${id})` : id,
+                            version: ver
+                        });
+                    }
+                });
+                if (live.length > 0) {
+                    const rank = (id) => {
+                        if (id === 'gemini-3.8-flash') return 0;
+                        if (id === 'gemini-3.5-flash-lite') return 1;
+                        if (id === 'gemini-3.5-flash') return 2;
+                        if (id.includes('3.8')) return 3;
+                        if (id.includes('3.5')) return 4;
+                        if (id.includes('3.1')) return 5;
+                        if (id.includes('3-')) return 6;
+                        if (id === 'gemini-2.5-flash') return 7;
+                        if (id.includes('2.5')) return 8;
+                        if (id.includes('2.0')) return 9;
+                        return 10;
+                    };
+                    live.sort((a, b) => rank(a.id) - rank(b.id));
+                    localStorage.setItem('ae_cached_gemini_models', JSON.stringify(live));
+                    updateModelDatalist(live);
+                    return live;
+                }
+            }
+        } catch (e) {
+            console.warn(`[Gemini Discovery ${ver}]`, e.message);
+        }
+    }
+    return [];
+};
+
+function updateModelDatalist(models) {
+    const dl = document.getElementById('aeModelDatalist');
+    if (!dl || !models || !models.length) return;
+    dl.innerHTML = '';
+    models.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = m.name;
+        dl.appendChild(opt);
+    });
+}
+
 window.autoSaveApiKey = function(val) {
     const k = (val || '').replace(/^["']|["']$/g, '').trim();
     state.apiKey = k;
@@ -668,10 +736,13 @@ window.autoSaveApiKey = function(val) {
     const status = document.getElementById('apiKeySaveStatus');
     if (status) {
         status.style.display = 'block';
-        status.style.color = 'var(--neon-emerald)';
+        status.style.color = 'var(--term-green)';
         status.textContent = '✓ KEY AUTO-SAVED';
         clearTimeout(window._saveTimer);
         window._saveTimer = setTimeout(() => { status.style.display = 'none'; }, 2500);
+    }
+    if (k && state.provider === 'gemini') {
+        fetchLiveGoogleModels(k).catch(() => {});
     }
 };
 
@@ -686,7 +757,7 @@ window.saveApiKeyDirect = function() {
 
 window.autoSaveModel = function(val) {
     const clean = (val || '').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
-    state.model = clean || 'gemini-2.5-flash';
+    state.model = clean || 'gemini-3.8-flash';
     localStorage.setItem('ae_model', state.model);
 
     const mInput = document.getElementById('modelInput');
@@ -696,7 +767,7 @@ window.autoSaveModel = function(val) {
     const status = document.getElementById('modelSaveStatus');
     if (status) {
         status.style.display = 'block';
-        status.style.color = 'var(--neon-emerald)';
+        status.style.color = 'var(--term-green)';
         status.textContent = `✓ MODEL: ${state.model}`;
         clearTimeout(window._modelSaveTimer);
         window._modelSaveTimer = setTimeout(() => { status.style.display = 'none'; }, 2500);
@@ -784,27 +855,46 @@ window.pasteApiKeyFromClipboard = async function() {
 window.testAIConnectionLive = async function() {
     const prov = state.provider || 'gemini';
     const key = (state.apiKey || '').replace(/^["']|["']$/g, '').trim();
-    const model = (state.model || 'gemini-2.5-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
+    let model = (state.model || 'gemini-3.8-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
     const status = document.getElementById('apiKeySaveStatus');
+    const modelStatus = document.getElementById('modelSaveStatus');
 
-    if (status) {
-        status.style.display = 'block';
-        status.style.color = '#00f0ff';
-        status.textContent = `⚡ TESTING ${prov.toUpperCase()} (${model})...`;
-    }
+    const updateStatus = (text, color) => {
+        if (status) {
+            status.style.display = 'block';
+            status.style.color = color;
+            status.textContent = text;
+        }
+        if (modelStatus) {
+            modelStatus.style.display = 'block';
+            modelStatus.style.color = color;
+            modelStatus.textContent = text;
+        }
+    };
+
+    updateStatus(`⚡ TESTING ${prov.toUpperCase()} (${model})...`, 'var(--term-green)');
 
     if (prov === 'gemini') {
         if (!key) {
-            if (status) {
-                status.textContent = '⚠ ENTER GEMINI KEY FIRST';
-                status.style.color = '#ffb700';
-            }
+            updateStatus('⚠ ENTER GEMINI KEY FIRST', 'var(--term-amber)');
             Bridge.showToast("Enter Gemini API key first");
             Bridge.speak("Enter your Gemini API key first");
             return;
         }
         try {
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+            // First run auto-discovery to sync available models
+            let targetModel = model;
+            const liveModels = await fetchLiveGoogleModels(key).catch(() => []);
+            if (liveModels.length > 0) {
+                const hasModel = liveModels.some(m => m.id === targetModel);
+                if (!hasModel && (targetModel.includes('1.5') || targetModel.includes('2.0') || targetModel.includes('2.5'))) {
+                    // Auto-upgrade to top available model
+                    targetModel = liveModels[0].id;
+                    autoSaveModel(targetModel);
+                }
+            }
+
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${encodeURIComponent(key)}`;
             const controller = new AbortController();
             const tid = setTimeout(() => controller.abort(), 12000);
             const res = await fetch(endpoint, {
@@ -819,30 +909,21 @@ window.testAIConnectionLive = async function() {
             clearTimeout(tid);
 
             if (res.ok) {
-                if (status) {
-                    status.textContent = `✓ CONNECTED: ${model}`;
-                    status.style.color = 'var(--neon-emerald)';
-                }
+                updateStatus(`✓ CONNECTED: ${targetModel}`, 'var(--term-green)');
                 Bridge.vibrate(40);
-                Bridge.showToast(`✓ Gemini connected (${model})`);
-                Bridge.speak(`Gemini neural link verified on model ${model}`);
+                Bridge.showToast(`✓ Gemini connected (${targetModel})`);
+                Bridge.speak(`Gemini neural link verified on model ${targetModel}`);
             } else {
                 const errData = await res.json().catch(() => ({}));
                 const msg = errData?.error?.message || `HTTP ${res.status}`;
-                if (status) {
-                    status.textContent = `⚠ ${msg.toUpperCase().slice(0, 45)}`;
-                    status.style.color = '#ff007f';
-                }
+                updateStatus(`⚠ ${msg.toUpperCase().slice(0, 45)}`, 'var(--term-amber)');
                 Bridge.vibrate(60);
                 Bridge.showToast(`Gemini Error: ${msg}`);
                 Bridge.speak(`Gemini connection error: ${msg}`);
             }
         } catch (e) {
             const msg = e.name === 'AbortError' ? 'Connection timed out' : e.message;
-            if (status) {
-                status.textContent = `⚠ ${msg.toUpperCase()}`;
-                status.style.color = '#ff007f';
-            }
+            updateStatus(`⚠ ${msg.toUpperCase()}`, 'var(--term-amber)');
             Bridge.showToast(`Error: ${msg}`);
         }
     } else if (prov === 'groq') {
@@ -1457,13 +1538,13 @@ DO NOT run commands, DO NOT recite system status or verification checklists, and
                 console.warn("[AI Provider Error]", queryErr.message);
                 appendFreeNode(
                     "SYSTEM // NEURAL LINK EXCEPTION",
-                    `<div style="border-left:3px solid #ff007f; padding:10px 14px; background:rgba(255,0,127,0.06); border-radius:6px; font-family:var(--font-code); font-size:12px; margin:4px 0;">` +
-                    `<div style="color:#ff007f; font-weight:700; margin-bottom:4px;">⚠ LLM Connection Error (${escapeHtml(state.provider.toUpperCase())})</div>` +
-                    `<div style="color:#f1f5f9; margin-bottom:6px;">${escapeHtml(queryErr.message)}</div>` +
-                    `<div style="font-size:11px; color:#94a3b8; margin-bottom:8px;">Target Model: <code>${escapeHtml(state.model || 'gemini-2.5-flash')}</code></div>` +
+                    `<div style="border-left:3px solid var(--term-amber); padding:10px 14px; background:rgba(255,183,0,0.06); border-radius:4px; font-family:var(--font-code); font-size:12px; margin:4px 0;">` +
+                    `<div style="color:var(--term-amber); font-weight:700; margin-bottom:4px;">⚠ LLM Connection Error (${escapeHtml(state.provider.toUpperCase())})</div>` +
+                    `<div style="color:#f1f5f9; margin-bottom:6px; line-height:1.45;">${escapeHtml(queryErr.message)}</div>` +
+                    `<div style="font-size:11px; color:#94a3b8; margin-bottom:8px;">Target Model: <code style="color:var(--term-green); background:rgba(0,255,136,0.1); padding:1px 6px; border-radius:3px;">${escapeHtml(state.model || 'gemini-3.8-flash')}</code></div>` +
                     `<div style="display:flex; gap:8px;">` +
-                    `<button type="button" onclick="openDrawer()" class="hw-matrix-btn emerald" style="padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;">⚙️ Open Settings</button>` +
-                    `<button type="button" onclick="testAIConnectionLive()" class="hw-matrix-btn gold" style="padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;">⚡ Test Connection</button>` +
+                    `<button type="button" onclick="openDrawer()" class="hw-matrix-btn" style="padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;">⚙️ Open Settings</button>` +
+                    `<button type="button" onclick="testAIConnectionLive()" class="hw-matrix-btn amber" style="padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;">⚡ Test Connection</button>` +
                     `</div>` +
                     `</div>`,
                     "system"
@@ -2498,60 +2579,104 @@ async function queryGemini(messages) {
     };
     if (sysInstruction) payload.systemInstruction = sysInstruction;
 
-    const userModel = (state.model || 'gemini-2.5-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
-    const preferredModel = (userModel && !userModel.includes('gemini-3')) ? userModel : 'gemini-2.5-flash';
-    const candidateModels = [preferredModel, 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-    const uniqueModels = [...new Set(candidateModels)];
+    const userModel = (state.model || 'gemini-3.8-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
+    const candidateModels = [
+        userModel,
+        'gemini-3.8-flash',
+        'gemini-3.5-flash-lite',
+        'gemini-3.5-flash',
+        'gemini-3.1-pro-preview',
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
+        'gemini-1.5-flash'
+    ];
+    let uniqueModels = [...new Set(candidateModels.filter(Boolean))];
     let lastError = null;
+    let attemptedAutoDiscovery = false;
 
-    for (const rawModel of uniqueModels) {
+    for (let idx = 0; idx < uniqueModels.length; idx++) {
+        const rawModel = uniqueModels[idx];
         const modelName = rawModel.trim().replace(/^models\//, '');
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(key)}`;
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 25000);
-        try {
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-                signal: controller.signal
-            });
-            clearTimeout(timeoutId);
+        
+        for (const ver of ['v1beta', 'v1']) {
+            const endpoint = `https://generativelanguage.googleapis.com/${ver}/models/${modelName}:generateContent?key=${encodeURIComponent(key)}`;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 25000);
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
 
-            if (!res.ok) {
-                const errJson = await res.json().catch(() => ({}));
-                const errMsg = (errJson.error && errJson.error.message) ? errJson.error.message : `HTTP ${res.status}`;
-                lastError = new Error(`Gemini (${modelName}): ${errMsg}`);
-                if (errMsg.includes('API key not valid') || errMsg.includes('API_KEY_INVALID')) {
-                    throw new Error(`Google API key is not valid: ${errMsg}`);
-                }
-                if (res.status === 429) {
-                    throw new Error(`Google Gemini quota or rate limit exceeded: ${errMsg}`);
-                }
-                if (res.status === 404 || res.status === 403 || res.status === 400) {
-                    continue;
-                }
-                throw lastError;
-            }
+                if (!res.ok) {
+                    const errJson = await res.json().catch(() => ({}));
+                    const errMsg = (errJson.error && errJson.error.message) ? errJson.error.message : `HTTP ${res.status}`;
+                    lastError = new Error(`Gemini (${modelName}): ${errMsg}`);
+                    if (errMsg.includes('API key not valid') || errMsg.includes('API_KEY_INVALID')) {
+                        throw new Error(`Google API key is not valid: ${errMsg}. Please enter a valid Gemini API key in Settings.`);
+                    }
+                    if (res.status === 429) {
+                        throw new Error(`Google Gemini quota or rate limit exceeded: ${errMsg}`);
+                    }
+                    
+                    if ((res.status === 404 || res.status === 400) && !attemptedAutoDiscovery) {
+                        attemptedAutoDiscovery = true;
+                        try {
+                            const discovered = await fetchLiveGoogleModels(key);
+                            if (discovered && discovered.length > 0) {
+                                const newModels = discovered.map(d => d.id).filter(id => !uniqueModels.includes(id));
+                                if (newModels.length > 0) {
+                                    uniqueModels.splice(idx + 1, 0, ...newModels);
+                                    if (idx === 0) {
+                                        state.model = newModels[0];
+                                        localStorage.setItem('ae_model', state.model);
+                                        const mInput = document.getElementById('modelInput');
+                                        if (mInput) mInput.value = state.model;
+                                    }
+                                }
+                            }
+                        } catch (discErr) {
+                            console.warn("[Auto-Discovery]", discErr);
+                        }
+                    }
 
-            const data = await res.json();
-            const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (replyText) {
-                return replyText.trim();
-            } else if (data?.candidates?.[0]?.finishReason) {
-                return `[Gemini finished with reason: ${data.candidates[0].finishReason}]`;
-            } else {
-                throw new Error("Gemini returned empty response");
-            }
-        } catch (e) {
-            clearTimeout(timeoutId);
-            lastError = e;
-            if (e.name === 'AbortError') {
-                lastError = new Error(`Gemini request timed out on model ${modelName}`);
+                    if (res.status === 404 || res.status === 403 || res.status === 400) {
+                        continue;
+                    }
+                    throw lastError;
+                }
+
+                const data = await res.json();
+                const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (replyText) {
+                    if (modelName !== userModel) {
+                        state.model = modelName;
+                        localStorage.setItem('ae_model', modelName);
+                        const mInput = document.getElementById('modelInput');
+                        if (mInput) mInput.value = modelName;
+                    }
+                    return replyText.trim();
+                } else if (data?.candidates?.[0]?.finishReason) {
+                    return `[Gemini finished with reason: ${data.candidates[0].finishReason}]`;
+                } else {
+                    throw new Error("Gemini returned empty response");
+                }
+            } catch (e) {
+                clearTimeout(timeoutId);
+                lastError = e;
+                if (e.name === 'AbortError') {
+                    lastError = new Error(`Gemini request timed out on model ${modelName}`);
+                }
+                if (e.message && (e.message.includes('API key is not valid') || e.message.includes('quota or rate limit exceeded'))) {
+                    throw e;
+                }
             }
         }
     }
-    throw lastError || new Error("Failed to connect to Google Gemini API. Please check your API key and network.");
+    throw new Error(`Google Gemini could not connect using model '${userModel}'. ${lastError ? lastError.message : 'Please check your API key and verify permitted models in Google AI Studio.'}`);
 }
 
 async function queryOpenAICompatible(url, key, messages) {

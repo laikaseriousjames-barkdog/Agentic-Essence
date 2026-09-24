@@ -4,33 +4,33 @@
  */
 
 :root {
-    --bg-space: #04060b;
-    --neon-cyan: #00f0ff;
-    --neon-magenta: #ff007f;
-    --neon-gold: #ffb700;
-    --neon-emerald: #00ff88;
-    --neon-violet: #8b00ff;
+    --bg-space: #05080d;
+    --neon-cyan: #00ff88;       /* Primary Phosphor Green */
+    --neon-magenta: #ffb700;    /* Terminal Amber */
+    --neon-gold: #ffb700;       /* Terminal Amber */
+    --neon-emerald: #00ff88;    /* Phosphor Green */
+    --neon-violet: #00f0ff;     /* Terminal Cyan */
     
-    --active-glow: var(--neon-cyan);
-    --active-dim: rgba(0, 240, 255, 0.15);
+    --active-glow: #00ff88;
+    --active-dim: rgba(0, 255, 136, 0.15);
     --font-ui: 'Outfit', -apple-system, sans-serif;
     --font-code: 'JetBrains Mono', monospace;
 }
 
 body.persona-swarm {
-    --active-glow: var(--neon-cyan);
-    --active-dim: rgba(0, 240, 255, 0.18);
+    --active-glow: #00ff88;
+    --active-dim: rgba(0, 255, 136, 0.18);
 }
 body.persona-turing {
-    --active-glow: var(--neon-magenta);
-    --active-dim: rgba(255, 0, 127, 0.18);
+    --active-glow: #00f0ff;
+    --active-dim: rgba(0, 240, 255, 0.18);
 }
 body.persona-knuth {
-    --active-glow: var(--neon-gold);
+    --active-glow: #ffb700;
     --active-dim: rgba(255, 183, 0, 0.18);
 }
 body.persona-lovelace {
-    --active-glow: var(--neon-emerald);
+    --active-glow: #00ff88;
     --active-dim: rgba(0, 255, 136, 0.18);
 }
 body.persona-shadow {
