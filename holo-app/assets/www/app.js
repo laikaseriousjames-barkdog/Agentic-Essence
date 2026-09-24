@@ -500,7 +500,14 @@ window.HoloBrain = {
         } catch (err) {
             console.error("[HoloBrain Error]", err);
             history.push({ role: 'assistant', content: `[Neural link exception: ${err.message}]` });
-            HoloVoice.speakAgent("Neural link exception: " + err.message);
+            if (window.SpatialTasks && window.SpatialTasks.spawnTerminalCard) {
+                SpatialTasks.spawnTerminalCard(
+                    "LLM NEURAL LINK ERROR",
+                    `Provider: ${state.provider}\nTarget Model: ${state.model || 'gemini-2.5-flash'}\nError: ${err.message}\n\nPlease tap the settings gear to verify or paste your API Key & Model.`,
+                    "shell"
+                );
+            }
+            HoloVoice.speakAgent("LLM connection failed: " + err.message);
         } finally {
             state.isGenerating = false;
         }
@@ -546,42 +553,249 @@ function getCachedGeminiModels() {
 }
 
 window.populateGeminiModelOptions = function(models) {
-    const select = document.getElementById('modelSelect');
-    if (!select) return;
     const list = models || getCachedGeminiModels();
+    const select = document.getElementById('modelSelect');
+    const datalist = document.getElementById('holoModelDatalist');
+    const mInput = document.getElementById('modelInput');
 
-    select.innerHTML = '';
-    let foundCurrent = false;
+    if (datalist) {
+        datalist.innerHTML = '';
+        list.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = m.name;
+            datalist.appendChild(opt);
+        });
+    }
 
-    list.forEach(m => {
-        const opt = document.createElement('option');
-        opt.value = m.id;
-        opt.textContent = m.name;
-        if (m.id === state.model) {
-            opt.selected = true;
-            foundCurrent = true;
-        }
-        select.appendChild(opt);
-    });
+    if (select) {
+        select.innerHTML = '';
+        let foundCurrent = false;
+        list.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = m.name;
+            if (m.id === state.model) {
+                opt.selected = true;
+                foundCurrent = true;
+            }
+            select.appendChild(opt);
+        });
+    }
 
-    if (!foundCurrent && list.length > 0) {
-        state.model = list[0].id;
+    if (mInput && (!mInput.value || mInput.value === 'gemini-2.5-flash')) {
+        mInput.value = state.model || 'gemini-2.5-flash';
+    }
+};
+
+window.autoSaveModel = function(val) {
+    const clean = (val || '').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
+    state.model = clean || 'gemini-2.5-flash';
+    localStorage.setItem('holo_model', state.model);
+    localStorage.setItem('ae_model', state.model);
+
+    const mInput = document.getElementById('modelInput');
+    if (mInput && mInput.value !== val) {
+        mInput.value = val;
+    }
+    const select = document.getElementById('modelSelect');
+    if (select) {
         select.value = state.model;
-        localStorage.setItem('holo_model', state.model);
-        localStorage.setItem('ae_model', state.model);
+    }
+    const badge = document.getElementById('modelUpdateStatus');
+    if (badge) {
+        badge.textContent = `✓ Selected: ${state.model}`;
+        badge.style.color = '#00ff88';
+    }
+};
+
+window.saveModelDirect = function() {
+    const mInput = document.getElementById('modelInput');
+    const val = mInput ? mInput.value : state.model;
+    autoSaveModel(val);
+    const msg = `Model locked: ${state.model}`;
+    if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(msg);
+    if (window.HoloBridge && window.HoloBridge.vibrate) window.HoloBridge.vibrate(25);
+};
+
+window.selectQuickModel = function(modelName) {
+    const mInput = document.getElementById('modelInput');
+    if (mInput) mInput.value = modelName;
+    autoSaveModel(modelName);
+    if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(`Selected model: ${modelName}`);
+    if (window.HoloBridge && window.HoloBridge.vibrate) window.HoloBridge.vibrate(20);
+};
+
+window.pasteModelFromClipboard = async function() {
+    let txt = null;
+    try {
+        if (window.HoloBridge && window.HoloBridge.getClipboardText) {
+            txt = window.HoloBridge.getClipboardText();
+        }
+    } catch (e) {}
+    if (!txt && navigator.clipboard && navigator.clipboard.readText) {
+        try {
+            txt = await navigator.clipboard.readText();
+        } catch (e) {}
+    }
+    if (txt) {
+        const clean = txt.replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
+        const mInput = document.getElementById('modelInput');
+        if (mInput) {
+            mInput.value = clean;
+            autoSaveModel(clean);
+        }
+        if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(`Pasted Model: ${clean}`);
+        if (window.HoloBridge && window.HoloBridge.vibrate) window.HoloBridge.vibrate(25);
+    } else {
+        const mInput = document.getElementById('modelInput');
+        if (mInput) {
+            mInput.focus();
+            mInput.select();
+        }
+        const msg = "Clipboard empty or permission needed. Long-press input to paste.";
+        if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(msg);
+        else alert(msg);
+    }
+};
+
+window.pasteApiKeyFromClipboard = async function() {
+    let txt = null;
+    try {
+        if (window.HoloBridge && window.HoloBridge.getClipboardText) {
+            txt = window.HoloBridge.getClipboardText();
+        }
+    } catch (e) {}
+    if (!txt && navigator.clipboard && navigator.clipboard.readText) {
+        try {
+            txt = await navigator.clipboard.readText();
+        } catch (e) {}
+    }
+    if (txt) {
+        const clean = txt.replace(/^["']|["']$/g, '').trim();
+        const aInput = document.getElementById('apiKeyInput');
+        if (aInput) {
+            aInput.value = clean;
+            autoSaveApiKey(clean);
+        }
+        if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast("API Key Pasted & Saved");
+        if (window.HoloBridge && window.HoloBridge.vibrate) window.HoloBridge.vibrate(25);
+    } else {
+        const aInput = document.getElementById('apiKeyInput');
+        if (aInput) {
+            aInput.focus();
+            aInput.select();
+        }
+        const msg = "Clipboard empty or permission needed. Long-press input to paste.";
+        if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(msg);
+        else alert(msg);
+    }
+};
+
+window.testAIConnectionLive = async function() {
+    const prov = state.provider || 'gemini';
+    const key = (state.apiKey || '').replace(/^["']|["']$/g, '').trim();
+    const model = (state.model || 'gemini-2.5-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
+    const badge = document.getElementById('modelUpdateStatus');
+    const statusBox = document.getElementById('apiKeySaveStatus');
+
+    const updateStatus = (text, color) => {
+        if (badge) { badge.textContent = text; badge.style.color = color; }
+        if (statusBox) { statusBox.style.display = 'block'; statusBox.textContent = text; statusBox.style.color = color; }
+    };
+
+    updateStatus(`⚡ Testing ${prov.toUpperCase()} (${model})...`, '#00f0ff');
+
+    if (prov === 'gemini') {
+        if (!key) {
+            updateStatus('⚠ Enter Google Gemini key first', '#ffb700');
+            if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast("Enter Gemini API key first");
+            if (window.HoloVoice && window.HoloVoice.speakAgent) HoloVoice.speakAgent("Please enter your Gemini API key first.");
+            return;
+        }
+        try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+            const controller = new AbortController();
+            const tid = setTimeout(() => controller.abort(), 12000);
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ role: 'user', parts: [{ text: 'Respond with the word CONNECTED.' }] }],
+                    generationConfig: { maxOutputTokens: 10 }
+                }),
+                signal: controller.signal
+            });
+            clearTimeout(tid);
+
+            if (res.ok) {
+                updateStatus(`✓ Connected to Google Gemini (${model})!`, '#00ff88');
+                if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(`✓ Gemini connected: ${model}`);
+                if (window.HoloVoice && window.HoloVoice.speakAgent) HoloVoice.speakAgent(`Neural link verified on model ${model}.`);
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                const msg = errData?.error?.message || `HTTP ${res.status}`;
+                updateStatus(`⚠ Error: ${msg}`, '#ff4444');
+                if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(`Gemini Error: ${msg}`);
+                if (window.HoloVoice && window.HoloVoice.speakAgent) HoloVoice.speakAgent("Gemini connection failed: " + msg);
+            }
+        } catch (e) {
+            const msg = e.name === 'AbortError' ? 'Connection timed out' : e.message;
+            updateStatus(`⚠ Error: ${msg}`, '#ff4444');
+            if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(`Error: ${msg}`);
+        }
+    } else if (prov === 'groq') {
+        if (!key) {
+            updateStatus('⚠ Enter Groq key first', '#ffb700');
+            return;
+        }
+        try {
+            const controller = new AbortController();
+            const tid = setTimeout(() => controller.abort(), 12000);
+            const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                body: JSON.stringify({ model: model, messages: [{ role: 'user', content: 'Ping' }], max_tokens: 5 }),
+                signal: controller.signal
+            });
+            clearTimeout(tid);
+            if (res.ok) {
+                updateStatus(`✓ Connected to Groq (${model})!`, '#00ff88');
+                if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(`✓ Groq connected: ${model}`);
+                if (window.HoloVoice && window.HoloVoice.speakAgent) HoloVoice.speakAgent("Groq neural link verified.");
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                const msg = errData?.error?.message || `HTTP ${res.status}`;
+                updateStatus(`⚠ Groq Error: ${msg}`, '#ff4444');
+                if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(`Groq Error: ${msg}`);
+            }
+        } catch (e) {
+            updateStatus(`⚠ Error: ${e.message}`, '#ff4444');
+        }
+    } else if (prov === 'ollama') {
+        const base = state.customUrl || "http://127.0.0.1:11434";
+        try {
+            const controller = new AbortController();
+            const tid = setTimeout(() => controller.abort(), 8000);
+            const res = await fetch(`${base}/api/tags`, { signal: controller.signal });
+            clearTimeout(tid);
+            if (res.ok) {
+                updateStatus(`✓ Ollama online at ${base}`, '#00ff88');
+                if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast("Ollama online");
+            } else {
+                updateStatus('⚠ Ollama unreachable', '#ff4444');
+            }
+        } catch (e) {
+            updateStatus('⚠ Ollama offline: ' + e.message, '#ff4444');
+        }
     }
 };
 
 window.onModelSelectChange = function(val) {
     if (!val) return;
-    state.model = val;
-    localStorage.setItem('holo_model', val);
-    localStorage.setItem('ae_model', val);
-    const badge = document.getElementById('modelUpdateStatus');
-    if (badge) {
-        badge.textContent = `✓ Selected: ${val}`;
-        badge.style.color = '#00ff88';
-    }
+    autoSaveModel(val);
+    const mInput = document.getElementById('modelInput');
+    if (mInput) mInput.value = state.model;
 };
 
 window.refreshGeminiModelsFromGoogle = async function(silent = false) {
@@ -686,7 +900,7 @@ window.refreshGeminiModelsFromGoogle = async function(silent = false) {
 // ==========================================
 async function queryAIProvider(messages) {
     if (state.provider === 'gemini') {
-        const key = (state.apiKey || '').trim();
+        const key = (state.apiKey || '').replace(/^["']|["']$/g, '').trim();
         if (!key) throw new Error("Enter your Gemini API key in Settings.");
 
         const sanitizedContents = [];
@@ -716,12 +930,14 @@ async function queryAIProvider(messages) {
             sanitizedContents.push({ role: 'user', parts: [{ text: 'Hello.' }] });
         }
 
-        const preferredModel = (state.model && !state.model.includes('gemini-3')) ? state.model : 'gemini-2.5-flash';
+        const userModel = (state.model || 'gemini-2.5-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
+        const preferredModel = (userModel && !userModel.includes('gemini-3')) ? userModel : 'gemini-2.5-flash';
         const candidateModels = [preferredModel, 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash'];
         const uniqueModels = [...new Set(candidateModels)];
         let lastError = null;
 
-        for (const modelName of uniqueModels) {
+        for (const rawModel of uniqueModels) {
+            const modelName = rawModel.trim().replace(/^models\//, '');
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(key)}`;
             const payload = {
                 contents: sanitizedContents,
@@ -760,7 +976,13 @@ async function queryAIProvider(messages) {
                 } else {
                     const errData = await res.json().catch(() => ({}));
                     const errMsg = (errData.error && errData.error.message) ? errData.error.message : `Gemini HTTP ${res.status}`;
-                    lastError = new Error(errMsg);
+                    lastError = new Error(`Gemini (${modelName}): ${errMsg}`);
+                    if (errMsg.includes('API key not valid') || errMsg.includes('API_KEY_INVALID')) {
+                        throw new Error(`Google API key is not valid: ${errMsg}`);
+                    }
+                    if (res.status === 429) {
+                        throw new Error(`Google Gemini quota or rate limit exceeded: ${errMsg}`);
+                    }
                     if (res.status === 404 || res.status === 403 || res.status === 400) {
                         continue;
                     }
@@ -779,6 +1001,10 @@ async function queryAIProvider(messages) {
 
     // Groq LPU Ultra-Fast Inference
     if (state.provider === 'groq') {
+        const key = (state.apiKey || '').replace(/^["']|["']$/g, '').trim();
+        if (!key) throw new Error("Enter your Groq API key in Settings.");
+        const groqModel = (state.model && !state.model.startsWith('gemini')) ? state.model : 'llama-3.3-70b-versatile';
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 16000);
 
@@ -786,10 +1012,10 @@ async function queryAIProvider(messages) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${state.apiKey}`
+                'Authorization': `Bearer ${key}`
             },
             body: JSON.stringify({
-                model: 'llama-3.3-70b-versatile',
+                model: groqModel,
                 messages: messages,
                 temperature: 0.7,
                 max_tokens: 1024
@@ -809,20 +1035,26 @@ async function queryAIProvider(messages) {
 
     // Local Ollama
     if (state.provider === 'ollama') {
+        const ollamaModel = (state.model && !state.model.startsWith('gemini')) ? state.model : 'llama3:latest';
+        const baseUrl = state.customUrl || 'http://127.0.0.1:11434';
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 16000);
 
-        const res = await fetch('http://127.0.0.1:11434/api/chat', {
+        const res = await fetch(`${baseUrl}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                model: 'llama3',
+                model: ollamaModel,
                 messages: messages,
                 stream: false
             }),
             signal: controller.signal
         });
         clearTimeout(timeoutId);
+
+        if (!res.ok) {
+            throw new Error(`Ollama HTTP ${res.status} at ${baseUrl}`);
+        }
 
         const data = await res.json();
         return data.message.content.trim();
@@ -841,24 +1073,40 @@ window.onProviderChange = function() {
     const keyInput = document.getElementById('apiKeyInput');
     const freeGuide = document.getElementById('freeKeyGuide');
     const geminiGroup = document.getElementById('geminiModelGroup');
+    const mInput = document.getElementById('modelInput');
 
     if (state.provider === 'gemini') {
         if (keyLabel) keyLabel.textContent = 'GOOGLE GEMINI API KEY (FREE TIER)';
         if (keyInput) keyInput.placeholder = 'AIzaSy... (Paste Google Gemini Key)';
         if (freeGuide) freeGuide.style.display = 'block';
         if (geminiGroup) geminiGroup.style.display = 'block';
+        if (!state.model || state.model.includes('llama')) {
+            autoSaveModel('gemini-2.5-flash');
+        } else if (mInput) {
+            mInput.value = state.model;
+        }
         populateGeminiModelOptions();
         if (state.apiKey) refreshGeminiModelsFromGoogle(true);
     } else if (state.provider === 'groq') {
         if (keyLabel) keyLabel.textContent = 'GROQ API KEY (FREE TIER)';
         if (keyInput) keyInput.placeholder = 'gsk_... (Paste Groq Key)';
         if (freeGuide) freeGuide.style.display = 'none';
-        if (geminiGroup) geminiGroup.style.display = 'none';
+        if (geminiGroup) geminiGroup.style.display = 'block';
+        if (!state.model || state.model.startsWith('gemini')) {
+            autoSaveModel('llama-3.3-70b-versatile');
+        } else if (mInput) {
+            mInput.value = state.model;
+        }
     } else {
         if (keyLabel) keyLabel.textContent = 'LOCAL OLLAMA (NO KEY NEEDED)';
         if (keyInput) keyInput.placeholder = 'http://127.0.0.1:11434';
         if (freeGuide) freeGuide.style.display = 'none';
-        if (geminiGroup) geminiGroup.style.display = 'none';
+        if (geminiGroup) geminiGroup.style.display = 'block';
+        if (!state.model || state.model.startsWith('gemini')) {
+            autoSaveModel('llama3:latest');
+        } else if (mInput) {
+            mInput.value = state.model;
+        }
     }
 };
 
@@ -878,7 +1126,9 @@ window.openSettingsModal = function() {
     const modal = document.getElementById('settingsModal');
     if (modal) modal.classList.add('open');
     const input = document.getElementById('apiKeyInput');
-    if (input) input.value = state.apiKey;
+    if (input) input.value = state.apiKey || '';
+    const mInput = document.getElementById('modelInput');
+    if (mInput) mInput.value = state.model || 'gemini-2.5-flash';
     populateGeminiModelOptions();
     if (state.apiKey && state.provider === 'gemini') {
         refreshGeminiModelsFromGoogle(true);

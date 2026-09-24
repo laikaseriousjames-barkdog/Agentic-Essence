@@ -33,8 +33,10 @@ def test_holo_web_assets_integrity():
 
     with open(index_html, "r", encoding="utf-8") as f:
         html = f.read()
-    # Confirm NO chat boxes / input forms
-    assert "type=\"text\"" not in html.lower() or "id=\"modelinput\"" not in html.lower()
+    # Confirm NO chat boxes / omnibars in voice-only holographic stage
+    assert "id=\"omniinput\"" not in html.lower()
+    assert "id=\"chatinput\"" not in html.lower()
+    assert "id=\"modelinput\"" in html.lower()
     assert "holo-stage-canvas" in html
     assert "spatial-task-viewport" in html
     assert "voice-orb-container" in html

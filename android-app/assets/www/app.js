@@ -643,30 +643,33 @@ window.onProviderChange = function() {
     const label = document.getElementById('apiKeyLabel');
     const mInput = document.getElementById('modelInput');
     const prov = pSelect.value;
+    state.provider = prov;
+    localStorage.setItem('ae_provider', prov);
 
     if (prov === 'gemini') {
         label.textContent = "GEMINI API KEY";
-        mInput.value = "gemini-2.5-flash";
+        autoSaveModel("gemini-2.5-flash");
     } else if (prov === 'groq') {
         label.textContent = "GROQ API KEY";
-        mInput.value = "llama-3.3-70b-versatile";
+        autoSaveModel("llama-3.3-70b-versatile");
     } else if (prov === 'openrouter') {
         label.textContent = "OPENROUTER API KEY";
-        mInput.value = "google/gemini-2.5-flash";
+        autoSaveModel("google/gemini-2.5-flash");
     } else if (prov === 'ollama') {
         label.textContent = "OLLAMA BASE URL";
-        mInput.value = "llama3:latest";
+        autoSaveModel("llama3:latest");
     }
 };
 
 window.autoSaveApiKey = function(val) {
-    const k = (val || '').trim();
+    const k = (val || '').replace(/^["']|["']$/g, '').trim();
     state.apiKey = k;
     localStorage.setItem('ae_api_key', k);
     const status = document.getElementById('apiKeySaveStatus');
     if (status) {
-        status.style.display = 'inline';
-        status.textContent = '✓ AUTO-SAVED';
+        status.style.display = 'block';
+        status.style.color = 'var(--neon-emerald)';
+        status.textContent = '✓ KEY AUTO-SAVED';
         clearTimeout(window._saveTimer);
         window._saveTimer = setTimeout(() => { status.style.display = 'none'; }, 2500);
     }
@@ -681,14 +684,228 @@ window.saveApiKeyDirect = function() {
     }
 };
 
+window.autoSaveModel = function(val) {
+    const clean = (val || '').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
+    state.model = clean || 'gemini-2.5-flash';
+    localStorage.setItem('ae_model', state.model);
+
+    const mInput = document.getElementById('modelInput');
+    if (mInput && mInput.value !== val) {
+        mInput.value = val;
+    }
+    const status = document.getElementById('modelSaveStatus');
+    if (status) {
+        status.style.display = 'block';
+        status.style.color = 'var(--neon-emerald)';
+        status.textContent = `✓ MODEL: ${state.model}`;
+        clearTimeout(window._modelSaveTimer);
+        window._modelSaveTimer = setTimeout(() => { status.style.display = 'none'; }, 2500);
+    }
+};
+
+window.saveModelDirect = function() {
+    const mInput = document.getElementById('modelInput');
+    const val = mInput ? mInput.value : state.model;
+    autoSaveModel(val);
+    Bridge.vibrate(25);
+    Bridge.showToast(`Model Locked: ${state.model}`);
+};
+
+window.selectQuickModel = function(modelName) {
+    const mInput = document.getElementById('modelInput');
+    if (mInput) mInput.value = modelName;
+    autoSaveModel(modelName);
+    Bridge.vibrate(20);
+    Bridge.showToast(`Selected model: ${modelName}`);
+};
+
+window.pasteModelFromClipboard = async function() {
+    let txt = null;
+    try {
+        if (window.AndroidBridge && window.AndroidBridge.getClipboardText) {
+            txt = window.AndroidBridge.getClipboardText();
+        }
+    } catch (e) {}
+    if (!txt && navigator.clipboard && navigator.clipboard.readText) {
+        try {
+            txt = await navigator.clipboard.readText();
+        } catch (e) {}
+    }
+    if (txt) {
+        const clean = txt.replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
+        const mInput = document.getElementById('modelInput');
+        if (mInput) {
+            mInput.value = clean;
+            autoSaveModel(clean);
+        }
+        Bridge.vibrate(25);
+        Bridge.showToast(`Pasted Model: ${clean}`);
+    } else {
+        const mInput = document.getElementById('modelInput');
+        if (mInput) {
+            mInput.focus();
+            mInput.select();
+        }
+        Bridge.showToast("Clipboard empty or permission needed. Long-press input to paste.");
+    }
+};
+
+window.pasteApiKeyFromClipboard = async function() {
+    let txt = null;
+    try {
+        if (window.AndroidBridge && window.AndroidBridge.getClipboardText) {
+            txt = window.AndroidBridge.getClipboardText();
+        }
+    } catch (e) {}
+    if (!txt && navigator.clipboard && navigator.clipboard.readText) {
+        try {
+            txt = await navigator.clipboard.readText();
+        } catch (e) {}
+    }
+    if (txt) {
+        const clean = txt.replace(/^["']|["']$/g, '').trim();
+        const aInput = document.getElementById('apiKeyInput');
+        if (aInput) {
+            aInput.value = clean;
+            autoSaveApiKey(clean);
+        }
+        Bridge.vibrate(25);
+        Bridge.showToast("API Key Pasted & Saved");
+    } else {
+        const aInput = document.getElementById('apiKeyInput');
+        if (aInput) {
+            aInput.focus();
+            aInput.select();
+        }
+        Bridge.showToast("Clipboard empty or permission needed. Long-press input to paste.");
+    }
+};
+
+window.testAIConnectionLive = async function() {
+    const prov = state.provider || 'gemini';
+    const key = (state.apiKey || '').replace(/^["']|["']$/g, '').trim();
+    const model = (state.model || 'gemini-2.5-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
+    const status = document.getElementById('apiKeySaveStatus');
+
+    if (status) {
+        status.style.display = 'block';
+        status.style.color = '#00f0ff';
+        status.textContent = `⚡ TESTING ${prov.toUpperCase()} (${model})...`;
+    }
+
+    if (prov === 'gemini') {
+        if (!key) {
+            if (status) {
+                status.textContent = '⚠ ENTER GEMINI KEY FIRST';
+                status.style.color = '#ffb700';
+            }
+            Bridge.showToast("Enter Gemini API key first");
+            Bridge.speak("Enter your Gemini API key first");
+            return;
+        }
+        try {
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+            const controller = new AbortController();
+            const tid = setTimeout(() => controller.abort(), 12000);
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ role: 'user', parts: [{ text: 'Respond with the word CONNECTED.' }] }],
+                    generationConfig: { maxOutputTokens: 10 }
+                }),
+                signal: controller.signal
+            });
+            clearTimeout(tid);
+
+            if (res.ok) {
+                if (status) {
+                    status.textContent = `✓ CONNECTED: ${model}`;
+                    status.style.color = 'var(--neon-emerald)';
+                }
+                Bridge.vibrate(40);
+                Bridge.showToast(`✓ Gemini connected (${model})`);
+                Bridge.speak(`Gemini neural link verified on model ${model}`);
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                const msg = errData?.error?.message || `HTTP ${res.status}`;
+                if (status) {
+                    status.textContent = `⚠ ${msg.toUpperCase().slice(0, 45)}`;
+                    status.style.color = '#ff007f';
+                }
+                Bridge.vibrate(60);
+                Bridge.showToast(`Gemini Error: ${msg}`);
+                Bridge.speak(`Gemini connection error: ${msg}`);
+            }
+        } catch (e) {
+            const msg = e.name === 'AbortError' ? 'Connection timed out' : e.message;
+            if (status) {
+                status.textContent = `⚠ ${msg.toUpperCase()}`;
+                status.style.color = '#ff007f';
+            }
+            Bridge.showToast(`Error: ${msg}`);
+        }
+    } else if (prov === 'groq') {
+        if (!key) {
+            if (status) {
+                status.textContent = '⚠ ENTER GROQ KEY FIRST';
+                status.style.color = '#ffb700';
+            }
+            Bridge.showToast("Enter Groq API key first");
+            return;
+        }
+        try {
+            const controller = new AbortController();
+            const tid = setTimeout(() => controller.abort(), 12000);
+            const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                body: JSON.stringify({ model: model, messages: [{ role: 'user', content: 'Ping' }], max_tokens: 5 }),
+                signal: controller.signal
+            });
+            clearTimeout(tid);
+            if (res.ok) {
+                if (status) { status.textContent = `✓ CONNECTED: ${model}`; status.style.color = 'var(--neon-emerald)'; }
+                Bridge.showToast(`✓ Groq connected (${model})`);
+                Bridge.speak("Groq neural link verified");
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                const msg = errData?.error?.message || `HTTP ${res.status}`;
+                if (status) { status.textContent = `⚠ ${msg.slice(0, 40)}`; status.style.color = '#ff007f'; }
+                Bridge.showToast(`Groq Error: ${msg}`);
+            }
+        } catch (e) {
+            if (status) { status.textContent = `⚠ ${e.message}`; status.style.color = '#ff007f'; }
+        }
+    } else if (prov === 'ollama') {
+        const base = state.customUrl || "http://127.0.0.1:11434";
+        try {
+            const controller = new AbortController();
+            const tid = setTimeout(() => controller.abort(), 8000);
+            const res = await fetch(`${base}/api/tags`, { signal: controller.signal });
+            clearTimeout(tid);
+            if (res.ok) {
+                if (status) { status.textContent = '✓ OLLAMA ONLINE'; status.style.color = 'var(--neon-emerald)'; }
+                Bridge.showToast("Ollama server connected");
+            } else {
+                if (status) { status.textContent = '⚠ OLLAMA UNREACHABLE'; status.style.color = '#ff007f'; }
+                Bridge.showToast("Ollama returned HTTP error");
+            }
+        } catch (e) {
+            if (status) { status.textContent = '⚠ OLLAMA OFFLINE'; status.style.color = '#ff007f'; }
+            Bridge.showToast("Cannot connect to Ollama at " + base);
+        }
+    }
+};
+
 window.saveSettings = function() {
     const pSelect = document.getElementById('providerSelect');
     const aInput = document.getElementById('apiKeyInput');
     const mInput = document.getElementById('modelInput');
 
     state.provider = pSelect.value;
-    state.apiKey = aInput.value.trim();
-    state.model = mInput.value.trim();
+    state.apiKey = (aInput ? aInput.value : state.apiKey).trim();
+    state.model = (mInput ? mInput.value : state.model).trim();
 
     localStorage.setItem('ae_provider', state.provider);
     localStorage.setItem('ae_api_key', state.apiKey);
@@ -1185,16 +1402,22 @@ window.sendMessage = async function() {
         return;
     }
 
-    // If offline and not a tool request, deliver authentic persona cognition directly
+    // If offline and not a tool request, deliver prompt to enter API key
     if (!hasAIConfig) {
-        const cogReply = generatePersonaCognition(state.persona, text);
         appendFreeNode(
-            currentPersona.tag,
-            renderAssistantContent(cogReply, null, isGreeting),
-            "assistant"
+            "SYSTEM // NEURAL LINK OFFLINE",
+            `<div style="border-left:3px solid #00f0ff; padding:10px 14px; background:rgba(0,240,255,0.06); border-radius:6px; font-family:var(--font-code); font-size:12px; margin:4px 0;">` +
+            `<div style="color:#00f0ff; font-weight:700; margin-bottom:4px;">🔑 API Key Required for Live Intelligence</div>` +
+            `<div style="color:#cbd5e1; margin-bottom:8px;">No ${escapeHtml(state.provider.toUpperCase())} API key configured. Enter your free Google Gemini API key to activate live persona intelligence.</div>` +
+            `<div style="display:flex; gap:8px;">` +
+            `<button type="button" onclick="openDrawer()" class="hw-matrix-btn cyan" style="padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;">⚙️ Enter API Key</button>` +
+            `<button type="button" onclick="pasteApiKeyFromClipboard()" class="hw-matrix-btn magenta" style="padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;">📋 Paste Key</button>` +
+            `</div>` +
+            `</div>`,
+            "system"
         );
-        state.history.push({ role: 'assistant', content: cogReply });
-        Bridge.speak(cogReply);
+        Bridge.speak("No API key configured. Please enter your Gemini API key in the routing drawer.");
+        openDrawer();
         return;
     }
 
@@ -1232,12 +1455,22 @@ DO NOT run commands, DO NOT recite system status or verification checklists, and
                 rawReply = await queryAIProvider(activeMessages);
             } catch (queryErr) {
                 console.warn("[AI Provider Error]", queryErr.message);
-                if (stepCount > 1) {
-                    appendFreeNode("SYSTEM // STEP TERMINATED", `<span style="color:#ff007f;">AI Provider query error at step ${stepCount}: ${escapeHtml(queryErr.message)}</span>`, "system");
-                    break;
-                } else {
-                    rawReply = generatePersonaCognition(state.persona, text);
-                }
+                appendFreeNode(
+                    "SYSTEM // NEURAL LINK EXCEPTION",
+                    `<div style="border-left:3px solid #ff007f; padding:10px 14px; background:rgba(255,0,127,0.06); border-radius:6px; font-family:var(--font-code); font-size:12px; margin:4px 0;">` +
+                    `<div style="color:#ff007f; font-weight:700; margin-bottom:4px;">⚠ LLM Connection Error (${escapeHtml(state.provider.toUpperCase())})</div>` +
+                    `<div style="color:#f1f5f9; margin-bottom:6px;">${escapeHtml(queryErr.message)}</div>` +
+                    `<div style="font-size:11px; color:#94a3b8; margin-bottom:8px;">Target Model: <code>${escapeHtml(state.model || 'gemini-2.5-flash')}</code></div>` +
+                    `<div style="display:flex; gap:8px;">` +
+                    `<button type="button" onclick="openDrawer()" class="hw-matrix-btn emerald" style="padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;">⚙️ Open Settings</button>` +
+                    `<button type="button" onclick="testAIConnectionLive()" class="hw-matrix-btn gold" style="padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;">⚡ Test Connection</button>` +
+                    `</div>` +
+                    `</div>`,
+                    "system"
+                );
+                Bridge.speak(`LLM connection failed: ${queryErr.message}`);
+                Bridge.vibrate(60);
+                break;
             }
 
             // 1. Extract execution directives via balanced bracket parser & block tags
@@ -2223,7 +2456,7 @@ async function queryAIProvider(messages) {
 }
 
 async function queryGemini(messages) {
-    const key = (state.apiKey || '').trim();
+    const key = (state.apiKey || '').replace(/^["']|["']$/g, '').trim();
     if (!key) throw new Error("Enter your Gemini API key in Routing & Settings.");
 
     const sanitizedContents = [];
@@ -2265,12 +2498,14 @@ async function queryGemini(messages) {
     };
     if (sysInstruction) payload.systemInstruction = sysInstruction;
 
-    const preferredModel = (state.model && !state.model.includes('gemini-3')) ? state.model : 'gemini-2.5-flash';
+    const userModel = (state.model || 'gemini-2.5-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
+    const preferredModel = (userModel && !userModel.includes('gemini-3')) ? userModel : 'gemini-2.5-flash';
     const candidateModels = [preferredModel, 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash'];
     const uniqueModels = [...new Set(candidateModels)];
     let lastError = null;
 
-    for (const modelName of uniqueModels) {
+    for (const rawModel of uniqueModels) {
+        const modelName = rawModel.trim().replace(/^models\//, '');
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(key)}`;
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 25000);
@@ -2287,6 +2522,12 @@ async function queryGemini(messages) {
                 const errJson = await res.json().catch(() => ({}));
                 const errMsg = (errJson.error && errJson.error.message) ? errJson.error.message : `HTTP ${res.status}`;
                 lastError = new Error(`Gemini (${modelName}): ${errMsg}`);
+                if (errMsg.includes('API key not valid') || errMsg.includes('API_KEY_INVALID')) {
+                    throw new Error(`Google API key is not valid: ${errMsg}`);
+                }
+                if (res.status === 429) {
+                    throw new Error(`Google Gemini quota or rate limit exceeded: ${errMsg}`);
+                }
                 if (res.status === 404 || res.status === 403 || res.status === 400) {
                     continue;
                 }
@@ -2314,6 +2555,8 @@ async function queryGemini(messages) {
 }
 
 async function queryOpenAICompatible(url, key, messages) {
+    const cleanKey = (key || '').replace(/^["']|["']$/g, '').trim();
+    const cleanModel = (state.model || 'llama-3.3-70b-versatile').replace(/^["']|["']$/g, '').trim();
     const formatted = messages.map(m => ({
         role: (m.role === 'model' || m.role === 'assistant') ? 'assistant' : m.role,
         content: m.content || ''
@@ -2325,9 +2568,9 @@ async function queryOpenAICompatible(url, key, messages) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${key}`
+                'Authorization': `Bearer ${cleanKey}`
             },
-            body: JSON.stringify({ model: state.model, messages: formatted }),
+            body: JSON.stringify({ model: cleanModel, messages: formatted }),
             signal: controller.signal
         });
         clearTimeout(timeoutId);
@@ -2346,6 +2589,7 @@ async function queryOpenAICompatible(url, key, messages) {
 }
 
 async function queryOllama(base, messages) {
+    const cleanModel = (state.model || 'llama3:latest').replace(/^["']|["']$/g, '').trim();
     const formatted = messages.map(m => ({
         role: (m.role === 'model' || m.role === 'assistant') ? 'assistant' : m.role,
         content: m.content || ''
@@ -2356,7 +2600,7 @@ async function queryOllama(base, messages) {
         const res = await fetch(`${base}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: state.model, messages: formatted, stream: false }),
+            body: JSON.stringify({ model: cleanModel, messages: formatted, stream: false }),
             signal: controller.signal
         });
         clearTimeout(timeoutId);

@@ -294,3 +294,41 @@ def test_google_gemini_connection_resilience_and_multiturn():
         assert "gemini-1.5-flash" in js
 
 
+def test_free_copy_paste_model_and_live_verification():
+    """Verify both APK apps support freely copying and pasting any model and live testing."""
+    for base in [HOLO_DIR, APP_DIR]:
+        app_js_path = os.path.join(base, "assets/www/app.js")
+        index_html_path = os.path.join(base, "assets/www/index.html")
+        with open(app_js_path, "r", encoding="utf-8") as f:
+            js = f.read()
+        with open(index_html_path, "r", encoding="utf-8") as f:
+            html = f.read()
+
+        # Both apps must have a real editable modelInput
+        assert 'id="modelInput"' in html
+        # Both apps must have clipboard paste functions for model and key
+        assert "pasteModelFromClipboard" in js
+        assert "pasteApiKeyFromClipboard" in js
+        assert "pasteModelFromClipboard" in html
+        assert "pasteApiKeyFromClipboard" in html
+        # Both apps must have autoSaveModel and saveModelDirect
+        assert "autoSaveModel" in js
+        assert "saveModelDirect" in js
+        # Both apps must have quick model selection chips
+        assert "selectQuickModel" in js
+        assert "selectQuickModel" in html
+        # Both apps must have live LLM test connection
+        assert "testAIConnectionLive" in js
+        assert "testAIConnectionLive" in html
+
+    # Verify Android bridge clipboard methods exist in Java sources
+    holo_java = os.path.join(HOLO_DIR, "src/org/antigravity/agenticvox/HoloBridgeInterface.java")
+    app_java = os.path.join(APP_DIR, "src/org/antigravity/agenticdeck/WebAppInterface.java")
+    for jpath in [holo_java, app_java]:
+        with open(jpath, "r", encoding="utf-8") as f:
+            java_src = f.read()
+        assert "getClipboardText" in java_src
+        assert "copyToClipboard" in java_src
+
+
+

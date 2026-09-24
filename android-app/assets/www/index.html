@@ -92,18 +92,45 @@
         <div class="drawer-block" id="apiKeyGroup">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                 <label class="drawer-label" id="apiKeyLabel" style="margin-bottom:0;">GEMINI API KEY</label>
-                <span id="apiKeySaveStatus" style="font-size:11px; font-family:var(--font-code); color:var(--neon-emerald); display:none;">✓ SAVED</span>
+                <div style="display:flex; gap:6px;">
+                    <button type="button" onclick="pasteApiKeyFromClipboard()" class="hw-matrix-btn cyan" style="padding:4px 8px; font-size:11px; cursor:pointer;">📋 PASTE</button>
+                    <button type="button" onclick="testAIConnectionLive()" class="hw-matrix-btn gold" style="padding:4px 8px; font-size:11px; cursor:pointer;">⚡ TEST</button>
+                </div>
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
                 <input type="password" id="apiKeyInput" class="holo-input" placeholder="Enter API Key..." oninput="autoSaveApiKey(this.value)" style="flex:1; margin-bottom:0;" />
                 <button type="button" onclick="saveApiKeyDirect()" class="hw-matrix-btn emerald" style="padding:10px 14px; font-weight:800; font-size:12px; white-space:nowrap; cursor:pointer;">💾 SAVE</button>
             </div>
+            <div id="apiKeySaveStatus" style="font-size:11px; font-family:var(--font-code); color:var(--neon-emerald); margin-top:4px; display:none;"></div>
             <span class="drawer-micro-hint" style="margin-top:6px; display:block;">Default: gemini-2.5-flash (Auto-saved on input)</span>
         </div>
 
         <div class="drawer-block">
-            <label class="drawer-label">MODEL TARGET</label>
-            <input type="text" id="modelInput" class="holo-input" value="gemini-2.5-flash" />
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <label class="drawer-label" style="margin-bottom:0;">MODEL TARGET (FREELY PASTE / EDIT ANY MODEL)</label>
+                <button type="button" onclick="pasteModelFromClipboard()" class="hw-matrix-btn cyan" style="padding:4px 8px; font-size:11px; cursor:pointer;">📋 PASTE</button>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <input type="text" id="modelInput" class="holo-input" value="gemini-2.5-flash" oninput="autoSaveModel(this.value)" list="aeModelDatalist" style="flex:1; margin-bottom:0;" />
+                <button type="button" onclick="saveModelDirect()" class="hw-matrix-btn emerald" style="padding:10px 14px; font-weight:800; font-size:12px; white-space:nowrap; cursor:pointer;">💾 SAVE</button>
+            </div>
+            <datalist id="aeModelDatalist">
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash [Recommended]</option>
+                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash-Lite</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Groq)</option>
+            </datalist>
+            <!-- Quick suggestion chips for 1-tap selection -->
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+                <button type="button" onclick="selectQuickModel('gemini-2.5-flash')" class="hw-matrix-btn cyan" style="padding:3px 7px; font-size:10px;">⚡ 2.5-flash</button>
+                <button type="button" onclick="selectQuickModel('gemini-2.5-pro')" class="hw-matrix-btn violet" style="padding:3px 7px; font-size:10px;">🧠 2.5-pro</button>
+                <button type="button" onclick="selectQuickModel('gemini-2.0-flash')" class="hw-matrix-btn magenta" style="padding:3px 7px; font-size:10px;">🚀 2.0-flash</button>
+                <button type="button" onclick="selectQuickModel('llama-3.3-70b-versatile')" class="hw-matrix-btn gold" style="padding:3px 7px; font-size:10px;">🦙 Llama-3.3</button>
+            </div>
+            <div id="modelSaveStatus" style="font-size:11px; font-family:var(--font-code); color:var(--neon-emerald); margin-top:4px; display:none;"></div>
         </div>
 
         <!-- Kali NetHunter Root Bridge Section -->

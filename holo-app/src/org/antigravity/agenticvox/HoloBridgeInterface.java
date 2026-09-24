@@ -2,6 +2,8 @@ package org.antigravity.agenticvox;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.ClipboardManager;
+import android.content.ClipData;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
@@ -771,6 +773,38 @@ public class HoloBridgeInterface {
     @JavascriptInterface
     public void showToast(String msg) {
         mActivity.runOnUiThread(() -> Toast.makeText(mActivity, msg, Toast.LENGTH_SHORT).show());
+    }
+
+    @JavascriptInterface
+    public void copyToClipboard(String text) {
+        mActivity.runOnUiThread(() -> {
+            try {
+                ClipboardManager clipboard = (ClipboardManager) mActivity.getSystemService(Context.CLIPBOARD_SERVICE);
+                ClipData clip = ClipData.newPlainText("Agentic Vox", text);
+                if (clipboard != null) {
+                    clipboard.setPrimaryClip(clip);
+                    Toast.makeText(mActivity, "Copied to clipboard", Toast.LENGTH_SHORT).show();
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Clipboard error: " + e.getMessage());
+            }
+        });
+    }
+
+    @JavascriptInterface
+    public String getClipboardText() {
+        try {
+            ClipboardManager clipboard = (ClipboardManager) mActivity.getSystemService(Context.CLIPBOARD_SERVICE);
+            if (clipboard != null && clipboard.hasPrimaryClip()) {
+                ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
+                if (item != null && item.getText() != null) {
+                    return item.getText().toString();
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Get clipboard error: " + e.getMessage());
+        }
+        return "";
     }
 
     private void evaluateJs(String script) {
