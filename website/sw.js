@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agentic-vox-v7.0';
+const CACHE_NAME = 'agentic-vox-v8.0';
 const ASSETS = [
   '/',
   '/index.html',

@@ -261,3 +261,36 @@ def test_speech_noise_filtering_and_tts_handshake():
     assert "onNativeSpeechFinished" in java_code
     assert "onDone" in java_code
 
+
+def test_no_broken_gemini_3_hallucinations():
+    """Verify neither app defaults to non-existent gemini-3.1-flash-lite."""
+    for base in [HOLO_DIR, APP_DIR]:
+        app_js = os.path.join(base, "assets/www/app.js")
+        index_html = os.path.join(base, "assets/www/index.html")
+        with open(app_js, "r", encoding="utf-8") as f:
+            js = f.read()
+        with open(index_html, "r", encoding="utf-8") as f:
+            html = f.read()
+
+        assert "gemini-3.1-flash-lite" not in js
+        assert "gemini-3.1-flash-lite" not in html
+        assert "gemini-2.5-flash" in js
+
+
+def test_google_gemini_connection_resilience_and_multiturn():
+    """Verify Gemini API client sanitizes multiturn messages and uses robust timeout."""
+    for base in [HOLO_DIR, APP_DIR]:
+        app_js = os.path.join(base, "assets/www/app.js")
+        with open(app_js, "r", encoding="utf-8") as f:
+            js = f.read()
+
+        # Verify API key encoding and trimming
+        assert "encodeURIComponent" in js
+        # Verify timeout is at least 20000ms
+        assert "25000" in js or "20000" in js
+        # Verify candidate models fallback
+        assert "candidateModels" in js
+        assert "gemini-2.0-flash" in js
+        assert "gemini-1.5-flash" in js
+
+

@@ -82,7 +82,7 @@
         <div class="drawer-block">
             <label class="drawer-label">INFERENCE ENGINE</label>
             <select id="providerSelect" class="holo-input" onchange="onProviderChange()">
-                <option value="gemini">Google Gemini 3.1 (Free)</option>
+                <option value="gemini">Google Gemini 2.5 / 2.0 (Free)</option>
                 <option value="groq">Groq LPU (Ultra-Fast)</option>
                 <option value="openrouter">OpenRouter Multi-Model</option>
                 <option value="ollama">Ollama Local Cyberdeck</option>
@@ -98,12 +98,12 @@
                 <input type="password" id="apiKeyInput" class="holo-input" placeholder="Enter API Key..." oninput="autoSaveApiKey(this.value)" style="flex:1; margin-bottom:0;" />
                 <button type="button" onclick="saveApiKeyDirect()" class="hw-matrix-btn emerald" style="padding:10px 14px; font-weight:800; font-size:12px; white-space:nowrap; cursor:pointer;">💾 SAVE</button>
             </div>
-            <span class="drawer-micro-hint" style="margin-top:6px; display:block;">Default: gemini-3.1-flash-lite (Auto-saved on input)</span>
+            <span class="drawer-micro-hint" style="margin-top:6px; display:block;">Default: gemini-2.5-flash (Auto-saved on input)</span>
         </div>
 
         <div class="drawer-block">
             <label class="drawer-label">MODEL TARGET</label>
-            <input type="text" id="modelInput" class="holo-input" value="gemini-3.1-flash-lite" />
+            <input type="text" id="modelInput" class="holo-input" value="gemini-2.5-flash" />
         </div>
 
         <!-- Kali NetHunter Root Bridge Section -->

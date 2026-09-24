@@ -9,7 +9,7 @@ const state = {
     persona: (savedPersona && ['swarm', 'turing', 'knuth', 'lovelace'].includes(savedPersona)) ? savedPersona : 'swarm',
     provider: localStorage.getItem('ae_provider') || 'gemini',
     apiKey: localStorage.getItem('ae_api_key') || '',
-    model: localStorage.getItem('ae_model') || 'gemini-3.1-flash-lite',
+    model: localStorage.getItem('ae_model') || 'gemini-2.5-flash',
     customUrl: localStorage.getItem('ae_custom_url') || '',
     ttsEnabled: localStorage.getItem('ae_tts') === 'true',
     hapticsEnabled: localStorage.getItem('ae_haptics') !== 'false',
@@ -49,9 +49,9 @@ Object.defineProperty(state, 'activePersona', {
 
 window.state = state;
 
-if (state.model.includes('gemini-2') || state.model.includes('gemini-1.5')) {
-    state.model = 'gemini-3.1-flash-lite';
-    localStorage.setItem('ae_model', 'gemini-3.1-flash-lite');
+if (!state.model || state.model.includes('gemini-3')) {
+    state.model = 'gemini-2.5-flash';
+    localStorage.setItem('ae_model', 'gemini-2.5-flash');
 }
 
 const SYSTEM_GROUNDING = `
@@ -646,7 +646,7 @@ window.onProviderChange = function() {
 
     if (prov === 'gemini') {
         label.textContent = "GEMINI API KEY";
-        mInput.value = "gemini-3.1-flash-lite";
+        mInput.value = "gemini-2.5-flash";
     } else if (prov === 'groq') {
         label.textContent = "GROQ API KEY";
         mInput.value = "llama-3.3-70b-versatile";
@@ -1311,6 +1311,7 @@ DO NOT run commands, DO NOT recite system status or verification checklists, and
             activeMessages.push({ role: 'user', content: feedbackPrompt });
         }
     } catch (err) {
+        state.history.push({ role: 'assistant', content: `[Exception: ${err.message}]` });
         appendFreeNode("SYSTEM // EXCEPTION", `<span style="color:#ff007f;">${escapeHtml(err.message)}</span>`, "system");
     } finally {
         state.isGenerating = false;
@@ -2222,10 +2223,9 @@ async function queryAIProvider(messages) {
 }
 
 async function queryGemini(messages) {
-    const key = state.apiKey.trim();
+    const key = (state.apiKey || '').trim();
     if (!key) throw new Error("Enter your Gemini API key in Routing & Settings.");
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${state.model}:generateContent?key=${key}`;
     const sanitizedContents = [];
     let sysInstruction = null;
 
@@ -2235,12 +2235,15 @@ async function queryGemini(messages) {
             continue;
         }
         const role = (m.role === 'model' || m.role === 'assistant') ? 'model' : 'user';
+        const text = (m.content || '').trim();
+        if (!text) continue;
+
         if (sanitizedContents.length > 0 && sanitizedContents[sanitizedContents.length - 1].role === role) {
-            sanitizedContents[sanitizedContents.length - 1].parts[0].text += "\n\n" + (m.content || "");
+            sanitizedContents[sanitizedContents.length - 1].parts[0].text += "\n\n" + text;
         } else {
             sanitizedContents.push({
                 role: role,
-                parts: [{ text: m.content || "" }]
+                parts: [{ text: text }]
             });
         }
     }
@@ -2249,33 +2252,65 @@ async function queryGemini(messages) {
     if (sanitizedContents.length > 0 && sanitizedContents[0].role !== 'user') {
         sanitizedContents.unshift({ role: 'user', parts: [{ text: 'Initiating session.' }] });
     }
+    if (sanitizedContents.length === 0) {
+        sanitizedContents.push({ role: 'user', parts: [{ text: 'Hello.' }] });
+    }
 
-    const payload = { contents: sanitizedContents };
+    const payload = {
+        contents: sanitizedContents,
+        generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2048
+        }
+    };
     if (sysInstruction) payload.systemInstruction = sysInstruction;
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-    try {
-        const res = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-            signal: controller.signal
-        });
-        clearTimeout(timeoutId);
+    const preferredModel = (state.model && !state.model.includes('gemini-3')) ? state.model : 'gemini-2.5-flash';
+    const candidateModels = [preferredModel, 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    const uniqueModels = [...new Set(candidateModels)];
+    let lastError = null;
 
-        if (!res.ok) {
-            const errJson = await res.json().catch(() => ({}));
-            const errMsg = (errJson.error && errJson.error.message) ? errJson.error.message : `HTTP ${res.status}`;
-            throw new Error(`Gemini: ${errMsg}`);
+    for (const modelName of uniqueModels) {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(key)}`;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 25000);
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            if (!res.ok) {
+                const errJson = await res.json().catch(() => ({}));
+                const errMsg = (errJson.error && errJson.error.message) ? errJson.error.message : `HTTP ${res.status}`;
+                lastError = new Error(`Gemini (${modelName}): ${errMsg}`);
+                if (res.status === 404 || res.status === 403 || res.status === 400) {
+                    continue;
+                }
+                throw lastError;
+            }
+
+            const data = await res.json();
+            const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (replyText) {
+                return replyText.trim();
+            } else if (data?.candidates?.[0]?.finishReason) {
+                return `[Gemini finished with reason: ${data.candidates[0].finishReason}]`;
+            } else {
+                throw new Error("Gemini returned empty response");
+            }
+        } catch (e) {
+            clearTimeout(timeoutId);
+            lastError = e;
+            if (e.name === 'AbortError') {
+                lastError = new Error(`Gemini request timed out on model ${modelName}`);
+            }
         }
-
-        const data = await res.json();
-        return data.candidates[0].content.parts[0].text;
-    } catch (e) {
-        clearTimeout(timeoutId);
-        throw e;
     }
+    throw lastError || new Error("Failed to connect to Google Gemini API. Please check your API key and network.");
 }
 
 async function queryOpenAICompatible(url, key, messages) {
@@ -2284,7 +2319,7 @@ async function queryOpenAICompatible(url, key, messages) {
         content: m.content || ''
     }));
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
     try {
         const res = await fetch(url, {
             method: 'POST',
@@ -2303,7 +2338,7 @@ async function queryOpenAICompatible(url, key, messages) {
         }
 
         const data = await res.json();
-        return data.choices[0].message.content;
+        return data.choices?.[0]?.message?.content || "No response received";
     } catch (e) {
         clearTimeout(timeoutId);
         throw e;
@@ -2316,7 +2351,7 @@ async function queryOllama(base, messages) {
         content: m.content || ''
     }));
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
     try {
         const res = await fetch(`${base}/api/chat`, {
             method: 'POST',

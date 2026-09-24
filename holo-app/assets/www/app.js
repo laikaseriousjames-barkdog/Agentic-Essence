@@ -19,6 +19,11 @@ const state = {
     }
 };
 
+if (!state.model || state.model.includes('gemini-3')) {
+    state.model = 'gemini-2.5-flash';
+    localStorage.setItem('holo_model', 'gemini-2.5-flash');
+}
+
 const SYSTEM_GROUNDING = `
 === ENVIRONMENT CONTEXT & PRIVILEGED DUAL EXECUTION ENGINE ===
 You are an advanced, intelligent AI cyberdeck hologram assistant executing inside Agentic Hologram / Vox on Android, connected to a dual-engine execution environment on Linux kernel 5.15 aarch64:
@@ -397,10 +402,6 @@ window.HoloBrain = {
         state.isGenerating = true;
         state.lastGenerateTime = now;
 
-        const currentPersona = PERSONAS[state.persona] || PERSONAS.swarm;
-        const history = state.personaHistories[state.persona];
-        history.push({ role: 'user', content: operatorSpeech });
-
         // If no API key configured, guide operator by voice
         if (!state.apiKey && state.provider !== 'ollama') {
             state.isGenerating = false;
@@ -408,6 +409,10 @@ window.HoloBrain = {
             openSettingsModal();
             return;
         }
+
+        const currentPersona = PERSONAS[state.persona] || PERSONAS.swarm;
+        const history = state.personaHistories[state.persona];
+        history.push({ role: 'user', content: operatorSpeech });
 
         try {
             const isToolIntent = /synth|build\s+a?\s*tool|create\s+a?\s*tool|widget/i.test(operatorSpeech);
@@ -494,6 +499,7 @@ window.HoloBrain = {
             }
         } catch (err) {
             console.error("[HoloBrain Error]", err);
+            history.push({ role: 'assistant', content: `[Neural link exception: ${err.message}]` });
             HoloVoice.speakAgent("Neural link exception: " + err.message);
         } finally {
             state.isGenerating = false;
@@ -598,12 +604,15 @@ window.refreshGeminiModelsFromGoogle = async function(silent = false) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 9000);
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(state.apiKey)}`;
+        const cleanKey = (state.apiKey || '').trim();
+        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(cleanKey)}`;
         const res = await fetch(url, { signal: controller.signal });
         clearTimeout(timeoutId);
 
         if (!res.ok) {
-            throw new Error(`Google API HTTP ${res.status}`);
+            const errJson = await res.json().catch(() => ({}));
+            const errMsg = (errJson.error && errJson.error.message) ? errJson.error.message : `HTTP ${res.status}`;
+            throw new Error(errMsg);
         }
 
         const data = await res.json();
@@ -660,8 +669,14 @@ window.refreshGeminiModelsFromGoogle = async function(silent = false) {
         console.warn("[GeminiModelSync] Failed to query live models:", err);
         populateGeminiModelOptions(getCachedGeminiModels());
         if (statusBadge) {
-            statusBadge.textContent = "✓ Using curated Google model registry";
-            statusBadge.style.color = "#94a3b8";
+            const isInvalidKey = err.message && (err.message.includes('API key not valid') || err.message.includes('API_KEY_INVALID') || err.message.includes('400'));
+            if (isInvalidKey) {
+                statusBadge.textContent = "⚠ Invalid Google API Key";
+                statusBadge.style.color = "#ff4444";
+            } else {
+                statusBadge.textContent = "✓ Using curated Google model registry";
+                statusBadge.style.color = "#94a3b8";
+            }
         }
     }
 };
@@ -671,27 +686,45 @@ window.refreshGeminiModelsFromGoogle = async function(silent = false) {
 // ==========================================
 async function queryAIProvider(messages) {
     if (state.provider === 'gemini') {
-        const contents = [];
+        const key = (state.apiKey || '').trim();
+        if (!key) throw new Error("Enter your Gemini API key in Settings.");
+
+        const sanitizedContents = [];
         let systemInstructionText = '';
 
         for (const msg of messages) {
             if (msg.role === 'system') {
                 systemInstructionText += (systemInstructionText ? '\n\n' : '') + msg.content;
-            } else if (msg.role === 'user') {
-                contents.push({ role: 'user', parts: [{ text: msg.content }] });
-            } else if (msg.role === 'assistant') {
-                contents.push({ role: 'model', parts: [{ text: msg.content }] });
+                continue;
+            }
+            const role = (msg.role === 'assistant' || msg.role === 'model') ? 'model' : 'user';
+            const text = (msg.content || '').trim();
+            if (!text) continue;
+
+            if (sanitizedContents.length > 0 && sanitizedContents[sanitizedContents.length - 1].role === role) {
+                sanitizedContents[sanitizedContents.length - 1].parts[0].text += '\n\n' + text;
+            } else {
+                sanitizedContents.push({ role: role, parts: [{ text: text }] });
             }
         }
 
-        const preferredModel = state.model || 'gemini-2.5-flash';
+        // Gemini requires first turn to be 'user'
+        if (sanitizedContents.length > 0 && sanitizedContents[0].role !== 'user') {
+            sanitizedContents.unshift({ role: 'user', parts: [{ text: 'Initiating session.' }] });
+        }
+        if (sanitizedContents.length === 0) {
+            sanitizedContents.push({ role: 'user', parts: [{ text: 'Hello.' }] });
+        }
+
+        const preferredModel = (state.model && !state.model.includes('gemini-3')) ? state.model : 'gemini-2.5-flash';
         const candidateModels = [preferredModel, 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+        const uniqueModels = [...new Set(candidateModels)];
         let lastError = null;
 
-        for (const modelName of [...new Set(candidateModels)]) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${state.apiKey}`;
+        for (const modelName of uniqueModels) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(key)}`;
             const payload = {
-                contents: contents,
+                contents: sanitizedContents,
                 generationConfig: {
                     temperature: 0.7,
                     maxOutputTokens: 1024
@@ -706,7 +739,7 @@ async function queryAIProvider(messages) {
 
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 20000);
+                const timeoutId = setTimeout(() => controller.abort(), 25000);
 
                 const res = await fetch(url, {
                     method: 'POST',
@@ -718,25 +751,30 @@ async function queryAIProvider(messages) {
 
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.candidates && data.candidates.length && data.candidates[0].content && data.candidates[0].content.parts) {
+                    if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
                         return data.candidates[0].content.parts[0].text.trim();
+                    }
+                    if (data?.candidates?.[0]?.finishReason) {
+                        return `[Gemini finished with reason: ${data.candidates[0].finishReason}]`;
                     }
                 } else {
                     const errData = await res.json().catch(() => ({}));
-                    lastError = new Error((errData.error && errData.error.message) || `Gemini HTTP ${res.status}`);
-                    if (res.status !== 404 && res.status !== 400) {
-                        throw lastError;
+                    const errMsg = (errData.error && errData.error.message) ? errData.error.message : `Gemini HTTP ${res.status}`;
+                    lastError = new Error(errMsg);
+                    if (res.status === 404 || res.status === 403 || res.status === 400) {
+                        continue;
                     }
+                    throw lastError;
                 }
             } catch (fetchErr) {
                 lastError = fetchErr;
-                if (!fetchErr.message.includes('404') && !fetchErr.message.includes('not found')) {
-                    throw fetchErr;
+                if (fetchErr.name === 'AbortError') {
+                    lastError = new Error(`Gemini request timed out on model ${modelName}`);
                 }
             }
         }
 
-        throw lastError || new Error("Failed to query Google Gemini API");
+        throw lastError || new Error("Failed to query Google Gemini API. Please check your API key and network.");
     }
 
     // Groq LPU Ultra-Fast Inference
