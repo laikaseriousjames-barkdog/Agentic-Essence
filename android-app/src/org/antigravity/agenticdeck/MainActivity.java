@@ -18,6 +18,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import java.util.ArrayList;
+import org.json.JSONObject;
 
 public class MainActivity extends Activity {
     private static final String TAG = "AgenticEssence";
@@ -126,11 +127,18 @@ public class MainActivity extends Activity {
             if (results != null && !results.isEmpty()) {
                 String spokenText = results.get(0);
                 if (mWebView != null && spokenText != null) {
-                    final String safeText = spokenText.replace("'", "\\'").replace("\n", " ");
-                    mWebView.post(() -> mWebView.evaluateJavascript("if(window.onSpeechResult) { window.onSpeechResult('" + safeText + "'); }", null));
+                    mWebView.post(() -> mWebView.evaluateJavascript("if(window.onSpeechResult) { window.onSpeechResult(" + JSONObject.quote(spokenText) + "); }", null));
                 }
             }
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (mBridge != null) {
+            mBridge.destroy();
+        }
+        super.onDestroy();
     }
 
     @Override

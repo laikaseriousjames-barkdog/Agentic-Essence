@@ -195,7 +195,7 @@ public class HoloBridgeInterface {
             } else {
                 mIsSpeakingPersona = false;
                 // Fallback to JS speech synthesis trigger
-                evaluateJs("window.onNativeTTSFallback('" + cleanText.replace("'", "\\'") + "')");
+                evaluateJs("window.onNativeTTSFallback(" + JSONObject.quote(cleanText) + ")");
             }
         });
     }
@@ -399,8 +399,7 @@ public class HoloBridgeInterface {
                                 String lower = raw.toLowerCase().replaceAll("[.,!?;:'\"-]", "").trim();
                                 // Filter out 1-char noise and ambient filler sounds (breaths, clicks, filler)
                                 if (lower.length() > 1 && !lower.equals("uh") && !lower.equals("um") && !lower.equals("ah") && !lower.equals("mm") && !lower.equals("er") && !lower.equals("sh")) {
-                                    String spoken = raw.replace("'", "\\'");
-                                    evaluateJs("if(window.HoloVoice) HoloVoice.onNativeSpeechResult('" + spoken + "')");
+                                    evaluateJs("if(window.HoloVoice) HoloVoice.onNativeSpeechResult(" + JSONObject.quote(raw) + ")");
                                 } else {
                                     evaluateJs("if(window.HoloVoice) HoloVoice.onNativeStateChange('idle')");
                                 }
@@ -412,8 +411,7 @@ public class HoloBridgeInterface {
                                 String raw = matches.get(0).trim();
                                 String lower = raw.toLowerCase().replaceAll("[.,!?;:'\"-]", "").trim();
                                 if (lower.length() > 1 && !lower.equals("uh") && !lower.equals("um") && !lower.equals("ah")) {
-                                    String partial = raw.replace("'", "\\'");
-                                    evaluateJs("if(window.HoloVoice) HoloVoice.onNativePartialResult('" + partial + "')");
+                                    evaluateJs("if(window.HoloVoice) HoloVoice.onNativePartialResult(" + JSONObject.quote(raw) + ")");
                                 }
                             }
                         }

@@ -82,7 +82,7 @@
         <div class="drawer-block">
             <label class="drawer-label">INFERENCE ENGINE</label>
             <select id="providerSelect" class="holo-input" onchange="onProviderChange()">
-                <option value="gemini">Google Gemini 3.8 / 3.5 (Free)</option>
+                <option value="gemini">Google Gemini 2.5 / 2.0 / 1.5 (Dynamic Google API)</option>
                 <option value="groq">Groq LPU (Ultra-Fast)</option>
                 <option value="openrouter">OpenRouter Multi-Model</option>
                 <option value="ollama">Ollama Local Cyberdeck</option>
@@ -93,6 +93,7 @@
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                 <label class="drawer-label" id="apiKeyLabel" style="margin-bottom:0;">GEMINI API KEY</label>
                 <div style="display:flex; gap:6px;">
+                    <button type="button" onclick="openGoogleKeyPortal()" class="hw-matrix-btn" style="padding:4px 8px; font-size:11px; cursor:pointer;" title="Get Free Google Gemini Key from Google AI Studio">🔑 GET FREE KEY ↗</button>
                     <button type="button" onclick="pasteApiKeyFromClipboard()" class="hw-matrix-btn" style="padding:4px 8px; font-size:11px; cursor:pointer;">📋 PASTE</button>
                     <button type="button" onclick="testAIConnectionLive()" class="hw-matrix-btn amber" style="padding:4px 8px; font-size:11px; cursor:pointer;">⚡ TEST</button>
                 </div>
@@ -102,7 +103,7 @@
                 <button type="button" onclick="saveApiKeyDirect()" class="hw-matrix-btn" style="padding:10px 14px; font-weight:800; font-size:12px; white-space:nowrap; cursor:pointer;">💾 SAVE</button>
             </div>
             <div id="apiKeySaveStatus" style="font-size:11px; font-family:var(--font-code); color:var(--term-green); margin-top:4px; display:none;"></div>
-            <span class="drawer-micro-hint" style="margin-top:6px; display:block;">Default: gemini-3.8-flash (Auto-saved on input)</span>
+            <span class="drawer-micro-hint" style="margin-top:6px; display:block;">Default: gemini-2.5-flash (Auto-saved on input)</span>
         </div>
 
         <div class="drawer-block">
@@ -111,7 +112,7 @@
                 <button type="button" onclick="pasteModelFromClipboard()" class="hw-matrix-btn" style="padding:4px 8px; font-size:11px; cursor:pointer;">📋 PASTE</button>
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
-                <input type="text" id="modelInput" class="holo-input" value="gemini-3.8-flash" oninput="autoSaveModel(this.value)" list="aeModelDatalist" style="flex:1; margin-bottom:0;" />
+                <input type="text" id="modelInput" class="holo-input" value="gemini-2.5-flash" oninput="autoSaveModel(this.value)" list="aeModelDatalist" style="flex:1; margin-bottom:0;" />
                 <button type="button" onclick="saveModelDirect()" class="hw-matrix-btn" style="padding:10px 14px; font-weight:800; font-size:12px; white-space:nowrap; cursor:pointer;">💾 SAVE</button>
             </div>
             <datalist id="aeModelDatalist">

@@ -446,6 +446,91 @@ def test_live_ollama_daemon_and_chat_generation():
         pytest.skip(f"Ollama daemon not reachable at 127.0.0.1:11434: {e}")
 
 
+def test_speech_recognition_json_quoting_and_security():
+    """Verify that speech results evaluated in JavaScript use JSONObject.quote for injection safety."""
+    holo_bridge = os.path.join(HOLO_DIR, "src/org/antigravity/agenticvox/HoloBridgeInterface.java")
+    holo_main = os.path.join(HOLO_DIR, "src/org/antigravity/agenticvox/MainActivity.java")
+    app_main = os.path.join(APP_DIR, "src/org/antigravity/agenticdeck/MainActivity.java")
+
+    for path in [holo_bridge, holo_main, app_main]:
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
+        assert "JSONObject.quote(" in content, f"Missing JSONObject.quote in {path}"
 
 
+def test_activity_lifecycle_destroy_cleanup():
+    """Verify that both apps properly implement onDestroy and bridge destroy methods to prevent resource leaks."""
+    holo_main = os.path.join(HOLO_DIR, "src/org/antigravity/agenticvox/MainActivity.java")
+    app_main = os.path.join(APP_DIR, "src/org/antigravity/agenticdeck/MainActivity.java")
+    holo_bridge = os.path.join(HOLO_DIR, "src/org/antigravity/agenticvox/HoloBridgeInterface.java")
+    app_bridge = os.path.join(APP_DIR, "src/org/antigravity/agenticdeck/WebAppInterface.java")
+
+    with open(holo_main, "r", encoding="utf-8") as f:
+        assert "onDestroy()" in f.read()
+    with open(app_main, "r", encoding="utf-8") as f:
+        assert "onDestroy()" in f.read()
+    with open(holo_bridge, "r", encoding="utf-8") as f:
+        assert "public void destroy()" in f.read()
+    with open(app_bridge, "r", encoding="utf-8") as f:
+        assert "public void destroy()" in f.read()
+
+
+def test_google_key_portal_in_both_apps():
+    """Verify that openGoogleKeyPortal is available and linked in both Android Cyberdeck and Hologram apps."""
+    for base_dir in [HOLO_DIR, APP_DIR]:
+        js_path = os.path.join(base_dir, "assets/www/app.js")
+        html_path = os.path.join(base_dir, "assets/www/index.html")
+        with open(js_path, "r", encoding="utf-8") as f:
+            js = f.read()
+        with open(html_path, "r", encoding="utf-8") as f:
+            html = f.read()
+        assert "openGoogleKeyPortal" in js, f"openGoogleKeyPortal missing from {js_path}"
+        assert "openGoogleKeyPortal()" in html, f"openGoogleKeyPortal missing from {html_path}"
+        assert "aistudio.google.com/app/apikey" in js, f"API key URL missing from {js_path}"
+
+
+def test_default_model_consistency():
+    """Verify that both applications initialize with consistent and valid default model configuration."""
+    for base_dir in [HOLO_DIR, APP_DIR]:
+        html_path = os.path.join(base_dir, "assets/www/index.html")
+        js_path = os.path.join(base_dir, "assets/www/app.js")
+        with open(html_path, "r", encoding="utf-8") as f:
+            html = f.read()
+        with open(js_path, "r", encoding="utf-8") as f:
+            js = f.read()
+
+        assert 'value="gemini-2.5-flash"' in html, f"Default model input value inconsistent in {html_path}"
+        assert "'gemini-2.5-flash'" in js, f"gemini-2.5-flash missing from default state in {js_path}"
+
+
+def test_model_fallback_chains_coverage():
+    """Verify comprehensive fallback chains in both apps to recover from HTTP 404 or unreleased models."""
+    for base_dir in [HOLO_DIR, APP_DIR]:
+        js_path = os.path.join(base_dir, "assets/www/app.js")
+        with open(js_path, "r", encoding="utf-8") as f:
+            js = f.read()
+
+        expected_candidates = [
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-1.5-flash",
+            "gemini-2.5-pro",
+            "gemini-3.8-flash",
+            "gemini-3.5-flash-lite",
+            "gemini-3.5-flash"
+        ]
+        for cand in expected_candidates:
+            assert cand in js, f"Candidate model {cand} missing from fallback chain in {js_path}"
+
+
+def test_ollama_endpoints_probing_and_fallback():
+    """Verify multi-target loopback fallback endpoints in both apps."""
+    for base_dir in [HOLO_DIR, APP_DIR]:
+        js_path = os.path.join(base_dir, "assets/www/app.js")
+        with open(js_path, "r", encoding="utf-8") as f:
+            js = f.read()
+
+        assert "http://127.0.0.1:11434" in js
+        assert "http://localhost:11434" in js
+        assert "http://10.0.2.2:11434" in js
 

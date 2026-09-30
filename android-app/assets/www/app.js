@@ -813,7 +813,7 @@ window.saveApiKeyDirect = function() {
 
 window.autoSaveModel = function(val) {
     const clean = (val || '').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
-    state.model = clean || 'gemini-3.8-flash';
+    state.model = clean || 'gemini-2.5-flash';
     localStorage.setItem('ae_model', state.model);
 
     const mInput = document.getElementById('modelInput');
@@ -905,6 +905,17 @@ window.pasteApiKeyFromClipboard = async function() {
             aInput.select();
         }
         Bridge.showToast("Clipboard empty or permission needed. Long-press input to paste.");
+    }
+};
+
+window.openGoogleKeyPortal = function() {
+    const url = 'https://aistudio.google.com/app/apikey';
+    if (window.Bridge && window.Bridge.openExternalUrl) {
+        window.Bridge.openExternalUrl(url);
+    } else if (window.Bridge && window.Bridge.openUrl) {
+        window.Bridge.openUrl(url);
+    } else {
+        window.open(url, '_blank');
     }
 };
 
@@ -1680,7 +1691,7 @@ DO NOT run commands, DO NOT recite system status or verification checklists, and
                     `<div style="border-left:3px solid var(--term-amber); padding:10px 14px; background:rgba(255,183,0,0.06); border-radius:4px; font-family:var(--font-code); font-size:12px; margin:4px 0;">` +
                     `<div style="color:var(--term-amber); font-weight:700; margin-bottom:4px;">⚠ LLM Connection Error (${escapeHtml(state.provider.toUpperCase())})</div>` +
                     `<div style="color:#f1f5f9; margin-bottom:6px; line-height:1.45;">${escapeHtml(queryErr.message)}</div>` +
-                    `<div style="font-size:11px; color:#94a3b8; margin-bottom:8px;">Target Model: <code style="color:var(--term-green); background:rgba(0,255,136,0.1); padding:1px 6px; border-radius:3px;">${escapeHtml(state.model || 'gemini-3.8-flash')}</code></div>` +
+                    `<div style="font-size:11px; color:#94a3b8; margin-bottom:8px;">Target Model: <code style="color:var(--term-green); background:rgba(0,255,136,0.1); padding:1px 6px; border-radius:3px;">${escapeHtml(state.model || 'gemini-2.5-flash')}</code></div>` +
                     `<div style="display:flex; gap:8px;">` +
                     `<button type="button" onclick="openDrawer()" class="hw-matrix-btn" style="padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;">⚙️ Open Settings</button>` +
                     `<button type="button" onclick="testAIConnectionLive()" class="hw-matrix-btn amber" style="padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;">⚡ Test Connection</button>` +

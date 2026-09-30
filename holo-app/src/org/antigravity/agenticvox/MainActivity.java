@@ -19,6 +19,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import java.util.ArrayList;
+import org.json.JSONObject;
 
 public class MainActivity extends Activity {
     private static final String TAG = "AgenticHolo";
@@ -122,8 +123,7 @@ public class MainActivity extends Activity {
             if (results != null && !results.isEmpty()) {
                 String spokenText = results.get(0);
                 if (mWebView != null && spokenText != null) {
-                    final String safeText = spokenText.replace("'", "\\'").replace("\n", " ");
-                    mWebView.post(() -> mWebView.evaluateJavascript("if(window.HoloVoice) { window.HoloVoice.onNativeSpeechResult('" + safeText + "'); }", null));
+                    mWebView.post(() -> mWebView.evaluateJavascript("if(window.HoloVoice) { window.HoloVoice.onNativeSpeechResult(" + JSONObject.quote(spokenText) + "); }", null));
                 }
             }
         }

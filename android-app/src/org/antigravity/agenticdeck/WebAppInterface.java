@@ -1379,4 +1379,23 @@ public class WebAppInterface implements TextToSpeech.OnInitListener {
         if (suRes != null && !suRes.trim().isEmpty()) return suRes;
         return runLocalProcess(trimmed);
     }
+
+    @JavascriptInterface
+    public void openExternalUrl(String url) {
+        openUrl(url);
+    }
+
+    public void destroy() {
+        if (mTTS != null) {
+            try {
+                mTTS.stop();
+                mTTS.shutdown();
+            } catch (Exception ignored) {}
+        }
+        if (mToneGenerator != null) {
+            try {
+                mToneGenerator.release();
+            } catch (Exception ignored) {}
+        }
+    }
 }
