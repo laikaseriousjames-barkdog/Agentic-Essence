@@ -6,7 +6,7 @@
 // ===================== STATE & PERSONAS =====================
 const savedPersona = localStorage.getItem('ae_persona');
 const savedModel = localStorage.getItem('ae_model');
-const initialModel = (savedModel && !savedModel.includes('1.5') && !savedModel.includes('2.0')) ? savedModel : 'gemini-3.8-flash';
+const initialModel = savedModel ? savedModel.replace(/^models\//, '') : 'gemini-2.5-flash';
 const state = {
     persona: (savedPersona && ['swarm', 'turing', 'knuth', 'lovelace'].includes(savedPersona)) ? savedPersona : 'swarm',
     provider: localStorage.getItem('ae_provider') || 'gemini',
@@ -51,7 +51,7 @@ Object.defineProperty(state, 'activePersona', {
 
 window.state = state;
 
-if (!state.model || state.model.includes('gemini-3')) {
+if (!state.model) {
     state.model = 'gemini-2.5-flash';
     localStorage.setItem('ae_model', 'gemini-2.5-flash');
 }
@@ -603,9 +603,26 @@ function initSettingsDrawer() {
     const pSelect = document.getElementById('providerSelect');
     const aInput = document.getElementById('apiKeyInput');
     const mInput = document.getElementById('modelInput');
+    const label = document.getElementById('apiKeyLabel');
 
     if (pSelect) pSelect.value = state.provider;
-    if (aInput) aInput.value = state.apiKey;
+    if (aInput) {
+        if (state.provider === 'ollama') {
+            aInput.type = 'text';
+            aInput.placeholder = 'http://127.0.0.1:11434';
+            aInput.value = state.customUrl || (state.apiKey && state.apiKey.startsWith('http') ? state.apiKey : 'http://127.0.0.1:11434');
+            if (label) label.textContent = "OLLAMA BASE URL";
+        } else {
+            aInput.type = 'password';
+            aInput.placeholder = 'Enter API Key...';
+            aInput.value = state.apiKey;
+            if (label) {
+                if (state.provider === 'groq') label.textContent = "GROQ API KEY";
+                else if (state.provider === 'openrouter') label.textContent = "OPENROUTER API KEY";
+                else label.textContent = "GEMINI API KEY";
+            }
+        }
+    }
     if (mInput) mInput.value = state.model;
 
     updatePersonaTabs();
@@ -642,24 +659,53 @@ function updatePersonaTabs() {
 window.onProviderChange = function() {
     const pSelect = document.getElementById('providerSelect');
     const label = document.getElementById('apiKeyLabel');
+    const aInput = document.getElementById('apiKeyInput');
     const mInput = document.getElementById('modelInput');
-    const prov = pSelect.value;
+    const prov = pSelect ? pSelect.value : (state.provider || 'gemini');
     state.provider = prov;
     localStorage.setItem('ae_provider', prov);
 
     if (prov === 'gemini') {
-        label.textContent = "GEMINI API KEY";
-        autoSaveModel("gemini-3.8-flash");
+        if (label) label.textContent = "GEMINI API KEY";
+        if (aInput) {
+            aInput.type = 'password';
+            aInput.placeholder = 'AIzaSy... (Paste Google Gemini Key)';
+            aInput.value = state.apiKey || '';
+        }
+        if (!state.model || state.model.includes('llama') || state.model.includes('qwen')) {
+            autoSaveModel("gemini-2.5-flash");
+        }
         if (state.apiKey) fetchLiveGoogleModels(state.apiKey);
     } else if (prov === 'groq') {
-        label.textContent = "GROQ API KEY";
-        autoSaveModel("llama-3.3-70b-versatile");
+        if (label) label.textContent = "GROQ API KEY";
+        if (aInput) {
+            aInput.type = 'password';
+            aInput.placeholder = 'gsk_... (Paste Groq Key)';
+            aInput.value = state.apiKey || '';
+        }
+        if (!state.model || state.model.startsWith('gemini')) {
+            autoSaveModel("llama-3.3-70b-versatile");
+        }
     } else if (prov === 'openrouter') {
-        label.textContent = "OPENROUTER API KEY";
-        autoSaveModel("google/gemini-2.5-flash");
+        if (label) label.textContent = "OPENROUTER API KEY";
+        if (aInput) {
+            aInput.type = 'password';
+            aInput.placeholder = 'sk-or-v1-... (Paste OpenRouter Key)';
+            aInput.value = state.apiKey || '';
+        }
+        if (!state.model) {
+            autoSaveModel("google/gemini-2.5-flash");
+        }
     } else if (prov === 'ollama') {
-        label.textContent = "OLLAMA BASE URL";
-        autoSaveModel("llama3:latest");
+        if (label) label.textContent = "OLLAMA BASE URL";
+        if (aInput) {
+            aInput.type = 'text';
+            aInput.placeholder = 'http://127.0.0.1:11434';
+            aInput.value = state.customUrl || (state.apiKey && state.apiKey.startsWith('http') ? state.apiKey : 'http://127.0.0.1:11434');
+        }
+        if (!state.model || state.model.startsWith('gemini')) {
+            autoSaveModel("llama3:latest");
+        }
     }
 };
 
@@ -733,11 +779,17 @@ window.autoSaveApiKey = function(val) {
     const k = (val || '').replace(/^["']|["']$/g, '').trim();
     state.apiKey = k;
     localStorage.setItem('ae_api_key', k);
+    localStorage.setItem('holo_api_key', k);
+    if (state.provider === 'ollama' || k.startsWith('http://') || k.startsWith('https://')) {
+        state.customUrl = k;
+        localStorage.setItem('ae_custom_url', k);
+        localStorage.setItem('holo_custom_url', k);
+    }
     const status = document.getElementById('apiKeySaveStatus');
     if (status) {
         status.style.display = 'block';
         status.style.color = 'var(--term-green)';
-        status.textContent = '✓ KEY AUTO-SAVED';
+        status.textContent = (state.provider === 'ollama') ? '✓ URL AUTO-SAVED' : '✓ KEY AUTO-SAVED';
         clearTimeout(window._saveTimer);
         window._saveTimer = setTimeout(() => { status.style.display = 'none'; }, 2500);
     }
@@ -751,7 +803,11 @@ window.saveApiKeyDirect = function() {
     if (aInput) {
         autoSaveApiKey(aInput.value);
         Bridge.vibrate(25);
-        Bridge.showToast("API Key Locked & Saved");
+        if (state.provider === 'ollama') {
+            Bridge.showToast("Ollama Base URL Locked & Saved");
+        } else {
+            Bridge.showToast("API Key Locked & Saved");
+        }
     }
 };
 
@@ -855,7 +911,7 @@ window.pasteApiKeyFromClipboard = async function() {
 window.testAIConnectionLive = async function() {
     const prov = state.provider || 'gemini';
     const key = (state.apiKey || '').replace(/^["']|["']$/g, '').trim();
-    let model = (state.model || 'gemini-3.8-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
+    let model = (state.model || 'gemini-2.5-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
     const status = document.getElementById('apiKeySaveStatus');
     const modelStatus = document.getElementById('modelSaveStatus');
 
@@ -881,50 +937,74 @@ window.testAIConnectionLive = async function() {
             Bridge.speak("Enter your Gemini API key first");
             return;
         }
-        try {
-            // First run auto-discovery to sync available models
-            let targetModel = model;
-            const liveModels = await fetchLiveGoogleModels(key).catch(() => []);
-            if (liveModels.length > 0) {
-                const hasModel = liveModels.some(m => m.id === targetModel);
-                if (!hasModel && (targetModel.includes('1.5') || targetModel.includes('2.0') || targetModel.includes('2.5'))) {
-                    // Auto-upgrade to top available model
-                    targetModel = liveModels[0].id;
-                    autoSaveModel(targetModel);
+
+        const candidateModels = [
+            model,
+            'gemini-2.5-flash',
+            'gemini-2.0-flash',
+            'gemini-1.5-flash',
+            'gemini-2.5-pro',
+            'gemini-3.8-flash',
+            'gemini-3.5-flash-lite',
+            'gemini-3.5-flash',
+            'gemini-3.1-pro-preview'
+        ];
+        const uniqueCandidates = [...new Set(candidateModels.filter(Boolean))];
+
+        let workingModel = null;
+        let lastMsg = '';
+
+        for (const cand of uniqueCandidates) {
+            const cName = cand.trim().replace(/^models\//, '');
+            for (const ver of ['v1beta', 'v1']) {
+                try {
+                    const endpoint = `https://generativelanguage.googleapis.com/${ver}/models/${cName}:generateContent?key=${encodeURIComponent(key)}`;
+                    const controller = new AbortController();
+                    const tid = setTimeout(() => controller.abort(), 12000);
+                    const res = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ role: 'user', parts: [{ text: 'Respond with the word CONNECTED.' }] }],
+                            generationConfig: { maxOutputTokens: 10 }
+                        }),
+                        signal: controller.signal
+                    });
+                    clearTimeout(tid);
+
+                    if (res.ok) {
+                        workingModel = cName;
+                        break;
+                    } else {
+                        const errData = await res.json().catch(() => ({}));
+                        const msg = errData?.error?.message || `HTTP ${res.status}`;
+                        lastMsg = msg;
+                        if (msg.includes('API key not valid') || msg.includes('API_KEY_INVALID')) {
+                            updateStatus(`⚠ INVALID KEY: ${msg.slice(0, 45)}`, '#ff007f');
+                            Bridge.showToast(`Invalid Key: ${msg}`);
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    lastMsg = e.name === 'AbortError' ? 'Connection timed out' : e.message;
                 }
             }
+            if (workingModel) break;
+        }
 
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${encodeURIComponent(key)}`;
-            const controller = new AbortController();
-            const tid = setTimeout(() => controller.abort(), 12000);
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ role: 'user', parts: [{ text: 'Respond with the word CONNECTED.' }] }],
-                    generationConfig: { maxOutputTokens: 10 }
-                }),
-                signal: controller.signal
-            });
-            clearTimeout(tid);
-
-            if (res.ok) {
-                updateStatus(`✓ CONNECTED: ${targetModel}`, 'var(--term-green)');
-                Bridge.vibrate(40);
-                Bridge.showToast(`✓ Gemini connected (${targetModel})`);
-                Bridge.speak(`Gemini neural link verified on model ${targetModel}`);
-            } else {
-                const errData = await res.json().catch(() => ({}));
-                const msg = errData?.error?.message || `HTTP ${res.status}`;
-                updateStatus(`⚠ ${msg.toUpperCase().slice(0, 45)}`, 'var(--term-amber)');
-                Bridge.vibrate(60);
-                Bridge.showToast(`Gemini Error: ${msg}`);
-                Bridge.speak(`Gemini connection error: ${msg}`);
+        if (workingModel) {
+            if (workingModel !== state.model) {
+                autoSaveModel(workingModel);
             }
-        } catch (e) {
-            const msg = e.name === 'AbortError' ? 'Connection timed out' : e.message;
-            updateStatus(`⚠ ${msg.toUpperCase()}`, 'var(--term-amber)');
-            Bridge.showToast(`Error: ${msg}`);
+            updateStatus(`✓ CONNECTED: ${workingModel}`, 'var(--term-green)');
+            Bridge.vibrate(40);
+            Bridge.showToast(`✓ Gemini connected (${workingModel})`);
+            Bridge.speak(`Gemini neural link verified on model ${workingModel}`);
+        } else {
+            updateStatus(`⚠ ${lastMsg.toUpperCase().slice(0, 45)}`, 'var(--term-amber)');
+            Bridge.vibrate(60);
+            Bridge.showToast(`Gemini Error: ${lastMsg}`);
+            Bridge.speak(`Gemini connection error: ${lastMsg}`);
         }
     } else if (prov === 'groq') {
         if (!key) {
@@ -959,22 +1039,75 @@ window.testAIConnectionLive = async function() {
             if (status) { status.textContent = `⚠ ${e.message}`; status.style.color = '#ff007f'; }
         }
     } else if (prov === 'ollama') {
-        const base = state.customUrl || "http://127.0.0.1:11434";
+        let candidateBases = [];
+        const configured = state.customUrl || (state.apiKey && state.apiKey.startsWith('http') ? state.apiKey : '');
+        if (configured) candidateBases.push(configured.replace(/\/+$/, ''));
+        candidateBases.push('http://127.0.0.1:11434', 'http://localhost:11434', 'http://10.0.2.2:11434');
+        candidateBases = [...new Set(candidateBases.filter(Boolean))];
+
+        let workingBase = null;
+        let availableModels = [];
+
+        for (const base of candidateBases) {
+            try {
+                const controller = new AbortController();
+                const tid = setTimeout(() => controller.abort(), 6000);
+                const res = await fetch(`${base}/api/tags`, { signal: controller.signal });
+                clearTimeout(tid);
+                if (res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    workingBase = base;
+                    if (Array.isArray(data.models) && data.models.length > 0) {
+                        availableModels = data.models.map(m => m.name || m.model);
+                    }
+                    break;
+                }
+            } catch (e) {}
+        }
+
+        if (!workingBase) {
+            updateStatus('⚠ OLLAMA UNREACHABLE', '#ff007f');
+            Bridge.showToast("Ollama unreachable on localhost:11434");
+            return;
+        }
+
+        state.customUrl = workingBase;
+        localStorage.setItem('ae_custom_url', workingBase);
+        localStorage.setItem('holo_custom_url', workingBase);
+
+        let testModel = (state.model && !state.model.startsWith('gemini')) ? state.model : '';
+        if (!testModel || (availableModels.length > 0 && !availableModels.includes(testModel))) {
+            testModel = availableModels.length > 0 ? availableModels[0] : 'llama3:latest';
+            autoSaveModel(testModel);
+        }
+
         try {
-            const controller = new AbortController();
-            const tid = setTimeout(() => controller.abort(), 8000);
-            const res = await fetch(`${base}/api/tags`, { signal: controller.signal });
-            clearTimeout(tid);
-            if (res.ok) {
-                if (status) { status.textContent = '✓ OLLAMA ONLINE'; status.style.color = 'var(--neon-emerald)'; }
-                Bridge.showToast("Ollama server connected");
+            const ctl = new AbortController();
+            const tid2 = setTimeout(() => ctl.abort(), 12000);
+            const chatRes = await fetch(`${workingBase}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: testModel,
+                    messages: [{ role: 'user', content: 'Say OK' }],
+                    stream: false
+                }),
+                signal: ctl.signal
+            });
+            clearTimeout(tid2);
+
+            if (chatRes.ok) {
+                updateStatus(`✓ OLLAMA ONLINE (${testModel})`, 'var(--term-green)');
+                Bridge.vibrate(30);
+                Bridge.showToast(`✓ Ollama Online: ${testModel}`);
+                Bridge.speak(`Ollama local neural link verified with model ${testModel}.`);
             } else {
-                if (status) { status.textContent = '⚠ OLLAMA UNREACHABLE'; status.style.color = '#ff007f'; }
-                Bridge.showToast("Ollama returned HTTP error");
+                updateStatus(`✓ OLLAMA REACHED (${testModel})`, 'var(--term-green)');
+                Bridge.showToast("Ollama connected at " + workingBase);
             }
-        } catch (e) {
-            if (status) { status.textContent = '⚠ OLLAMA OFFLINE'; status.style.color = '#ff007f'; }
-            Bridge.showToast("Cannot connect to Ollama at " + base);
+        } catch (chatErr) {
+            updateStatus(`✓ OLLAMA ONLINE (${availableModels.length} models)`, 'var(--term-green)');
+            Bridge.showToast("Ollama connected at " + workingBase);
         }
     }
 };
@@ -984,13 +1117,19 @@ window.saveSettings = function() {
     const aInput = document.getElementById('apiKeyInput');
     const mInput = document.getElementById('modelInput');
 
-    state.provider = pSelect.value;
+    state.provider = pSelect ? pSelect.value : (state.provider || 'gemini');
     state.apiKey = (aInput ? aInput.value : state.apiKey).trim();
     state.model = (mInput ? mInput.value : state.model).trim();
 
     localStorage.setItem('ae_provider', state.provider);
     localStorage.setItem('ae_api_key', state.apiKey);
     localStorage.setItem('ae_model', state.model);
+
+    if (state.provider === 'ollama' || state.apiKey.startsWith('http://') || state.apiKey.startsWith('https://')) {
+        state.customUrl = state.apiKey;
+        localStorage.setItem('ae_custom_url', state.customUrl);
+        localStorage.setItem('holo_custom_url', state.customUrl);
+    }
 
     Bridge.showToast("Configuration locked");
     Bridge.vibrate(25);
@@ -2579,16 +2718,17 @@ async function queryGemini(messages) {
     };
     if (sysInstruction) payload.systemInstruction = sysInstruction;
 
-    const userModel = (state.model || 'gemini-3.8-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
+    const userModel = (state.model || 'gemini-2.5-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
     const candidateModels = [
         userModel,
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
+        'gemini-1.5-flash',
+        'gemini-2.5-pro',
         'gemini-3.8-flash',
         'gemini-3.5-flash-lite',
         'gemini-3.5-flash',
-        'gemini-3.1-pro-preview',
-        'gemini-2.5-flash',
-        'gemini-2.0-flash',
-        'gemini-1.5-flash'
+        'gemini-3.1-pro-preview'
     ];
     let uniqueModels = [...new Set(candidateModels.filter(Boolean))];
     let lastError = null;
@@ -2714,32 +2854,85 @@ async function queryOpenAICompatible(url, key, messages) {
 }
 
 async function queryOllama(base, messages) {
-    const cleanModel = (state.model || 'llama3:latest').replace(/^["']|["']$/g, '').trim();
-    const formatted = messages.map(m => ({
-        role: (m.role === 'model' || m.role === 'assistant') ? 'assistant' : m.role,
-        content: m.content || ''
-    }));
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000);
-    try {
-        const res = await fetch(`${base}/api/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: cleanModel, messages: formatted, stream: false }),
-            signal: controller.signal
-        });
-        clearTimeout(timeoutId);
+    let ollamaModel = (state.model && !state.model.startsWith('gemini')) ? state.model : 'llama3:latest';
+    const bases = [
+        base,
+        state.customUrl,
+        'http://127.0.0.1:11434',
+        'http://localhost:11434',
+        'http://10.0.2.2:11434'
+    ].filter(Boolean);
+    const uniqueBases = [...new Set(bases.map(b => b.replace(/\/+$/, '')))];
 
-        if (!res.ok) {
-            throw new Error(`Ollama HTTP ${res.status}`);
+    let lastErr = null;
+    for (const b of uniqueBases) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 35000);
+
+            const res = await fetch(`${b}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: ollamaModel,
+                    messages: messages.map(m => ({
+                        role: (m.role === 'model' || m.role === 'assistant') ? 'assistant' : m.role,
+                        content: m.content || ''
+                    })),
+                    stream: false
+                }),
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            if (res.ok) {
+                const data = await res.json();
+                const reply = data?.message?.content || data?.response;
+                if (reply) {
+                    if (b !== state.customUrl) {
+                        state.customUrl = b;
+                        localStorage.setItem('ae_custom_url', b);
+                    }
+                    return reply.trim();
+                }
+            } else if (res.status === 404) {
+                const tagRes = await fetch(`${b}/api/tags`).catch(() => null);
+                if (tagRes && tagRes.ok) {
+                    const tagData = await tagRes.json().catch(() => ({}));
+                    if (Array.isArray(tagData.models) && tagData.models.length > 0) {
+                        const avail = tagData.models[0].name || tagData.models[0].model;
+                        if (avail && avail !== ollamaModel) {
+                            ollamaModel = avail;
+                            state.model = avail;
+                            localStorage.setItem('ae_model', avail);
+                            const retryRes = await fetch(`${b}/api/chat`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    model: ollamaModel,
+                                    messages: messages.map(m => ({
+                                        role: (m.role === 'model' || m.role === 'assistant') ? 'assistant' : m.role,
+                                        content: m.content || ''
+                                    })),
+                                    stream: false
+                                })
+                            });
+                            if (retryRes.ok) {
+                                const rData = await retryRes.json();
+                                return (rData?.message?.content || rData?.response || '').trim();
+                            }
+                        }
+                    }
+                }
+                lastErr = new Error(`Ollama model '${ollamaModel}' not found at ${b}`);
+            } else {
+                lastErr = new Error(`Ollama HTTP ${res.status} at ${b}`);
+            }
+        } catch (e) {
+            lastErr = e;
         }
-
-        const data = await res.json();
-        return data.message?.content || data.response || "Task completed.";
-    } catch (e) {
-        clearTimeout(timeoutId);
-        throw e;
     }
+    throw lastErr || new Error("Failed to connect to Ollama at " + (base || "127.0.0.1:11434"));
 }
 
 // ===================== 10. FORMATTING UTILITIES =====================

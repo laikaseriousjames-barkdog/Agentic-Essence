@@ -7,7 +7,8 @@ window.HoloVoice = (function() {
     let recognition = null;
     let isListening = false;
     let isSpeaking = false;
-    let isContinuous = true;
+    let isContinuous = (localStorage.getItem('holo_continuous_voice') === 'true');
+    let consecutiveTimeouts = 0;
     let currentSpeechText = '';
     let speechSilenceTimer = null;
     let audioAnimInterval = null;
@@ -79,13 +80,8 @@ window.HoloVoice = (function() {
         eqBars = document.getElementById('eqBars');
 
         initSpeechRecognition();
-        
-        // Auto-start continuous listening after brief pause
-        setTimeout(() => {
-            if (isContinuous && !isListening && !isSpeaking) {
-                startListening();
-            }
-        }, 1200);
+        // Set to standby idle on app boot. Listening starts upon operator tap.
+        updateVoiceState('idle');
     }
 
     function initSpeechRecognition() {
@@ -102,6 +98,7 @@ window.HoloVoice = (function() {
             };
 
             recognition.onresult = (event) => {
+                consecutiveTimeouts = 0;
                 let interim = '';
                 let final = '';
 
@@ -132,20 +129,26 @@ window.HoloVoice = (function() {
                 if (event.error !== 'no-speech') {
                     console.log("[HoloVoice] Speech error:", event.error);
                 }
+                if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                    isContinuous = false;
+                    isListening = false;
+                    showTranscript('SYSTEM', 'Microphone access denied. Tap to speak.');
+                }
                 pulseEqualizer(false);
             };
 
             recognition.onend = () => {
                 isListening = false;
                 pulseEqualizer(false);
-                // If continuous mode is on and we are not currently speaking, re-open listening
-                if (isContinuous && !isSpeaking) {
+                // In continuous mode, back off if repeated silence occurs
+                if (isContinuous && !isSpeaking && consecutiveTimeouts < 2) {
+                    consecutiveTimeouts++;
                     setTimeout(() => {
                         try {
-                            if (!isListening && !isSpeaking) recognition.start();
+                            if (!isListening && !isSpeaking && isContinuous) recognition.start();
                         } catch (e) {}
-                    }, 400);
-                } else if (!isSpeaking) {
+                    }, 1200);
+                } else {
                     updateVoiceState('idle');
                 }
             };
@@ -158,6 +161,7 @@ window.HoloVoice = (function() {
         if (isSpeaking) {
             stopSpeaking();
         }
+        consecutiveTimeouts = 0;
 
         // Native Android Bridge SpeechRecognizer
         if (window.HoloBridge && window.HoloBridge.startNativeVoiceRecognition) {
@@ -177,9 +181,19 @@ window.HoloVoice = (function() {
         } else {
             updateVoiceState('listening');
             showTranscript('OPERATOR', 'Listening...');
+            // Fallback prompt for desktop / test environments without microphone hardware
+            setTimeout(() => {
+                if (isListening && !window.HoloBridge) {
+                    const promptText = prompt("Vocal input unavailable. Enter text command for Hologram Swarm:");
+                    if (promptText && promptText.trim()) {
+                        handleVoiceInput(promptText.trim());
+                    } else {
+                        stopListening();
+                    }
+                }
+            }, 600);
         }
     }
-
     function stopListening() {
         if (window.HoloBridge && window.HoloBridge.stopNativeVoiceRecognition) {
             window.HoloBridge.stopNativeVoiceRecognition();
@@ -570,13 +584,16 @@ window.HoloVoice = (function() {
 
     // Native bridge callbacks
     function onNativeSpeechResult(text) {
+        consecutiveTimeouts = 0;
         handleVoiceInput(text);
     }
     function onNativeSpeechDetected() {
+        consecutiveTimeouts = 0;
         updateVoiceState('listening');
         pulseEqualizer(true);
     }
     function onNativePartialResult(partial) {
+        consecutiveTimeouts = 0;
         if (partial && partial.trim()) {
             showTranscript('OPERATOR', partial.trim());
             pulseEqualizer(true);
@@ -590,11 +607,35 @@ window.HoloVoice = (function() {
         pulseEqualizer(false);
         updateVoiceState('idle');
         isListening = false;
-        // Fast restart on normal speech timeout (6) or no match (7)
-        const restartDelay = (errorCode === 8) ? 1000 : 350;
+
+        // Permissions error (9) or Audio recording error (3) or Client error (5)
+        if (errorCode === 9) {
+            console.warn("[HoloVoice] Microphone permission denied. Halting speech recognition.");
+            if (window.HoloBridge && window.HoloBridge.showToast) {
+                window.HoloBridge.showToast("Microphone permission required for voice");
+            }
+            showTranscript('SYSTEM', 'Microphone permission needed. Tap to speak.');
+            return;
+        }
+
+        if (errorCode === 3 || errorCode === 4 || errorCode === 5) {
+            console.warn("[HoloVoice] Recognizer error " + errorCode + ", waiting for operator tap.");
+            return;
+        }
+
+        // Timeouts (6) or No Match (7)
+        consecutiveTimeouts++;
+        if (consecutiveTimeouts >= 2) {
+            console.log("[HoloVoice] Pausing voice listening after idle timeouts.");
+            showTranscript('SYSTEM', 'Voice standby. Tap orb to speak.');
+            return;
+        }
+
+        // Only retry if continuous mode is explicitly enabled by the operator
         if (isContinuous && !isSpeaking) {
+            const restartDelay = (errorCode === 8) ? 2000 : 1500;
             setTimeout(() => {
-                if (!isListening && !isSpeaking) {
+                if (!isListening && !isSpeaking && isContinuous) {
                     startListening();
                 }
             }, restartDelay);
@@ -727,9 +768,15 @@ window.HoloVoice = (function() {
         onNativeSpeechFinished: onNativeSpeechFinished,
         onNativeError: onNativeError,
         onNativeAudioLevel: onNativeAudioLevel,
-        onNativeStateChange: onNativeStateChange,
-        setContinuous: function(val) { isContinuous = val; },
-        getAvailableVoices: getAvailableVoices,
+        setContinuous: function(val) {
+            isContinuous = !!val;
+            localStorage.setItem('holo_continuous_voice', isContinuous ? 'true' : 'false');
+            consecutiveTimeouts = 0;
+            if (!isContinuous && isListening) {
+                stopListening();
+            }
+        },
+        getContinuous: function() { return isContinuous; },
         setSelectedVoice: setSelectedVoice,
         getSelectedVoice: getSelectedVoice,
         setVoicePitch: setVoicePitch,

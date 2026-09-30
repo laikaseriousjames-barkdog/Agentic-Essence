@@ -341,14 +341,31 @@ public class HoloBridgeInterface {
     public void startNativeVoiceRecognition() {
         mActivity.runOnUiThread(() -> {
             try {
-                if (!SpeechRecognizer.isRecognitionAvailable(mActivity)) {
-                    showToast("Speech recognition not available on device");
-                    return;
+                // Check RECORD_AUDIO runtime permission
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if (mActivity.checkCallingOrSelfPermission(android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                        mActivity.requestPermissions(new String[]{android.Manifest.permission.RECORD_AUDIO}, MainActivity.PERMISSION_REQUEST_CODE);
+                        evaluateJs("if(window.HoloVoice) HoloVoice.onNativeError(9)");
+                        return;
+                    }
                 }
 
                 // If currently speaking, don't start listening to avoid echo loops
                 if (isSpeaking()) {
                     Log.d(TAG, "Speech recognizer paused because TTS is actively speaking");
+                    return;
+                }
+
+                Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.US.toString());
+                intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
+                intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+                intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak to Hologram Swarm...");
+
+                if (!SpeechRecognizer.isRecognitionAvailable(mActivity)) {
+                    Log.w(TAG, "SpeechRecognizer service not available on device, launching speech intent");
+                    mActivity.startActivityForResult(intent, MainActivity.SPEECH_REQUEST_CODE);
                     return;
                 }
 
@@ -404,11 +421,6 @@ public class HoloBridgeInterface {
                     });
                 }
 
-                Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.US.toString());
-                intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
-                intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
                 intent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 1500L);
                 intent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 1800L);
                 intent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1400L);
@@ -416,7 +428,15 @@ public class HoloBridgeInterface {
                 mSpeechRecognizer.cancel();
                 mSpeechRecognizer.startListening(intent);
             } catch (Exception e) {
-                Log.e(TAG, "Failed to start speech recognizer: " + e.getMessage());
+                Log.e(TAG, "Speech recognizer exception: " + e.getMessage());
+                try {
+                    Intent fallbackIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                    fallbackIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                    fallbackIntent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak to Hologram Swarm...");
+                    mActivity.startActivityForResult(fallbackIntent, MainActivity.SPEECH_REQUEST_CODE);
+                } catch (Exception ex) {
+                    evaluateJs("if(window.HoloVoice) HoloVoice.onNativeError(5)");
+                }
             }
         });
     }
@@ -425,7 +445,10 @@ public class HoloBridgeInterface {
     public void stopNativeVoiceRecognition() {
         mActivity.runOnUiThread(() -> {
             if (mSpeechRecognizer != null) {
-                mSpeechRecognizer.stopListening();
+                try {
+                    mSpeechRecognizer.stopListening();
+                    mSpeechRecognizer.cancel();
+                } catch (Exception ignored) {}
                 mIsListening = false;
             }
         });

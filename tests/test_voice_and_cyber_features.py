@@ -361,5 +361,91 @@ def test_terminal_styling_and_gemini_auto_discovery():
     assert "--term-amber" in css
 
 
+def test_voice_engine_continuous_mode_and_anti_loop():
+    """Verify voice engine defaults to non-continuous listening and prevents infinite listen loops."""
+    voice_js_path = os.path.join(HOLO_DIR, "assets/www/voice-engine.js")
+    with open(voice_js_path, "r", encoding="utf-8") as f:
+        code = f.read()
+
+    # Continuous listening must default to false unless explicitly opted in
+    assert "localStorage.getItem('holo_continuous_voice') === 'true'" in code
+    # Must track consecutive timeouts to pause rather than infinite loop
+    assert "consecutiveTimeouts" in code
+    # Must stop on permission denied (error 9)
+    assert "code === 9" in code or "permission denied" in code.lower()
+
+    # UI toggle must not be hardcoded checked
+    holo_html = os.path.join(HOLO_DIR, "assets/www/index.html")
+    with open(holo_html, "r", encoding="utf-8") as f:
+        html = f.read()
+    assert 'id="continuousVoiceToggle" checked' not in html
+
+
+def test_gemini_candidate_fallbacks_and_recovery():
+    """Verify both apps have candidate model rollover for Gemini 404/endpoint failures."""
+    for base in [HOLO_DIR, APP_DIR]:
+        app_js_path = os.path.join(base, "assets/www/app.js")
+        with open(app_js_path, "r", encoding="utf-8") as f:
+            code = f.read()
+
+        assert "gemini-2.5-flash" in code
+        assert "gemini-2.0-flash" in code
+        assert "gemini-1.5-flash" in code
+        # Verify testAIConnectionLive iterates through candidates
+        assert "uniqueCandidates" in code or "candidateModels" in code
+        # Verify candidate models in queryGemini
+        assert "candidateModels" in code
+
+
+def test_ollama_connectivity_and_loopback_probing():
+    """Verify both apps support Ollama loopback candidate probing and customUrl state."""
+    for base in [HOLO_DIR, APP_DIR]:
+        app_js_path = os.path.join(base, "assets/www/app.js")
+        with open(app_js_path, "r", encoding="utf-8") as f:
+            code = f.read()
+
+        assert "customUrl" in code
+        assert "127.0.0.1:11434" in code
+        assert "10.0.2.2:11434" in code
+        assert "candidateBases" in code
+        assert "/api/tags" in code
+        assert "/api/chat" in code
+
+
+def test_live_ollama_daemon_and_chat_generation():
+    """Verify real live Ollama server connectivity and model generation if daemon is running."""
+    import urllib.request
+    import urllib.error
+
+    try:
+        req = urllib.request.Request("http://127.0.0.1:11434/api/tags")
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            models = [m.get("name") or m.get("model") for m in data.get("models", [])]
+            assert len(models) > 0, "Ollama daemon has no installed models"
+            assert any("llama3" in m or "qwen" in m for m in models)
+
+            # Test live chat ping on first available model
+            model_to_test = models[0]
+            chat_payload = json.dumps({
+                "model": model_to_test,
+                "messages": [{"role": "user", "content": "Respond with CONNECTED"}],
+                "stream": False
+            }).encode("utf-8")
+
+            chat_req = urllib.request.Request(
+                "http://127.0.0.1:11434/api/chat",
+                data=chat_payload,
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(chat_req, timeout=25) as chat_resp:
+                chat_data = json.loads(chat_resp.read().decode("utf-8"))
+                reply = chat_data.get("message", {}).get("content", "")
+                assert len(reply.strip()) > 0, f"Ollama {model_to_test} returned empty response"
+    except (urllib.error.URLError, TimeoutError, ConnectionRefusedError) as e:
+        pytest.skip(f"Ollama daemon not reachable at 127.0.0.1:11434: {e}")
+
+
+
 
 

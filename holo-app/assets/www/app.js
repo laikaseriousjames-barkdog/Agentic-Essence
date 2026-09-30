@@ -5,11 +5,12 @@
 
 const savedHoloPersona = localStorage.getItem('holo_persona') || localStorage.getItem('ae_persona');
 const savedHoloModel = localStorage.getItem('holo_model') || localStorage.getItem('ae_model');
-const initialHoloModel = (savedHoloModel && !savedHoloModel.includes('1.5') && !savedHoloModel.includes('2.0')) ? savedHoloModel : 'gemini-3.8-flash';
+const initialHoloModel = savedHoloModel ? savedHoloModel.replace(/^models\//, '') : 'gemini-2.5-flash';
 const state = {
     persona: (savedHoloPersona && ['swarm', 'turing', 'knuth', 'lovelace'].includes(savedHoloPersona)) ? savedHoloPersona : 'swarm',
     provider: localStorage.getItem('holo_provider') || localStorage.getItem('ae_provider') || 'gemini',
     apiKey: localStorage.getItem('holo_api_key') || localStorage.getItem('ae_api_key') || '',
+    customUrl: localStorage.getItem('holo_custom_url') || localStorage.getItem('ae_custom_url') || '',
     model: initialHoloModel,
     isGenerating: false,
     lastGenerateTime: 0,
@@ -21,9 +22,9 @@ const state = {
     }
 };
 
-if (!state.model || state.model.includes('1.5') || state.model.includes('2.0')) {
-    state.model = 'gemini-3.8-flash';
-    localStorage.setItem('holo_model', 'gemini-3.8-flash');
+if (!state.model) {
+    state.model = 'gemini-2.5-flash';
+    localStorage.setItem('holo_model', 'gemini-2.5-flash');
 }
 
 const SYSTEM_GROUNDING = `
@@ -697,7 +698,7 @@ window.pasteApiKeyFromClipboard = async function() {
 window.testAIConnectionLive = async function() {
     const prov = state.provider || 'gemini';
     const key = (state.apiKey || '').replace(/^["']|["']$/g, '').trim();
-    let model = (state.model || 'gemini-3.8-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
+    let model = (state.model || 'gemini-2.5-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
     const badge = document.getElementById('modelUpdateStatus');
     const statusBox = document.getElementById('apiKeySaveStatus');
 
@@ -715,49 +716,70 @@ window.testAIConnectionLive = async function() {
             if (window.HoloVoice && window.HoloVoice.speakAgent) HoloVoice.speakAgent("Please enter your Gemini API key first.");
             return;
         }
-        try {
-            let targetModel = model;
-            if (window.refreshGeminiModelsFromGoogle) {
-                await refreshGeminiModelsFromGoogle(true).catch(() => {});
-                const cached = getCachedGeminiModels();
-                if (cached && cached.length > 0) {
-                    const hasModel = cached.some(m => m.id === targetModel);
-                    if (!hasModel && (targetModel.includes('1.5') || targetModel.includes('2.0') || targetModel.includes('2.5'))) {
-                        targetModel = cached[0].id;
-                        autoSaveModel(targetModel);
+
+        const testCandidates = [
+            model,
+            'gemini-2.5-flash',
+            'gemini-2.0-flash',
+            'gemini-1.5-flash',
+            'gemini-2.5-pro',
+            'gemini-3.8-flash',
+            'gemini-3.5-flash-lite'
+        ];
+        const uniqueCandidates = [...new Set(testCandidates.filter(Boolean))];
+
+        let workingModel = null;
+        let lastMsg = '';
+
+        for (const cand of uniqueCandidates) {
+            const cName = cand.trim().replace(/^models\//, '');
+            for (const ver of ['v1beta', 'v1']) {
+                try {
+                    const url = `https://generativelanguage.googleapis.com/${ver}/models/${cName}:generateContent?key=${encodeURIComponent(key)}`;
+                    const controller = new AbortController();
+                    const tid = setTimeout(() => controller.abort(), 12000);
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ role: 'user', parts: [{ text: 'Respond with the word CONNECTED.' }] }],
+                            generationConfig: { maxOutputTokens: 10 }
+                        }),
+                        signal: controller.signal
+                    });
+                    clearTimeout(tid);
+
+                    if (res.ok) {
+                        workingModel = cName;
+                        break;
+                    } else {
+                        const errData = await res.json().catch(() => ({}));
+                        const msg = errData?.error?.message || `HTTP ${res.status}`;
+                        lastMsg = msg;
+                        if (msg.includes('API key not valid') || msg.includes('API_KEY_INVALID')) {
+                            updateStatus(`⚠ Invalid Key: ${msg.slice(0, 45)}`, '#ff4444');
+                            if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(`Invalid Key: ${msg}`);
+                            return;
+                        }
                     }
+                } catch (e) {
+                    lastMsg = e.name === 'AbortError' ? 'Connection timed out' : e.message;
                 }
             }
+            if (workingModel) break;
+        }
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${encodeURIComponent(key)}`;
-            const controller = new AbortController();
-            const tid = setTimeout(() => controller.abort(), 12000);
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ role: 'user', parts: [{ text: 'Respond with the word CONNECTED.' }] }],
-                    generationConfig: { maxOutputTokens: 10 }
-                }),
-                signal: controller.signal
-            });
-            clearTimeout(tid);
-
-            if (res.ok) {
-                updateStatus(`✓ Connected to Google Gemini (${targetModel})!`, '#00ff88');
-                if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(`✓ Gemini connected: ${targetModel}`);
-                if (window.HoloVoice && window.HoloVoice.speakAgent) HoloVoice.speakAgent(`Neural link verified on model ${targetModel}.`);
-            } else {
-                const errData = await res.json().catch(() => ({}));
-                const msg = errData?.error?.message || `HTTP ${res.status}`;
-                updateStatus(`⚠ Error: ${msg}`, '#ffb700');
-                if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(`Gemini Error: ${msg}`);
-                if (window.HoloVoice && window.HoloVoice.speakAgent) HoloVoice.speakAgent("Gemini connection failed: " + msg);
+        if (workingModel) {
+            if (workingModel !== state.model) {
+                autoSaveModel(workingModel);
             }
-        } catch (e) {
-            const msg = e.name === 'AbortError' ? 'Connection timed out' : e.message;
-            updateStatus(`⚠ Error: ${msg}`, '#ffb700');
-            if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(`Error: ${msg}`);
+            updateStatus(`✓ Connected to Google Gemini (${workingModel})!`, '#00ff88');
+            if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(`✓ Gemini connected: ${workingModel}`);
+            if (window.HoloVoice && window.HoloVoice.speakAgent) HoloVoice.speakAgent(`Neural link verified on model ${workingModel}.`);
+        } else {
+            updateStatus(`⚠ Gemini Error: ${lastMsg || 'Could not connect'}`, '#ffb700');
+            if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(`Gemini Error: ${lastMsg}`);
+            if (window.HoloVoice && window.HoloVoice.speakAgent) HoloVoice.speakAgent("Gemini connection failed: " + lastMsg);
         }
     } else if (prov === 'groq') {
         if (!key) {
@@ -788,20 +810,73 @@ window.testAIConnectionLive = async function() {
             updateStatus(`⚠ Error: ${e.message}`, '#ff4444');
         }
     } else if (prov === 'ollama') {
-        const base = state.customUrl || "http://127.0.0.1:11434";
+        let candidateBases = [];
+        const configured = state.customUrl || (state.apiKey && state.apiKey.startsWith('http') ? state.apiKey : '');
+        if (configured) candidateBases.push(configured.replace(/\/+$/, ''));
+        candidateBases.push('http://127.0.0.1:11434', 'http://localhost:11434', 'http://10.0.2.2:11434');
+        candidateBases = [...new Set(candidateBases.filter(Boolean))];
+
+        let workingBase = null;
+        let availableModels = [];
+
+        for (const base of candidateBases) {
+            try {
+                const controller = new AbortController();
+                const tid = setTimeout(() => controller.abort(), 6000);
+                const res = await fetch(`${base}/api/tags`, { signal: controller.signal });
+                clearTimeout(tid);
+                if (res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    workingBase = base;
+                    if (Array.isArray(data.models) && data.models.length > 0) {
+                        availableModels = data.models.map(m => m.name || m.model);
+                    }
+                    break;
+                }
+            } catch (e) {}
+        }
+
+        if (!workingBase) {
+            updateStatus('⚠ Ollama unreachable. Start server: ollama serve', '#ff4444');
+            if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast("Ollama unreachable on localhost:11434");
+            return;
+        }
+
+        state.customUrl = workingBase;
+        localStorage.setItem('holo_custom_url', workingBase);
+
+        // Determine model to test
+        let testModel = (state.model && !state.model.startsWith('gemini')) ? state.model : '';
+        if (!testModel || (availableModels.length > 0 && !availableModels.includes(testModel))) {
+            testModel = availableModels.length > 0 ? availableModels[0] : 'llama3:latest';
+            autoSaveModel(testModel);
+        }
+
+        // Live chat ping test
         try {
-            const controller = new AbortController();
-            const tid = setTimeout(() => controller.abort(), 8000);
-            const res = await fetch(`${base}/api/tags`, { signal: controller.signal });
-            clearTimeout(tid);
-            if (res.ok) {
-                updateStatus(`✓ Ollama online at ${base}`, '#00ff88');
-                if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast("Ollama online");
+            const ctl = new AbortController();
+            const tid2 = setTimeout(() => ctl.abort(), 12000);
+            const chatRes = await fetch(`${workingBase}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: testModel,
+                    messages: [{ role: 'user', content: 'Say OK' }],
+                    stream: false
+                }),
+                signal: ctl.signal
+            });
+            clearTimeout(tid2);
+
+            if (chatRes.ok) {
+                updateStatus(`✓ Ollama Online (${testModel}) at ${workingBase}`, '#00ff88');
+                if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast(`✓ Ollama Online: ${testModel}`);
+                if (window.HoloVoice && window.HoloVoice.speakAgent) HoloVoice.speakAgent(`Ollama local neural link verified with model ${testModel}.`);
             } else {
-                updateStatus('⚠ Ollama unreachable', '#ff4444');
+                updateStatus(`✓ Ollama reached at ${workingBase} (${testModel} ready)`, '#00ff88');
             }
-        } catch (e) {
-            updateStatus('⚠ Ollama offline: ' + e.message, '#ff4444');
+        } catch (chatErr) {
+            updateStatus(`✓ Ollama online at ${workingBase} (${availableModels.length} models ready)`, '#00ff88');
         }
     }
 };
@@ -866,16 +941,15 @@ window.refreshGeminiModelsFromGoogle = async function(silent = false) {
                 // Priority ordering: latest recommended models first
                 liveModels.sort((a, b) => {
                     const rank = (id) => {
-                        if (id === 'gemini-3.8-flash') return 0;
-                        if (id === 'gemini-3.5-flash-lite') return 1;
-                        if (id === 'gemini-3.5-flash') return 2;
-                        if (id.includes('3.8')) return 3;
-                        if (id.includes('3.5')) return 4;
-                        if (id.includes('3.1')) return 5;
-                        if (id.includes('3-')) return 6;
-                        if (id === 'gemini-2.5-flash') return 7;
-                        if (id.includes('2.5')) return 8;
-                        if (id.includes('2.0')) return 9;
+                        if (id === 'gemini-2.5-flash') return 0;
+                        if (id === 'gemini-2.0-flash') return 1;
+                        if (id === 'gemini-1.5-flash') return 2;
+                        if (id === 'gemini-2.5-pro') return 3;
+                        if (id === 'gemini-3.8-flash') return 4;
+                        if (id === 'gemini-3.5-flash-lite') return 5;
+                        if (id === 'gemini-3.5-flash') return 6;
+                        if (id.includes('2.5')) return 7;
+                        if (id.includes('2.0')) return 8;
                         return 10;
                     };
                     return rank(a.id) - rank(b.id);
@@ -947,16 +1021,17 @@ async function queryAIProvider(messages) {
             sanitizedContents.push({ role: 'user', parts: [{ text: 'Hello.' }] });
         }
 
-        const userModel = (state.model || 'gemini-3.8-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
+        const userModel = (state.model || 'gemini-2.5-flash').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
         const candidateModels = [
             userModel,
+            'gemini-2.5-flash',
+            'gemini-2.0-flash',
+            'gemini-1.5-flash',
+            'gemini-2.5-pro',
             'gemini-3.8-flash',
             'gemini-3.5-flash-lite',
             'gemini-3.5-flash',
-            'gemini-3.1-pro-preview',
-            'gemini-2.5-flash',
-            'gemini-2.0-flash',
-            'gemini-1.5-flash'
+            'gemini-3.1-pro-preview'
         ];
         let uniqueModels = [...new Set(candidateModels.filter(Boolean))];
         let lastError = null;
@@ -1098,29 +1173,83 @@ async function queryAIProvider(messages) {
 
     // Local Ollama
     if (state.provider === 'ollama') {
-        const ollamaModel = (state.model && !state.model.startsWith('gemini')) ? state.model : 'llama3:latest';
-        const baseUrl = state.customUrl || 'http://127.0.0.1:11434';
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 16000);
+        let candidateBases = [];
+        const configured = state.customUrl || (state.apiKey && state.apiKey.startsWith('http') ? state.apiKey : '');
+        if (configured) candidateBases.push(configured.replace(/\/+$/, ''));
+        candidateBases.push('http://127.0.0.1:11434', 'http://localhost:11434', 'http://10.0.2.2:11434');
+        candidateBases = [...new Set(candidateBases.filter(Boolean))];
 
-        const res = await fetch(`${baseUrl}/api/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: ollamaModel,
-                messages: messages,
-                stream: false
-            }),
-            signal: controller.signal
-        });
-        clearTimeout(timeoutId);
+        let ollamaModel = (state.model && !state.model.startsWith('gemini')) ? state.model : 'llama3:latest';
+        let lastErr = null;
 
-        if (!res.ok) {
-            throw new Error(`Ollama HTTP ${res.status} at ${baseUrl}`);
+        for (const base of candidateBases) {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 45000);
+
+                const res = await fetch(`${base}/api/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: ollamaModel,
+                        messages: messages.map(m => ({
+                            role: (m.role === 'model' || m.role === 'assistant') ? 'assistant' : m.role,
+                            content: m.content || ''
+                        })),
+                        stream: false
+                    }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const reply = data?.message?.content || data?.response;
+                    if (reply) {
+                        if (base !== state.customUrl) {
+                            state.customUrl = base;
+                            localStorage.setItem('holo_custom_url', base);
+                        }
+                        return reply.trim();
+                    }
+                } else if (res.status === 404) {
+                    const tagRes = await fetch(`${base}/api/tags`).catch(() => null);
+                    if (tagRes && tagRes.ok) {
+                        const tagData = await tagRes.json().catch(() => ({}));
+                        if (Array.isArray(tagData.models) && tagData.models.length > 0) {
+                            const avail = tagData.models[0].name || tagData.models[0].model;
+                            if (avail && avail !== ollamaModel) {
+                                ollamaModel = avail;
+                                state.model = avail;
+                                localStorage.setItem('holo_model', avail);
+                                const retryRes = await fetch(`${base}/api/chat`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        model: ollamaModel,
+                                        messages: messages.map(m => ({
+                                            role: (m.role === 'model' || m.role === 'assistant') ? 'assistant' : m.role,
+                                            content: m.content || ''
+                                        })),
+                                        stream: false
+                                    })
+                                });
+                                if (retryRes.ok) {
+                                    const rData = await retryRes.json();
+                                    return (rData?.message?.content || rData?.response || '').trim();
+                                }
+                            }
+                        }
+                    }
+                    lastErr = new Error(`Ollama model '${ollamaModel}' not found at ${base}`);
+                } else {
+                    lastErr = new Error(`Ollama HTTP ${res.status} at ${base}`);
+                }
+            } catch (e) {
+                lastErr = e;
+            }
         }
-
-        const data = await res.json();
-        return data.message.content.trim();
+        throw lastErr || new Error("Failed to connect to Ollama at " + (state.customUrl || "127.0.0.1:11434"));
     }
 
     throw new Error("Unsupported provider: " + state.provider);
@@ -1140,10 +1269,14 @@ window.onProviderChange = function() {
 
     if (state.provider === 'gemini') {
         if (keyLabel) keyLabel.textContent = 'GOOGLE GEMINI API KEY (FREE TIER)';
-        if (keyInput) keyInput.placeholder = 'AIzaSy... (Paste Google Gemini Key)';
+        if (keyInput) {
+            keyInput.type = 'password';
+            keyInput.placeholder = 'AIzaSy... (Paste Google Gemini Key)';
+            keyInput.value = state.apiKey || '';
+        }
         if (freeGuide) freeGuide.style.display = 'block';
         if (geminiGroup) geminiGroup.style.display = 'block';
-        if (!state.model || state.model.includes('llama')) {
+        if (!state.model || state.model.includes('llama') || state.model.includes('qwen')) {
             autoSaveModel('gemini-2.5-flash');
         } else if (mInput) {
             mInput.value = state.model;
@@ -1152,7 +1285,11 @@ window.onProviderChange = function() {
         if (state.apiKey) refreshGeminiModelsFromGoogle(true);
     } else if (state.provider === 'groq') {
         if (keyLabel) keyLabel.textContent = 'GROQ API KEY (FREE TIER)';
-        if (keyInput) keyInput.placeholder = 'gsk_... (Paste Groq Key)';
+        if (keyInput) {
+            keyInput.type = 'password';
+            keyInput.placeholder = 'gsk_... (Paste Groq Key)';
+            keyInput.value = state.apiKey || '';
+        }
         if (freeGuide) freeGuide.style.display = 'none';
         if (geminiGroup) geminiGroup.style.display = 'block';
         if (!state.model || state.model.startsWith('gemini')) {
@@ -1161,8 +1298,12 @@ window.onProviderChange = function() {
             mInput.value = state.model;
         }
     } else {
-        if (keyLabel) keyLabel.textContent = 'LOCAL OLLAMA (NO KEY NEEDED)';
-        if (keyInput) keyInput.placeholder = 'http://127.0.0.1:11434';
+        if (keyLabel) keyLabel.textContent = 'LOCAL OLLAMA BASE URL';
+        if (keyInput) {
+            keyInput.type = 'text';
+            keyInput.placeholder = 'http://127.0.0.1:11434';
+            keyInput.value = state.customUrl || (state.apiKey && state.apiKey.startsWith('http') ? state.apiKey : 'http://127.0.0.1:11434');
+        }
         if (freeGuide) freeGuide.style.display = 'none';
         if (geminiGroup) geminiGroup.style.display = 'block';
         if (!state.model || state.model.startsWith('gemini')) {
@@ -1189,9 +1330,19 @@ window.openSettingsModal = function() {
     const modal = document.getElementById('settingsModal');
     if (modal) modal.classList.add('open');
     const input = document.getElementById('apiKeyInput');
-    if (input) input.value = state.apiKey || '';
+    if (input) {
+        if (state.provider === 'ollama') {
+            input.type = 'text';
+            input.value = state.customUrl || (state.apiKey && state.apiKey.startsWith('http') ? state.apiKey : 'http://127.0.0.1:11434');
+        } else {
+            input.type = 'password';
+            input.value = state.apiKey || '';
+        }
+    }
     const mInput = document.getElementById('modelInput');
     if (mInput) mInput.value = state.model || 'gemini-2.5-flash';
+    const contToggle = document.getElementById('continuousVoiceToggle');
+    if (contToggle) contToggle.checked = (localStorage.getItem('holo_continuous_voice') === 'true');
     populateGeminiModelOptions();
     if (state.apiKey && state.provider === 'gemini') {
         refreshGeminiModelsFromGoogle(true);
@@ -1270,19 +1421,25 @@ window.closeSettingsModal = function(e) {
 };
 
 window.autoSaveApiKey = function(val) {
-    state.apiKey = val.trim();
+    const trimmed = (val || '').trim();
+    state.apiKey = trimmed;
     localStorage.setItem('holo_api_key', state.apiKey);
     localStorage.setItem('ae_api_key', state.apiKey);
+    if (state.provider === 'ollama' || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        state.customUrl = trimmed;
+        localStorage.setItem('holo_custom_url', state.customUrl);
+        localStorage.setItem('ae_custom_url', state.customUrl);
+    }
 };
 
 window.saveApiKeyDirect = function() {
     const input = document.getElementById('apiKeyInput');
     if (input) autoSaveApiKey(input.value);
-    if (state.apiKey && state.provider === 'gemini') {
-        refreshGeminiModelsFromGoogle(false);
-    }
-    if (window.HoloBridge && window.HoloBridge.showToast) {
-        window.HoloBridge.showToast("Gemini key saved");
+    if (state.provider === 'gemini') {
+        if (state.apiKey) refreshGeminiModelsFromGoogle(false);
+        if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast("Gemini key saved");
+    } else if (state.provider === 'ollama') {
+        if (window.HoloBridge && window.HoloBridge.showToast) window.HoloBridge.showToast("Ollama endpoint saved");
     }
     const modal = document.getElementById('settingsModal');
     if (modal) modal.classList.remove('open');
