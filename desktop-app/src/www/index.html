@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AgenticEssence • Holographic Cyberdeck</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="holographic-universe">
+    <!-- Alive Animated Background: Multi-colored Neon Particle Cybermesh & Plasma Nebula -->
+    <canvas id="holo-canvas"></canvas>
+    <div class="plasma-nebula-glow"></div>
+    <div class="cyber-grid-overlay"></div>
+
+    <!-- Free-Floating Holographic HUD Top Bar -->
+    <header class="holo-hud-header">
+        <button id="open-drawer-btn" class="hud-glyph-btn" onclick="openDrawer()" title="Holo Routing & Settings">
+            <span class="glyph-bar"></span>
+            <span class="glyph-bar short"></span>
+            <span class="glyph-bar"></span>
+        </button>
+
+        <div class="hud-brand-node">
+            <div class="quantum-qbit-holo">
+                <div class="qbit-core"></div>
+                <div class="orbit ring-cyan"><div class="electron cyan"></div></div>
+                <div class="orbit ring-magenta"><div class="electron magenta"></div></div>
+                <div class="orbit ring-violet"><div class="electron violet"></div></div>
+            </div>
+            <div class="hud-title-cluster">
+                <span class="hud-title-main">AGENTIC ESSENCE</span>
+                <span class="hud-subtitle">QUANTUM SYNTHESIZER // ONLINE</span>
+            </div>
+        </div>
+
+        <div class="hud-quick-nodes">
+            <button id="nh-bridge-pill" class="hud-pill-btn neon-gold" onclick="inspectNetHunter()" title="Kali NetHunter Root Bridge (127.0.0.1:8765)">
+                <span class="pill-icon">🐉</span><span id="nh-pill-text" class="pill-text">NH: CHECK</span>
+            </button>
+            <button class="hud-pill-btn neon-cyan" onclick="execQuick('wifi scan')" title="Hardware Wi-Fi Scan">
+                <span class="pill-icon">📡</span><span class="pill-text">WIFI</span>
+            </button>
+            <button class="hud-pill-btn neon-cyan" onclick="execQuick('ifconfig')" title="Network Interfaces">
+                <span class="pill-icon">🌐</span><span class="pill-text">NET</span>
+            </button>
+            <button class="hud-pill-btn neon-gold" onclick="clearCanvas()" title="Purge HUD Canvas">
+                <span class="pill-icon">🧹</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Persona Stream Hologram Selector (Free-Floating) -->
+    <nav class="persona-holo-bar" style="overflow-x:auto; max-width:98%; scrollbar-width:none;">
+        <button class="persona-stream-btn active" data-persona="swarm" onclick="switchPersona('swarm')">
+            <span class="persona-dot cyan"></span>[SWARM]
+        </button>
+        <button class="persona-stream-btn" data-persona="turing" onclick="switchPersona('turing')">
+            <span class="persona-dot cyan"></span>[TURING]
+        </button>
+        <button class="persona-stream-btn" data-persona="knuth" onclick="switchPersona('knuth')">
+            <span class="persona-dot cyan"></span>[KNUTH]
+        </button>
+        <button class="persona-stream-btn" data-persona="lovelace" onclick="switchPersona('lovelace')">
+            <span class="persona-dot cyan"></span>[LOVELACE]
+        </button>
+    </nav>
+
+    <!-- Translucent Glass Engine Drawer -->
+    <aside class="holo-drawer" id="settings-panel">
+        <div class="holo-drawer-head">
+            <div class="drawer-title-holo">
+                <span class="bracket">[</span> ROUTING &amp; SETTINGS <span class="bracket">]</span>
+            </div>
+            <button class="holo-close-btn" onclick="closeDrawer()">✕</button>
+        </div>
+        <div class="drawer-subhint">Swipe left anywhere to dismiss</div>
+
+        <!-- AI Inference Routing -->
+        <div class="drawer-block">
+            <label class="drawer-label">INFERENCE ENGINE</label>
+            <select id="providerSelect" class="holo-input" onchange="onProviderChange()">
+                <option value="gemini">Google Gemini 2.5 / 2.0 / 1.5 (Dynamic Google API)</option>
+                <option value="groq">Groq LPU (Ultra-Fast)</option>
+                <option value="openrouter">OpenRouter Multi-Model</option>
+                <option value="ollama">Ollama Local Cyberdeck</option>
+            </select>
+        </div>
+
+        <div class="drawer-block" id="apiKeyGroup">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <label class="drawer-label" id="apiKeyLabel" style="margin-bottom:0;">GEMINI API KEY</label>
+                <div style="display:flex; gap:6px;">
+                    <button type="button" onclick="openGoogleKeyPortal()" class="hw-matrix-btn" style="padding:4px 8px; font-size:11px; cursor:pointer;" title="Get Free Google Gemini Key from Google AI Studio">🔑 GET FREE KEY ↗</button>
+                    <button type="button" onclick="pasteApiKeyFromClipboard()" class="hw-matrix-btn" style="padding:4px 8px; font-size:11px; cursor:pointer;">📋 PASTE</button>
+                    <button type="button" onclick="testAIConnectionLive()" class="hw-matrix-btn amber" style="padding:4px 8px; font-size:11px; cursor:pointer;">⚡ TEST</button>
+                </div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <input type="password" id="apiKeyInput" class="holo-input" placeholder="Enter API Key..." oninput="autoSaveApiKey(this.value)" style="flex:1; margin-bottom:0;" />
+                <button type="button" onclick="saveApiKeyDirect()" class="hw-matrix-btn" style="padding:10px 14px; font-weight:800; font-size:12px; white-space:nowrap; cursor:pointer;">💾 SAVE</button>
+            </div>
+            <div id="apiKeySaveStatus" style="font-size:11px; font-family:var(--font-code); color:var(--term-green); margin-top:4px; display:none;"></div>
+            <span class="drawer-micro-hint" style="margin-top:6px; display:block;">Default: gemini-2.5-flash (Auto-saved on input)</span>
+        </div>
+
+        <div class="drawer-block">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <label class="drawer-label" style="margin-bottom:0;">MODEL TARGET (FREELY PASTE / EDIT ANY MODEL)</label>
+                <button type="button" onclick="pasteModelFromClipboard()" class="hw-matrix-btn" style="padding:4px 8px; font-size:11px; cursor:pointer;">📋 PASTE</button>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <input type="text" id="modelInput" class="holo-input" value="gemini-2.5-flash" oninput="autoSaveModel(this.value)" list="aeModelDatalist" style="flex:1; margin-bottom:0;" />
+                <button type="button" onclick="saveModelDirect()" class="hw-matrix-btn" style="padding:10px 14px; font-weight:800; font-size:12px; white-space:nowrap; cursor:pointer;">💾 SAVE</button>
+            </div>
+            <datalist id="aeModelDatalist">
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash [Standard Free]</option>
+                <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                <option value="gemini-3.8-flash">Gemini 3.8 Flash [Preview]</option>
+                <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite [Fastest]</option>
+                <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro Preview</option>
+                <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Groq)</option>
+                <option value="llama3:latest">Ollama (llama3:latest)</option>
+            </datalist>
+            <!-- Quick suggestion chips for 1-tap selection -->
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+                <button type="button" onclick="selectQuickModel('gemini-2.5-flash')" class="hw-matrix-btn emerald" style="padding:3px 7px; font-size:10px;">⚡ 2.5-flash</button>
+                <button type="button" onclick="selectQuickModel('gemini-3.8-flash')" class="hw-matrix-btn" style="padding:3px 7px; font-size:10px;">⚡ 3.8-flash</button>
+                <button type="button" onclick="selectQuickModel('gemini-3.5-flash-lite')" class="hw-matrix-btn" style="padding:3px 7px; font-size:10px;">🚀 3.5-lite</button>
+                <button type="button" onclick="selectQuickModel('llama3:latest')" class="hw-matrix-btn amber" style="padding:3px 7px; font-size:10px;">🦙 Ollama</button>
+            </div>
+            <div id="modelSaveStatus" style="font-size:11px; font-family:var(--font-code); color:var(--term-green); margin-top:4px; display:none;"></div>
+        </div>
+
+        <!-- Kali NetHunter Root Bridge Section -->
+        <div class="drawer-block">
+            <label class="drawer-label">KALI NETHUNTER ROOT BRIDGE</label>
+            <div style="background:rgba(255,0,127,0.08); border:1px solid rgba(255,0,127,0.35); border-radius:6px; padding:12px; margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-family:var(--font-code); font-size:13px; color:#fff;">DAEMON (127.0.0.1:8765):</span>
+                    <span id="nh-drawer-status" style="font-family:var(--font-code); font-weight:700; color:#00ff88; font-size:13px;">ONLINE</span>
+                </div>
+                <div style="font-size:12px; color:var(--text-dim); margin-bottom:10px; line-height:1.45;">
+                    Full root execution in Termux Kali NetHunter (<code>nh -r</code>).
+                    CLI binary available: <code>agentic</code> / <code>ae</code>.
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <button onclick="inspectNetHunter()" class="hw-matrix-btn magenta" style="font-size:12px; padding:8px 6px;">🐉 Test Bridge</button>
+                    <button onclick="execQuick('agentic bridge status')" class="hw-matrix-btn cyan" style="font-size:12px; padding:8px 6px;">⚡ Check CLI</button>
+                    <button onclick="launchOrStartTermux()" class="hw-matrix-btn emerald" style="font-size:12px; padding:8px 6px; grid-column:span 2;">🚀 Launch Termux / Start Bridge</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tactical Cyber Security Arsenal -->
+        <div class="drawer-block">
+            <label class="drawer-label">TACTICAL CYBER ARSENAL</label>
+            <div class="hw-holo-matrix">
+                <button onclick="openCyberTool('portscan')" class="hw-matrix-btn cyan">⚡ Port Scanner</button>
+                <button onclick="openCyberTool('payload')" class="hw-matrix-btn magenta">🐚 Payloads</button>
+                <button onclick="openCyberTool('hash')" class="hw-matrix-btn violet">🔑 Crypto/Hashes</button>
+                <button onclick="openCyberTool('mitre')" class="hw-matrix-btn gold">🎯 MITRE Matrix</button>
+                <button onclick="openCyberTool('posture')" class="hw-matrix-btn emerald">🛡️ Posture Audit</button>
+                <button onclick="execQuick('wifi scan')" class="hw-matrix-btn cyan">📡 RF Wi-Fi</button>
+            </div>
+        </div>
+
+        <!-- Voice Agent & Acoustic Lab -->
+        <div class="drawer-block">
+            <label class="drawer-label">VOICE AGENT &amp; ACOUSTIC ENGINE</label>
+            <select id="deckVoiceSelect" class="holo-input" onchange="localStorage.setItem('ae_selected_voice', this.value); Bridge.speak('Voice profile updated.');" style="margin-bottom:8px;">
+                <option value="">Default Persona Voice Profile</option>
+            </select>
+            <button type="button" onclick="Bridge.speak('Agentic Cyberdeck voice synthesis active. All tactical cybersecurity systems nominal.');" class="hw-matrix-btn cyan" style="width:100%; font-size:12px; padding:6px;">🗣️ Audition Spoken Voice</button>
+        </div>
+
+        <!-- Hardware Controls -->
+        <div class="drawer-block">
+            <label class="drawer-label">HARDWARE BRIDGE APIS</label>
+            <div class="hw-holo-matrix">
+                <button onclick="execQuick('wifi scan')" class="hw-matrix-btn cyan">📡 Scan Wi-Fi</button>
+                <button onclick="execQuick('ifconfig')" class="hw-matrix-btn violet">🌐 Ifconfig</button>
+                <button onclick="toggleDeviceTorch()" class="hw-matrix-btn gold">🔦 Torch</button>
+                <button onclick="vibrateDevice()" class="hw-matrix-btn magenta">📳 Haptic Pulse</button>
+                <button onclick="execQuick('battery')" class="hw-matrix-btn emerald">🔋 Battery</button>
+                <button onclick="execQuick('whoami && id')" class="hw-matrix-btn cyan">⚡ Shell Id</button>
+            </div>
+        </div>
+
+        <!-- Saved Toolbox Section -->
+        <div class="drawer-block" id="toolsModal">
+            <div class="toolbox-head">
+                <label class="drawer-label">STORED WIDGETS (<span id="toolCountBadge">0</span>)</label>
+            </div>
+            <div id="savedToolsList" class="saved-holo-list">
+                <div class="empty-holo-text">No stored widgets. Synthesize any tool to save.</div>
+            </div>
+        </div>
+
+        <!-- Embedded Kali Linux VM Console (Headless WSL2) -->
+        <div class="drawer-block" id="kaliVmDrawerBlock">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <label class="drawer-label" style="margin-bottom:0;">🐉 KALI LINUX VM (HEADLESS WSL2)</label>
+                <span id="kaliVmStatusBadge" class="neon-badge" style="font-size:10px; color:#10b981; border:1px solid #10b981; padding:2px 6px; border-radius:4px;">HEADLESS READY</span>
+            </div>
+            <div style="display:flex; gap:6px; margin-bottom:8px;">
+                <input type="text" id="kaliCmdInput" class="holo-input" placeholder="Execute in Kali (e.g., nmap -F 127.0.0.1)..." style="flex:1; margin-bottom:0;" onkeydown="if(event.key==='Enter')execKaliVmDirect()" />
+                <button type="button" onclick="execKaliVmDirect()" class="hw-matrix-btn gold" style="padding:8px 12px; font-weight:700;">EXEC</button>
+            </div>
+            <div id="kaliVmOutputBox" style="background:#05070a; border:1px solid rgba(0,240,255,0.3); border-radius:6px; padding:8px; font-family:monospace; font-size:11px; color:#00f0ff; max-height:140px; overflow-y:auto; white-space:pre-wrap; display:none;"></div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+                <button type="button" onclick="execKaliQuick('nmap -V')" class="hw-matrix-btn" style="font-size:10px; padding:3px 6px;">nmap -V</button>
+                <button type="button" onclick="execKaliQuick('uname -a')" class="hw-matrix-btn" style="font-size:10px; padding:3px 6px;">uname -a</button>
+                <button type="button" onclick="execKaliQuick('ip -br addr')" class="hw-matrix-btn" style="font-size:10px; padding:3px 6px;">ip addr</button>
+                <button type="button" onclick="checkKaliHealth()" class="hw-matrix-btn amber" style="font-size:10px; padding:3px 6px;">Health Check</button>
+            </div>
+        </div>
+
+        <!-- State Persistence & Export -->
+        <div class="drawer-block">
+            <label class="drawer-label">CYBERDECK SESSION PERSISTENCE</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <button onclick="SessionStateManager.exportConfig()" class="hw-matrix-btn cyan" style="font-size:12px; padding:8px 6px;">💾 Export State</button>
+                <button onclick="document.getElementById('importFileInput').click()" class="hw-matrix-btn emerald" style="font-size:12px; padding:8px 6px;">📂 Import State</button>
+                <input type="file" id="importFileInput" style="display:none;" onchange="const f=this.files[0]; if(f){const r=new FileReader(); r.onload=()=>SessionStateManager.importConfig(r.result); r.readAsText(f);}" accept=".json" />
+            </div>
+        </div>
+
+        <button onclick="saveSettings()" class="holo-action-btn" style="margin-top:16px; width:100%; display:block;">CONFIRM CONFIGURATION</button>
+    </aside>
+
+    <!-- Free-Floating Agent Canvas (No Boxes, Seamless Stream) -->
+    <main class="holo-canvas-feed" id="output-feed" data-id="chatContainer">
+        <!-- Initial Free-Floating Holographic Intro Node -->
+        <div class="free-node intro-node">
+            <div class="holo-node-tag">
+                <span class="tag-pulse"></span>
+                <span class="tag-title">SYSTEM // QUANTUM KERNEL READY</span>
+            </div>
+            <div class="free-node-text">
+                Autonomous agentic intelligence online. Connected to Termux and Kali NetHunter root.
+                Talk freely with the assistant, execute real Linux &amp; Android commands, or synthesize custom tools on demand using <code>/synth</code>.
+            </div>
+        </div>
+
+        <!-- Live Status Node -->
+        <div class="free-node status-node">
+            <div class="holo-node-tag neon-magenta">
+                <span class="tag-pulse magenta"></span>
+                <span class="tag-title">NETHUNTER &bull; ROOT // READY</span>
+            </div>
+            <div class="free-node-text">
+                Ask a question, run basic shell tasks, or tap any terminal command below:
+            </div>
+        </div>
+    </main>
+
+    <!-- Free-Floating Terminal Command Chips -->
+    <div class="floating-chip-cloud" id="quick-chips">
+        <button class="holo-chip chip-gold" onclick="inspectNetHunter()">🐉 NetHunter Status</button>
+        <button class="holo-chip chip-cyan" onclick="openCyberTool('portscan')">⚡ Port Scan</button>
+        <button class="holo-chip chip-cyan" onclick="openCyberTool('payload')">🐚 Payloads</button>
+        <button class="holo-chip chip-cyan" onclick="openCyberTool('hash')">🔑 Hashes</button>
+        <button class="holo-chip chip-cyan" onclick="openCyberTool('mitre')">🎯 MITRE</button>
+        <button class="holo-chip chip-cyan" onclick="openCyberTool('posture')">🛡️ Posture</button>
+        <button class="holo-chip chip-cyan" onclick="execQuick('wifi scan')">📡 Wi-Fi Scan</button>
+        <button class="holo-chip chip-cyan" onclick="execQuick('whoami && uname -a')">⚡ Host Id</button>
+        <button class="holo-chip chip-cyan" onclick="execQuick('ifconfig')">🌐 Net</button>
+        <button class="holo-chip chip-cyan" onclick="execQuick('/synth Wi-Fi signal analyzer')">🧮 Synth Tool</button>
+    </div>
+
+    <!-- Free-Floating Glassmorphic Command Nebula -->
+    <footer class="holo-command-nebula">
+        <button id="micBtn" class="nebula-voice-btn" onclick="triggerVoiceInput()" title="Vocal Command">
+            <span class="voice-wave"></span>
+            🎙️
+        </button>
+        <div class="nebula-input-wrapper">
+            <input type="text" id="omni-input" name="messageInput" placeholder="Command agent, run shell, or build tool..." autocomplete="off" />
+            <div class="input-glow-line"></div>
+        </div>
+        <button id="execute-btn" name="sendBtn" class="nebula-exec-btn" onclick="sendMessage()">
+            <span class="exec-text">RUN</span>
+            <span class="exec-arrow">›</span>
+        </button>
+    </footer>
+</div>
+
+<script src="desktop-bridge.js"></script>
+<script>
+window.execKaliVmDirect = function() {
+    const inp = document.getElementById('kaliCmdInput');
+    const cmd = inp ? inp.value.trim() : '';
+    if (!cmd) return;
+    execKaliQuick(cmd);
+    if (inp) inp.value = '';
+};
+
+window.execKaliQuick = function(cmd) {
+    const box = document.getElementById('kaliVmOutputBox');
+    if (box) {
+        box.style.display = 'block';
+        box.textContent += '$ kali> ' + cmd + '\n... running headless ...\n';
+        box.scrollTop = box.scrollHeight;
+    }
+    if (window.DesktopBridge && window.DesktopBridge.runKaliCommand) {
+        DesktopBridge.runKaliCommand(cmd).then(res => {
+            if (box) {
+                const out = res.stdout || res.output || res.stderr || res.error || '[Done exit code 0]';
+                box.textContent += out + '\n\n';
+                box.scrollTop = box.scrollHeight;
+            }
+        }).catch(err => {
+            if (box) {
+                box.textContent += 'ERR: ' + err + '\n\n';
+                box.scrollTop = box.scrollHeight;
+            }
+        });
+    }
+};
+
+window.checkKaliHealth = function() {
+    if (window.DesktopBridge && window.DesktopBridge.getVmStatus) {
+        DesktopBridge.getVmStatus().then(status => {
+            const badge = document.getElementById('kaliVmStatusBadge');
+            if (badge) {
+                if (status.installed) {
+                    badge.textContent = status.running ? 'RUNNING (HEADLESS)' : 'AVAILABLE (WSL2)';
+                    badge.style.color = '#10b981';
+                    badge.style.borderColor = '#10b981';
+                } else {
+                    badge.textContent = 'STANDBY (HOST SHELL)';
+                    badge.style.color = '#00f0ff';
+                    badge.style.borderColor = '#00f0ff';
+                }
+            }
+            DesktopBridge.showToast(status.installed ? 'Kali WSL2 Detected & Active' : 'Desktop Host Shell Active');
+        }).catch(() => {
+            DesktopBridge.showToast('Desktop Host Shell Active');
+        });
+    }
+};
+</script>
+<script src="app.js"></script>
+</body>
+</html>

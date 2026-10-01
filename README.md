@@ -15,6 +15,7 @@
 - **Official Website & Downloads**: [https://laikaseriousjames-barkdog.github.io/Agentic-Essence/](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/)
 - **Direct Cyberdeck APK Download**: [AgenticEssence-Android.apk](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/downloads/AgenticEssence-Android.apk)
 - **Direct Agentic Vox APK Download (Voice Edition)**: [AgenticVox-Android.apk](https://laikaseriousjames-barkdog.github.io/Agentic-Essence/downloads/AgenticVox-Android.apk)
+- **Direct Windows Desktop Download (v3.0)**: [Agentic-Essence-Desktop-Setup.exe](https://github.com/laikaseriousjames-barkdog/Agentic-Essence/releases/latest/download/Agentic-Essence-Desktop-Setup.exe)
 
 ---
 
@@ -128,6 +129,22 @@ To build the Agentic Vox Holographic APK locally:
 ./build_holo_apk.sh
 ```
 The output APK is generated at `holo-app/bin/AgenticVox-Android.apk` (and `AgenticHolo-Android.apk`).
+
+### Desktop Local Build & Run (Windows, Linux, macOS)
+To sync assets and validate the Desktop application:
+```bash
+./build_desktop.sh
+```
+
+To launch the Cyberdeck Desktop console:
+```bash
+# Launch with native app-mode window
+python3 desktop-app/launcher.py
+
+# Or launch daemon only
+python3 desktop-app/launcher.py --server-only
+```
+Access the console directly at: `http://127.0.0.1:52400/index.html`.
 
 ### Run Test Suite:
 ```bash

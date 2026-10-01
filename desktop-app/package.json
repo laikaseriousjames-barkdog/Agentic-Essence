@@ -1,0 +1,35 @@
+{
+  "name": "agentic-essence-desktop",
+  "version": "3.0.0",
+  "description": "Agentic Essence — Autonomous AI Tri-Agent Cyberdeck Desktop",
+  "main": "electron-main.js",
+  "author": "Agentic Essence Team <laikaseriousjames@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "org.antigravity.agenticessence",
+    "productName": "Agentic Essence",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "src/www/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Agentic Essence"
+    }
+  }
+}

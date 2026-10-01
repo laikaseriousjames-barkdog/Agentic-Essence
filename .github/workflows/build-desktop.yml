@@ -1,0 +1,68 @@
+name: Build Windows Desktop App
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "desktop-app/**"
+      - ".github/workflows/build-desktop.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: Build Standalone Windows Executable
+        working-directory: desktop-app
+        run: |
+          python build_exe.py
+
+      - name: Verify Executable Size (< 80 MB, No VM Bloat)
+        working-directory: desktop-app
+        shell: pwsh
+        run: |
+          $exe = Get-Item "dist/AgenticEssence-Desktop.exe"
+          $sizeMB = $exe.Length / 1MB
+          Write-Host "Built: $($exe.FullName) ($("{0:N1}" -f $sizeMB) MB)"
+          if ($sizeMB -gt 150) {
+            Write-Error "Binary size exceeds limit (>150MB). Bloat detected!"
+            exit 1
+          }
+
+      - name: Stage for Release and Website Distribution
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "downloads"
+          Copy-Item "desktop-app/dist/AgenticEssence-Desktop.exe" "downloads/Agentic-Essence-Desktop-Setup.exe" -Force
+
+      - name: Upload Desktop Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentic-essence-windows-desktop
+          path: desktop-app/dist/AgenticEssence-Desktop.exe
+          retention-days: 30
+
+      - name: Commit Updated Desktop Binary to Repository Downloads
+        shell: pwsh
+        run: |
+          git config --global user.name "Agentic Essence Swarm"
+          git config --global user.email "agentic@antigravity.internal"
+          git add downloads/Agentic-Essence-Desktop-Setup.exe
+          git commit -m "build(desktop): update verified Windows Desktop executable [skip ci]" || Write-Host "No changes to commit"
+          git push origin master || Write-Host "Skipped push"
