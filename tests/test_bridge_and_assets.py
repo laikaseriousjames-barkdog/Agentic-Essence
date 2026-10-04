@@ -64,8 +64,32 @@ def test_bridge_methods_consistency():
         "showToast",
         "vibrate",
         "speakText",
-        "getBatteryLevel"
+        "getBatteryLevel",
+        "checkShizukuPermission",
+        "requestShizukuPermission",
+        "isShizukuAvailable",
+        "isShizukuReady",
+        "getExecutiveEnvironmentStatus",
+        "executeExecutiveCommand",
+        "inspectSystem",
+        "sendScreenInput",
+        "runShizukuCommand"
     ]
 
     for m in expected_methods:
         assert m in js_interfaces, f"Method {m} missing from WebAppInterface.java"
+
+
+def test_executive_binaries_and_shizuku_dex_exist():
+    """Verify that both android-app and holo-app bundle rish_shizuku.dex and busybox."""
+    for sub in ["android-app", "holo-app"]:
+        base = os.path.join(REPO_DIR, sub)
+        dex = os.path.join(base, "assets/rish_shizuku.dex")
+        busybox = os.path.join(base, "assets/bin/busybox")
+        rish = os.path.join(base, "assets/rish")
+
+        assert os.path.isfile(dex), f"{sub} missing assets/rish_shizuku.dex"
+        assert os.path.getsize(dex) > 10000, f"{sub} rish_shizuku.dex is too small"
+        assert os.path.isfile(busybox), f"{sub} missing assets/bin/busybox"
+        assert os.path.getsize(busybox) > 1000000, f"{sub} busybox binary is too small"
+        assert os.path.isfile(rish), f"{sub} missing assets/rish"

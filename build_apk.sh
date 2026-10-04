@@ -37,7 +37,7 @@ aapt package -f -m -J "$APP_DIR/src" \
 # Step 2: Compile Java sources
 echo "Step 2: Compiling Java source files with javac..."
 javac -d "$APP_DIR/obj" \
-    -cp "$SDK_DIR/android.jar" \
+    -cp "$SDK_DIR/android.jar:$SCRIPT_DIR/libs/shizuku/*" \
     "$APP_DIR/src/org/antigravity/agenticdeck/"*.java \
     --release 8
 
@@ -47,7 +47,8 @@ java -cp "$SDK_DIR/r8.jar" com.android.tools.r8.D8 \
     --output "$APP_DIR/bin" \
     --lib "$SDK_DIR/android.jar" \
     --min-api 21 \
-    "$APP_DIR/obj/org/antigravity/agenticdeck/"*.class
+    "$APP_DIR/obj/org/antigravity/agenticdeck/"*.class \
+    "$SCRIPT_DIR/libs/shizuku/"*.jar
 
 # Step 4: Package resources and assets into APK
 echo "Step 4: Packaging assets and manifest into initial APK..."

@@ -24,13 +24,35 @@ public class MainActivity extends Activity {
     private static final String TAG = "AgenticEssence";
     public static final int PERMISSION_REQUEST_CODE = 101;
     public static final int SPEECH_REQUEST_CODE = 102;
+    public static final int SHIZUKU_PERMISSION_REQUEST_CODE = 103;
     private WebView mWebView;
     private WebAppInterface mBridge;
+
+    private final rikka.shizuku.Shizuku.OnRequestPermissionResultListener mShizukuPermissionListener =
+        (requestCode, grantResult) -> {
+            boolean granted = grantResult == PackageManager.PERMISSION_GRANTED;
+            Log.i(TAG, "Shizuku permission result: " + granted);
+            if (mWebView != null) {
+                mWebView.post(() -> mWebView.evaluateJavascript("if(window.onShizukuPermissionResult) { window.onShizukuPermissionResult(" + granted + "); }", null));
+            }
+        };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Native Shizuku binder registration & prompt
+        try {
+            rikka.shizuku.Shizuku.addRequestPermissionResultListener(mShizukuPermissionListener);
+            if (rikka.shizuku.Shizuku.pingBinder()) {
+                if (rikka.shizuku.Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) {
+                    rikka.shizuku.Shizuku.requestPermission(SHIZUKU_PERMISSION_REQUEST_CODE);
+                }
+            }
+        } catch (Throwable t) {
+            Log.d(TAG, "Shizuku binder init skipped: " + t.getMessage());
+        }
 
         // Request all runtime permissions on Android 6.0+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -135,6 +157,9 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        try {
+            rikka.shizuku.Shizuku.removeRequestPermissionResultListener(mShizukuPermissionListener);
+        } catch (Throwable ignored) {}
         if (mBridge != null) {
             mBridge.destroy();
         }

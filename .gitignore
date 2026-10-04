@@ -7,6 +7,7 @@ __pycache__/
 # Build artifacts
 *.class
 *.dex
+!**/assets/rish_shizuku.dex
 *.idsig
 **/obj/
 **/bin/unaligned.apk

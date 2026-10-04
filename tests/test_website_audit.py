@@ -89,8 +89,8 @@ def test_index_html_features_and_personas():
     assert "toggleFaq" in html
 
     # Verified SHA-256 checksums
-    assert "ef67c447aedfabd25c94d1135504629290f9af75e91fa753ed6e6d66807039ac" in html
-    assert "432c666741fa613040f2dc0b7c818acee23b871126be55648b866f40ce7a078b" in html
+    assert "9dfb2e096db9c15a399e813a1b60c853b34bf33f024b40b2df60f760871e593d" in html
+    assert "a6f4c7e8d209d9580b201a3a36a9d251283aed18aa88ca6dbe870c9eb8be61aa" in html
     assert "9c7990eb5f0267875762270c7e173ee2f36dc1f9c574e9f1c3e34232c92947b0" in html
 
 def test_service_worker_integrity():

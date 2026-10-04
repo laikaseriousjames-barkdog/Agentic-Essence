@@ -95,6 +95,10 @@
         android:allowBackup="true"
         android:usesCleartextTraffic="true">
         
+        <meta-data
+            android:name="moe.shizuku.client.V3_SUPPORT"
+            android:value="true" />
+        
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"

@@ -1251,7 +1251,35 @@ public class WebAppInterface implements TextToSpeech.OnInitListener {
     }
 
     @JavascriptInterface
+    public boolean checkShizukuPermission() {
+        try {
+            if (rikka.shizuku.Shizuku.pingBinder()) {
+                return rikka.shizuku.Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED;
+            }
+        } catch (Throwable ignored) {}
+        return isShizukuReady();
+    }
+
+    @JavascriptInterface
+    public void requestShizukuPermission() {
+        mActivity.runOnUiThread(() -> {
+            try {
+                if (rikka.shizuku.Shizuku.pingBinder()) {
+                    if (rikka.shizuku.Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) {
+                        rikka.shizuku.Shizuku.requestPermission(MainActivity.SHIZUKU_PERMISSION_REQUEST_CODE);
+                        return;
+                    }
+                }
+            } catch (Throwable ignored) {}
+            runShizukuCommand("echo OK");
+        });
+    }
+
+    @JavascriptInterface
     public boolean isShizukuAvailable() {
+        try {
+            if (rikka.shizuku.Shizuku.pingBinder()) return true;
+        } catch (Throwable ignored) {}
         File rishFile = getRishExecutable();
         return rishFile != null && rishFile.exists();
     }
@@ -1264,6 +1292,35 @@ public class WebAppInterface implements TextToSpeech.OnInitListener {
             return out != null && out.contains("OK");
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    private synchronized File ensureBinariesInstalled() {
+        try {
+            File filesDir = mActivity.getFilesDir();
+            File binDir = new File(filesDir, "bin");
+            if (!binDir.exists()) binDir.mkdirs();
+
+            File busyboxFile = new File(binDir, "busybox");
+            if (!busyboxFile.exists() || busyboxFile.length() == 0) {
+                try (InputStream in = mActivity.getAssets().open("bin/busybox");
+                     OutputStream out = new FileOutputStream(busyboxFile)) {
+                    byte[] buf = new byte[8192];
+                    int len;
+                    while ((len = in.read(buf)) > 0) out.write(buf, 0, len);
+                }
+                busyboxFile.setExecutable(true, false);
+                busyboxFile.setReadable(true, false);
+
+                try {
+                    Process p = new ProcessBuilder(busyboxFile.getAbsolutePath(), "--install", "-s", binDir.getAbsolutePath()).start();
+                    p.waitFor();
+                } catch (Exception ignored) {}
+            }
+            return busyboxFile;
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to extract busybox: " + e.getMessage());
+            return null;
         }
     }
 
@@ -1301,18 +1358,131 @@ public class WebAppInterface implements TextToSpeech.OnInitListener {
     }
 
     @JavascriptInterface
+    public String getExecutiveEnvironmentStatus() {
+        JSONObject status = new JSONObject();
+        try {
+            ensureBinariesInstalled();
+            File filesDir = mActivity.getFilesDir();
+            File binDir = new File(filesDir, "bin");
+            File busyboxFile = new File(binDir, "busybox");
+
+            boolean shizukuAvail = isShizukuAvailable();
+            boolean shizukuReady = isShizukuReady();
+
+            status.put("shizukuAvailable", shizukuAvail);
+            status.put("shizukuReady", shizukuReady);
+            status.put("shizukuUid", shizukuReady ? 2000 : android.os.Process.myUid());
+            status.put("busyboxAvailable", busyboxFile.exists());
+            status.put("binPath", binDir.getAbsolutePath());
+            status.put("appletCount", 280);
+            status.put("isNetHunterBridgeActive", isNetHunterBridgeOnline());
+            status.put("architecture", System.getProperty("os.arch", "aarch64"));
+        } catch (Exception e) {
+            Log.w(TAG, "Executive status error: " + e.getMessage());
+        }
+        return status.toString();
+    }
+
+    @JavascriptInterface
+    public String executeExecutiveCommand(String cmd) {
+        if (cmd == null || cmd.trim().isEmpty()) return "ERR: empty command";
+        String trimmed = cmd.trim();
+        if (isShizukuReady()) {
+            return runShizukuCommand(trimmed);
+        }
+        // Fallback to local process with BusyBox
+        ensureBinariesInstalled();
+        File filesDir = mActivity.getFilesDir();
+        File binDir = new File(filesDir, "bin");
+        File busyboxFile = new File(binDir, "busybox");
+        try {
+            ProcessBuilder pb;
+            if (busyboxFile.exists()) {
+                pb = new ProcessBuilder(busyboxFile.getAbsolutePath(), "sh", "-c", trimmed);
+            } else {
+                pb = new ProcessBuilder("/system/bin/sh", "-c", trimmed);
+            }
+            pb.directory(filesDir);
+            pb.environment().put("PATH", binDir.getAbsolutePath() + ":/system/bin:/system/xbin");
+            Process p = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            BufferedReader errReader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+            StringBuilder sb = new StringBuilder();
+            String l;
+            int count = 0;
+            while ((l = reader.readLine()) != null && count < 3000) { sb.append(l).append("\n"); count++; }
+            while ((l = errReader.readLine()) != null && count < 1000) { sb.append(l).append("\n"); count++; }
+            p.waitFor();
+            String res = sb.toString().trim();
+            if (!res.isEmpty()) return res;
+            int code = p.exitValue();
+            return code == 0 ? "[Executive process completed (exit code 0)]" : "[Process exited with code " + code + "]";
+        } catch (Exception e) {
+            return "ERR (Executive): " + e.getMessage();
+        }
+    }
+
+    @JavascriptInterface
+    public String inspectSystem(String target) {
+        if (target == null) target = "summary";
+        String t = target.trim().toLowerCase(Locale.US);
+        if (t.equals("battery")) {
+            return runShizukuCommand("dumpsys battery || cat /sys/class/power_supply/battery/capacity");
+        } else if (t.equals("window") || t.equals("screen")) {
+            return runShizukuCommand("dumpsys window displays || dumpsys display");
+        } else if (t.equals("logcat")) {
+            return runShizukuCommand("logcat -d -v time -t 60");
+        } else if (t.equals("packages")) {
+            return runShizukuCommand("pm list packages -3 -f");
+        } else if (t.equals("memory") || t.equals("mem")) {
+            return runShizukuCommand("cat /proc/meminfo || dumpsys meminfo");
+        } else if (t.equals("network") || t.equals("net")) {
+            return runShizukuCommand("ip addr || ifconfig");
+        } else {
+            return runShizukuCommand("uname -a && id && getprop ro.build.version.release");
+        }
+    }
+
+    @JavascriptInterface
+    public String sendScreenInput(String action, String args) {
+        if (action == null) return "ERR: missing action";
+        String act = action.trim().toLowerCase(Locale.US);
+        String safeArgs = args != null ? args.trim() : "";
+        if (act.equals("tap")) {
+            return runShizukuCommand("input tap " + safeArgs);
+        } else if (act.equals("swipe")) {
+            return runShizukuCommand("input swipe " + safeArgs);
+        } else if (act.equals("text")) {
+            return runShizukuCommand("input text " + JSONObject.quote(safeArgs));
+        } else if (act.equals("key") || act.equals("keyevent")) {
+            return runShizukuCommand("input keyevent " + safeArgs);
+        } else if (act.equals("screenshot")) {
+            String path = safeArgs.isEmpty() ? "/sdcard/Download/agentic_screencap.png" : safeArgs;
+            return runShizukuCommand("screencap -p " + path + " && echo 'Screenshot saved to " + path + "'");
+        }
+        return "ERR: unknown screen action " + act;
+    }
+
+    @JavascriptInterface
     public String runShizukuCommand(String cmd) {
         if (cmd == null || cmd.trim().isEmpty()) return "ERR: empty command";
         String trimmed = cmd.trim();
+
+        ensureBinariesInstalled();
+        File filesDir = mActivity.getFilesDir();
+        File binDir = new File(filesDir, "bin");
+        String pathEnv = binDir.getAbsolutePath() + ":/system/bin:/system/xbin";
+        String fullCmd = "export PATH=\"" + binDir.getAbsolutePath() + ":$PATH\"; " + trimmed;
 
         // 1. Try rish execution directly via private files directory
         File rishFile = getRishExecutable();
         if (rishFile != null && rishFile.exists()) {
             Process process = null;
             try {
-                ProcessBuilder pb = new ProcessBuilder("/system/bin/sh", rishFile.getAbsolutePath(), "-c", trimmed);
+                ProcessBuilder pb = new ProcessBuilder("/system/bin/sh", rishFile.getAbsolutePath(), "-c", fullCmd);
                 pb.directory(mActivity.getFilesDir());
                 pb.environment().put("RISH_APPLICATION_ID", mActivity.getPackageName());
+                pb.environment().put("PATH", pathEnv);
                 pb.redirectErrorStream(false);
                 process = pb.start();
 
@@ -1347,11 +1517,11 @@ public class WebAppInterface implements TextToSpeech.OnInitListener {
             }
         }
 
-        // 2. Try Shizuku class reflection if library present
+        // 2. Try Shizuku class reflection or native newProcess if library present
         try {
             Class<?> shizukuClass = Class.forName("rikka.shizuku.Shizuku");
             java.lang.reflect.Method newProcess = shizukuClass.getMethod("newProcess", String[].class, String[].class, String.class);
-            Process process = (Process) newProcess.invoke(null, new String[]{"sh", "-c", trimmed}, null, null);
+            Process process = (Process) newProcess.invoke(null, new String[]{"sh", "-c", fullCmd}, new String[]{"PATH=" + pathEnv}, binDir.getAbsolutePath());
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
             StringBuilder sb = new StringBuilder();
@@ -1374,10 +1544,10 @@ public class WebAppInterface implements TextToSpeech.OnInitListener {
             return res;
         } catch (Throwable ignored) {}
 
-        // 3. Fallback: try NetHunter or local process
+        // 3. Fallback: try NetHunter or local executive process
         String suRes = runSuNetHunterCommand(trimmed);
         if (suRes != null && !suRes.trim().isEmpty()) return suRes;
-        return runLocalProcess(trimmed);
+        return executeExecutiveCommand(trimmed);
     }
 
     @JavascriptInterface
