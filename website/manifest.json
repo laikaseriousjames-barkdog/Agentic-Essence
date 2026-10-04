@@ -1,34 +1,53 @@
 {
-  "name": "Agentic Essence",
-  "short_name": "Agentic",
-  "description": "Autonomous AI, Untethered. Local-first Tri-Agent AI orchestration console with hybrid cloud/local LLM routing.",
-  "version": "2.5.0",
+  "name": "Agentic Essence & Agentic Vox",
+  "short_name": "AgenticSwarm",
+  "description": "Autonomous AI, Untethered. Local-first Tri-Agent AI orchestration console and spatial holographic voice holodeck.",
+  "version": "3.0.0",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0B0C10",
-  "theme_color": "#66FCF1",
+  "background_color": "#060913",
+  "theme_color": "#00f0ff",
   "orientation": "portrait-primary",
-  "categories": ["productivity", "utilities", "developer"],
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities", "developer", "security"],
   "shortcuts": [
     {
-      "name": "Download",
+      "name": "Download Vox",
       "url": "/#download",
-      "description": "Download the app or APK"
+      "description": "Download Agentic Vox APK"
     },
     {
       "name": "Capabilities",
       "url": "/#features",
-      "description": "View all features"
+      "description": "Explore agent capabilities"
     },
     {
       "name": "Agents",
       "url": "/#agents",
-      "description": "Meet the Planner, Builder, and Auditor"
+      "description": "Explore cognitive swarm architecture"
+    },
+    {
+      "name": "Gemini API Key",
+      "url": "/#apikey",
+      "description": "Free Google Gemini API setup guide"
     },
     {
       "name": "Contact",
       "url": "/#contact",
-      "description": "Get in touch"
+      "description": "Get in touch with the maintainers"
     }
   ]
 }

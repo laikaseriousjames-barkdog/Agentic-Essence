@@ -3,160 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Agentic Essence — Release beta. A local-first, hardware-locked Tri-Agent AI orchestration console. Hybrid cloud/local LLM routing, on-device model manager, and a built-in Kali Linux VM pane. No cloud lock-in.">
-    <meta property="og:title" content="Agentic Essence — Autonomous AI, Untethered.">
-    <meta property="og:description" content="Deploy a Tri-Agent AI swarm with hybrid cloud/local routing, a local model manager, and an embedded Kali Linux VM. Your hardware, your swarm.">
+    <title>Agentic Essence &amp; Agentic Vox — Autonomous Voice AI Cyberdeck</title>
+    
+    <!-- SEO & Metadata -->
+    <meta name="description" content="Agentic Essence & Agentic Vox: Local-first, hardware-locked Tri-Agent AI orchestration console and hands-free holographic voice cyberdeck. Hybrid cloud/local LLM routing, on-device GGUF manager, and live Kali NetHunter root. Zero telemetry.">
+    <meta name="keywords" content="Agentic Essence, Agentic Vox, AI Cyberdeck, Voice AI Swarm, Kali NetHunter, Local LLM, Ollama, Google Gemini, Termux, Android APK">
+    <meta name="author" content="Agentic Essence Team">
+    <link rel="canonical" href="https://agentic-essence.com/">
+    
+    <!-- Open Graph / Social Cards -->
+    <meta property="og:title" content="Agentic Essence &amp; Agentic Vox — Autonomous AI, Untethered.">
+    <meta property="og:description" content="Deploy a Tri-Agent AI swarm with hybrid cloud/local routing, 100% hands-free 3D voice holodeck, and embedded Kali Linux NetHunter root console. Your hardware, your swarm.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://agentic-essence.com/">
-    <meta name="theme-color" content="#0B0C10">
+    <meta property="og:image" content="assets/og-banner.jpg">
+    
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Agentic Essence &amp; Agentic Vox — Autonomous AI Cyberdeck">
+    <meta name="twitter:description" content="Deploy a Tri-Agent AI swarm. Hybrid cloud/local routing, 12 3D voice avatars, local model manager, embedded Kali VM.">
+    <meta name="twitter:image" content="assets/og-banner.jpg">
+    
+    <!-- Web App & Theme -->
+    <meta name="theme-color" content="#060913">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Agentic Essence">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Agentic Essence — Autonomous AI, Untethered.">
-    <meta name="twitter:description" content="Deploy a Tri-Agent AI swarm. Hybrid cloud/local routing, local model manager, embedded Kali VM.">
+    
+    <!-- Cache Control -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Agentic Essence &amp; Agentic Vox — Autonomous Voice AI Cyberdeck</title>
+    
+    <!-- Icons & Manifest -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="alternate icon" type="image/png" href="assets/icon-192.png">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="styles.css?v=8.0">
+    
+    <!-- Fonts & Stylesheet -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;0,800;1,400&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=9.0">
 </head>
 <body>
 
-    <!-- NAV -->
+    <!-- TOP ANNOUNCEMENT BANNER -->
+    <div class="top-banner">
+        <span>⚡ <strong>v3.0.0 Cyberdeck &amp; Agentic Vox Voice Edition Released</strong> — Universal Android &amp; Windows Desktop</span>
+        <a href="#download">Explore Downloads &rarr;</a>
+    </div>
+
+    <!-- MAIN NAVIGATION -->
     <nav>
         <div class="nav-inner">
-            <a href="#" class="logo-link">
+            <a href="#" class="logo-link" aria-label="Agentic Essence Home">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" height="36" style="border-radius:8px;flex-shrink:0;">
-                  <rect width="500" height="500" fill="#0B0C10"/>
-                  <polygon points="250,40 460,150 460,350 250,460 40,350 40,150" fill="none" stroke="#45A29E" stroke-width="6" stroke-opacity="0.4"/>
-                  <path d="M 250 100 L 400 400 L 320 400 L 250 250 L 180 400 L 100 400 Z" fill="#66FCF1"/>
-                  <circle cx="250" cy="250" r="30" fill="#1F2833"/>
-                  <circle cx="250" cy="250" r="15" fill="#66FCF1"/>
-                  <line x1="250" y1="100" x2="250" y2="220" stroke="#1F2833" stroke-width="8"/>
-                  <line x1="250" y1="40" x2="250" y2="100" stroke="#66FCF1" stroke-width="8"/>
+                  <defs>
+                    <linearGradient id="navLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#00f0ff"/>
+                      <stop offset="100%" stop-color="#ff007f"/>
+                    </linearGradient>
+                  </defs>
+                  <rect width="500" height="500" fill="#060913"/>
+                  <polygon points="250,40 460,150 460,350 250,460 40,350 40,150" fill="none" stroke="#00f0ff" stroke-width="8" stroke-opacity="0.4"/>
+                  <path d="M 250 95 L 405 405 L 320 405 L 250 255 L 180 405 L 95 405 Z" fill="url(#navLogoGrad)"/>
+                  <circle cx="250" cy="255" r="30" fill="#0d1426"/>
+                  <circle cx="250" cy="255" r="15" fill="#00f0ff"/>
+                  <line x1="250" y1="95" x2="250" y2="223" stroke="#0d1426" stroke-width="8"/>
+                  <line x1="250" y1="40" x2="250" y2="95" stroke="#00f0ff" stroke-width="8"/>
                 </svg>
                 <span class="logo">agentic_essence<span class="dim">//</span></span>
             </a>
-            <button class="nav-hamburger" aria-label="Toggle menu" onclick="toggleMenu()">
+            
+            <button class="nav-hamburger" id="navHamburger" aria-label="Toggle navigation menu" onclick="toggleMenu()">
                 <span></span><span></span><span></span>
             </button>
+            
             <div class="nav-links" id="nav-menu">
                 <a href="#agents">Agents</a>
+                <a href="#demo">Live Showcase</a>
                 <a href="#features">Capabilities</a>
-                <a href="#demo">Demo</a>
                 <a href="#download">All Downloads</a>
                 <a href="#apikey" style="color:#10b981; font-weight:600;">Free Gemini Key 🔑</a>
-                <a href="downloads/AgenticVox-Android.apk" download class="nav-cta" style="background: linear-gradient(135deg, #ff007f 0%, #8b00ff 100%);">Download Voice APK 🎙️</a>
+                <a href="#quickstart">Quick Start</a>
+                <a href="#faq">FAQ</a>
+                <a href="downloads/AgenticVox-Android.apk" download class="nav-cta">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                    Download Voice APK 🎙️
+                </a>
             </div>
         </div>
     </nav>
 
-    <!-- HERO -->
-    <header class="hero">
-        <div class="hero-bg"></div>
-        <div class="hero-grid-overlay"></div>
+    <!-- HERO HEADER -->
+    <header class="hero" id="top">
         <div class="hero-content">
-            <span class="badge" style="background: rgba(255, 0, 127, 0.15); border: 1px solid rgba(255, 0, 127, 0.4); color: #ff007f;">
-                <span class="badge-dot" style="background: #ff007f;"></span>
+            <div class="badge">
+                <span class="badge-dot"></span>
                 ⚡ NEW: Agentic Vox Voice Edition Released — 100% Hands-Free AI Swarm
-            </span>
-            <h1>Autonomous AI,<br><span class="accent">Untethered.</span></h1>
-            <p class="hero-sub">Agentic Essence is an elite local-first Autonomous AI Cyberdeck suite. Experience <strong>Agentic Vox</strong>—our 100% hands-free holographic voice holodeck with 12 physical 3D avatars, real-time lip-sync, and tasks spawned out of thin air—or deploy the <strong>Android Cyberdeck</strong> orchestration console connected to live Kali NetHunter root. <strong>Your hardware, your swarm.</strong></p>
-            <div class="hero-stats">
-                <div class="stat"><span class="stat-num" style="color:#ff007f;">12</span><span class="stat-label">Holo Personas</span></div>
-                <div class="stat-divider"></div>
-                <div class="stat"><span class="stat-num">Voice</span><span class="stat-label">100% Hands-Free</span></div>
-                <div class="stat-divider"></div>
-                <div class="stat"><span class="stat-num">Free</span><span class="stat-label">Google Gemini API</span></div>
-                <div class="stat-divider"></div>
-                <div class="stat"><span class="stat-num">Root</span><span class="stat-label">Kali NetHunter</span></div>
             </div>
-            <div class="hero-actions" style="flex-wrap: wrap; gap: 12px; justify-content: center;">
-                <a href="downloads/AgenticVox-Android.apk" class="btn-primary" download style="background: linear-gradient(135deg, #ff007f 0%, #8b00ff 100%); box-shadow: 0 10px 30px rgba(255,0,127,0.35); text-decoration: none;">
+            
+            <h1>Autonomous AI,<br><span class="gradient-text">Untethered.</span></h1>
+            
+            <p class="hero-sub">
+                Agentic Essence is an elite local-first Autonomous AI Cyberdeck suite. Experience <strong>Agentic Vox</strong>—our 100% hands-free holographic voice holodeck with 12 physical 3D avatars, real-time lip-sync, and tasks spawned out of thin air—or deploy the <strong>Android Cyberdeck</strong> orchestration console connected to live Kali NetHunter root. <strong>Your hardware, your swarm.</strong>
+            </p>
+            
+            <div class="hero-stats">
+                <div class="stat">
+                    <span class="stat-num" style="color:#ff007f;">12</span>
+                    <span class="stat-label">Holo Personas</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat">
+                    <span class="stat-num">Voice</span>
+                    <span class="stat-label">100% Hands-Free</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat">
+                    <span class="stat-num" style="color:#10b981;">Free</span>
+                    <span class="stat-label">Google Gemini API</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat">
+                    <span class="stat-num">Root</span>
+                    <span class="stat-label">Kali NetHunter</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat">
+                    <span class="stat-num" style="color:#00f0ff;">v3.0</span>
+                    <span class="stat-label">Windows PC</span>
+                </div>
+            </div>
+            
+            <div class="hero-actions">
+                <a href="downloads/AgenticVox-Android.apk" class="btn-primary btn-vox" download>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
                     Download Agentic Vox (Voice APK)
                 </a>
-                <a href="downloads/AgenticEssence-Android.apk" class="btn-secondary" download style="text-decoration: none;">
+                
+                <a href="downloads/AgenticEssence-Android.apk" class="btn-secondary" download>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.34a1 1 0 1 1-.002-2 1 1 0 0 1 .002 2m-11.046 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2m11.4-6.02 1.997-3.46a.417.417 0 0 0-.152-.567.416.416 0 0 0-.566.152l-2.023 3.505a12.51 12.51 0 0 0-5.133-1.08c-1.83 0-3.56.39-5.132 1.08L4.845 5.445a.416.416 0 0 0-.567-.152.417.417 0 0 0-.152.567l1.997 3.46C2.938 11.06.988 14.5.63 18.5h22.74c-.358-4-2.308-7.44-5.493-9.18"/></svg>
                     Download Cyberdeck APK
                 </a>
-                <a href="https://github.com/laikaseriousjames-barkdog/Agentic-Essence/releases/download/v3.0.0/Agentic-Essence-Desktop-Setup.exe" class="btn-secondary" download style="border-color: rgba(255,255,255,0.15); text-decoration: none;">
+                
+                <a href="https://github.com/laikaseriousjames-barkdog/Agentic-Essence/releases/download/v3.0.0/Agentic-Essence-Desktop-Setup.exe" class="btn-secondary" download>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
                     Windows PC App (v3.0)
                 </a>
             </div>
-            <p class="hero-note" style="margin-top: 1rem;">✓ Free to download &nbsp;·&nbsp; <a href="#apikey" style="color:#00f0ff; text-decoration:underline;">Need a free Google Gemini key? Read setup guide ↓</a></p>
-        </div>
-        <div class="hero-scroll-hint">
-            <span>Scroll</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            
+            <div class="hero-note">
+                <span>✓ 100% Free Forever</span>
+                <span>&bull;</span>
+                <span>Zero Telemetry</span>
+                <span>&bull;</span>
+                <span>Offline GGUF &amp; Ollama</span>
+                <span>&bull;</span>
+                <a href="#apikey" style="color:var(--accent); text-decoration:underline;">Need a free Google Gemini key? Read setup guide ↓</a>
+            </div>
+            
+            <div class="hero-scroll-hint">
+                <span>Explore Swarm</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
         </div>
     </header>
 
-    <!-- AGENTS -->
-    <section class="agents-section" id="agents">
+    <!-- INTERACTIVE SHOWCASE & DEMO SECTION -->
+    <section class="showcase-section" id="demo">
         <div class="section-header">
-            <span class="section-tag">Cognitive Architecture</span>
-            <h2>Four Specialized Personas.<br><span class="accent">One Orchestrated Mind.</span></h2>
-            <p>Stop relying on single-threaded chatbots. Agentic Essence routes complex operations across four distinct cognitive philosophies, each running with real hardware telemetry and live tool synthesis.</p>
-        </div>
-        <div class="agents-grid">
-            <div class="agent-card commander">
-                <div class="agent-num">01</div>
-                <div class="agent-icon-wrap">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-                </div>
-                <div class="agent-role">Quantum Neural Core</div>
-                <h3>Agentic Swarm</h3>
-                <p>The operational backbone. Swarm executes asynchronous telemetry streaming, multi-step terminal workflows, and hardware diagnostics via the live NetHunter root daemon.</p>
-                <div class="agent-tag">Async Telemetry · Shell Execution · NetHunter Root</div>
-            </div>
-            <div class="agent-card developer">
-                <div class="agent-num">02</div>
-                <div class="agent-icon-wrap">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                </div>
-                <div class="agent-role">Algorithmic Logic</div>
-                <h3>Alan Turing</h3>
-                <p>The mathematical formalizer. Turing evaluates synthesized widgets via a deterministic Directed Acyclic Graph (DAG) state machine, eliminating cyclic locks and verifying sandbox integrity.</p>
-                <div class="agent-tag">Deterministic DAG · AST Sandbox · Cycle Elimination</div>
-            </div>
-            <div class="agent-card tester">
-                <div class="agent-num">03</div>
-                <div class="agent-icon-wrap">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
-                </div>
-                <div class="agent-role">Systems &amp; Algorithms</div>
-                <h3>Donald Knuth</h3>
-                <p>The data structure architect. Knuth drives our in-memory Trie prefix search and O(1) LRU tool cache, eliminating NAND flash latency spikes and optimizing ARM memory footprint.</p>
-                <div class="agent-tag">Trie Prefix Search · O(1) LRU Cache · ARM Memory Tuning</div>
-            </div>
-            <div class="agent-card" style="border-top: 3px solid var(--neon-emerald, #00ff88);">
-                <div class="agent-num">04</div>
-                <div class="agent-icon-wrap">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                </div>
-                <div class="agent-role">Poetic Science</div>
-                <h3>Ada Lovelace</h3>
-                <p>The sensory experience visionary. Lovelace unifies human intuition with machine telemetry, weaving harmonic visual pulses and rhythmic haptic motifs across the cyberdeck canvas.</p>
-                <div class="agent-tag">Sensory Reactive HUD · Haptic Harmony · Responsive UI</div>
-            </div>
-        </div>
-    </section>
-
-    <!-- DEMO / TERMINAL -->
-    <section class="demo-section" id="demo">
-        <div class="section-header">
-            <span class="section-tag">In Action</span>
+            <span class="section-tag">Interactive Cockpit</span>
             <h2>Hybrid Routing &amp; <span class="accent">Kali VM Orchestration</span></h2>
-            <p>Watch the swarm route between cloud and local models, spin up on-device inference, and reach into the Kali Linux VM — live.</p>
+            <p>Experience the multi-agent console in real-time. Switch between the live interactive cyber terminal, high-definition promo reels, and the 12-persona voice hologram matrix.</p>
         </div>
+
+        <div class="showcase-tabs">
+            <button class="tab-btn active" onclick="switchShowcaseTab('terminal-pane', this)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                Live Interactive Terminal
+            </button>
+            <button class="tab-btn" onclick="switchShowcaseTab('vox-video-pane', this)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                Agentic Vox Voice Showcase
+            </button>
+            <button class="tab-btn" onclick="switchShowcaseTab('cyber-video-pane', this)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 16 21 12 17"/></svg>
+                Cyberdeck &amp; Kali NetHunter
+            </button>
+            <button class="tab-btn" onclick="switchShowcaseTab('personas-pane', this)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                12 Persona Matrix
+            </button>
+        </div>
+
         <div class="hardware-frame">
             <div class="screen-header">
                 <div class="window-controls">
@@ -164,11 +207,350 @@
                     <span class="dot yellow"></span>
                     <span class="dot green"></span>
                 </div>
-                <span class="window-title">agentic_essence — Hybrid LLM &amp; Kali VM Console</span>
-                <span class="window-status"><span class="status-dot"></span> LIVE</span>
+                <span class="window-title" id="screenTitle">agentic_essence — Hybrid LLM &amp; Kali VM Console</span>
+                <span class="window-status"><span class="status-dot"></span> LIVE ENGINE</span>
             </div>
-            <div class="screen-body">
-                <div class="terminal-fallback" id="terminal"></div>
+
+            <!-- PANE 1: TERMINAL -->
+            <div class="tab-pane active" id="terminal-pane">
+                <div class="terminal-wrapper">
+                    <div class="terminal-actions-bar">
+                        <div class="terminal-quick-cmds">
+                            <span style="color:var(--text-dim); margin-right:4px;">Quick Directives:</span>
+                            <button class="term-chip" onclick="injectTermCommand('/status')">/status</button>
+                            <button class="term-chip" onclick="injectTermCommand('/scan --rf')">/scan --rf</button>
+                            <button class="term-chip" onclick="injectTermCommand('/vm-connect &quot;Kali-Root&quot;')">/vm-connect</button>
+                            <button class="term-chip" onclick="injectTermCommand('/synth &quot;Wi-Fi Auditor&quot;')">/synth &quot;Wi-Fi&quot;</button>
+                            <button class="term-chip" onclick="injectTermCommand('/api/system/hot-reload')">/hot-reload</button>
+                        </div>
+                        <div class="term-ctrls">
+                            <button class="term-ctrl-btn" id="termToggleBtn" onclick="toggleTerminalPlayback()">⏸ Pause</button>
+                            <button class="term-ctrl-btn" onclick="restartTerminal()">↺ Restart</button>
+                            <button class="term-ctrl-btn" onclick="copyTerminalText()">📋 Copy</button>
+                        </div>
+                    </div>
+                    <div class="terminal-fallback" id="terminal"></div>
+                </div>
+            </div>
+
+            <!-- PANE 2: AGENTIC VOX VIDEO SHOWCASE -->
+            <div class="tab-pane" id="vox-video-pane">
+                <div class="media-showcase-grid">
+                    <div class="media-player-box">
+                        <video controls poster="assets/vox-preview.jpg" preload="metadata">
+                            <source src="assets/AgenticVoxPromo.mp4" type="video/mp4">
+                            Your browser does not support HTML5 video.
+                        </video>
+                    </div>
+                    <div class="media-info">
+                        <span class="section-tag" style="background:rgba(255,0,127,0.12); color:#ff007f; border-color:rgba(255,0,127,0.4);">Spatial Holodeck</span>
+                        <h3>Agentic Vox Voice Hologram</h3>
+                        <p>A breakthrough voice-first architecture designed for completely hands-free physical AI collaboration. No buttons, no chat textboxes, and instant acoustic turn-taking.</p>
+                        <ul class="media-features">
+                            <li>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                12 Physical 3D Persona Avatars with real-time lip-synchronization
+                            </li>
+                            <li>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                Continuous acoustic microphone listener with instant barge-in interruption
+                            </li>
+                            <li>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                Spawns floating 3D tactical cyber widgets (Port Scanners, Hashes, MITRE)
+                            </li>
+                            <li>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                Native Android Speech Recognizer + Neural TTS fallback
+                            </li>
+                        </ul>
+                        <div class="audio-preview-card">
+                            <div class="audio-info">
+                                <button class="audio-play-btn" id="voxAudioBtn" onclick="toggleAudioPreview('assets/vox_tts.mp3', 'voxAudioBtn')">▶</button>
+                                <div>
+                                    <div style="font-weight:700; font-size:0.92rem;">Listen to Agentic Vox Persona Audio</div>
+                                    <div style="font-size:0.75rem; color:var(--text-dim);" id="voxAudioStatus">Sample voice preview &bull; 0:03</div>
+                                </div>
+                            </div>
+                            <span class="term-chip" style="color:#ff007f; border-color:rgba(255,0,127,0.4);">Aria Neural Voice</span>
+                        </div>
+                        <div style="margin-top:1.5rem;">
+                            <a href="downloads/AgenticVox-Android.apk" class="btn-primary btn-vox" download style="text-decoration:none;">
+                                Download Agentic Vox APK (Free)
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANE 3: CYBERDECK VIDEO SHOWCASE -->
+            <div class="tab-pane" id="cyber-video-pane">
+                <div class="media-showcase-grid">
+                    <div class="media-player-box">
+                        <video controls poster="assets/cyberdeck-preview.jpg" preload="metadata">
+                            <source src="assets/AgenticEssencePromo.mp4" type="video/mp4">
+                            Your browser does not support HTML5 video.
+                        </video>
+                    </div>
+                    <div class="media-info">
+                        <span class="section-tag">Low-Level Hardware Root</span>
+                        <h3>Android Cyberdeck &amp; NetHunter Bridge</h3>
+                        <p>The definitive tactical command center. Bridges modern browser UI with local Termux subshells, Kali NetHunter root environments, and hardware radio peripherals.</p>
+                        <ul class="media-features">
+                            <li>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                Direct <code>nh -r</code> NetHunter and <code>su</code> privilege elevation
+                            </li>
+                            <li>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                On-demand tool synthesis: generate self-contained JS tools on the fly
+                            </li>
+                            <li>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                Hardware APIs: 802.11 RF Wi-Fi discovery, camera torch, haptics, battery
+                            </li>
+                            <li>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                Direct Ollama routing on 127.0.0.1:11434 with candidate model fallback
+                            </li>
+                        </ul>
+                        <div class="audio-preview-card">
+                            <div class="audio-info">
+                                <button class="audio-play-btn" id="cyberAudioBtn" onclick="toggleAudioPreview('assets/cyber_tts.mp3', 'cyberAudioBtn')" style="background:linear-gradient(135deg, #00f0ff, #0077ff);">▶</button>
+                                <div>
+                                    <div style="font-weight:700; font-size:0.92rem;">Listen to Cyberdeck Telemetry Broadcast</div>
+                                    <div style="font-size:0.75rem; color:var(--text-dim);" id="cyberAudioStatus">Synthesized voice telemetry &bull; 0:03</div>
+                                </div>
+                            </div>
+                            <span class="term-chip">Root Telemetry</span>
+                        </div>
+                        <div style="margin-top:1.5rem;">
+                            <a href="downloads/AgenticEssence-Android.apk" class="btn-primary" download style="text-decoration:none;">
+                                Download Cyberdeck APK (Free)
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANE 4: 12 PERSONA MATRIX -->
+            <div class="tab-pane" id="personas-pane">
+                <div class="personas-grid">
+                    <div class="persona-card">
+                        <div class="persona-header">
+                            <div class="persona-avatar-icon">⚡</div>
+                            <div>
+                                <h4>Agentic Swarm</h4>
+                                <div class="persona-badge">Prime Core</div>
+                            </div>
+                        </div>
+                        <p class="persona-desc">Asynchronous telemetry coordinator. Manages multi-stage task queues and hardware execution.</p>
+                    </div>
+                    <div class="persona-card">
+                        <div class="persona-header">
+                            <div class="persona-avatar-icon" style="color:var(--emerald); background:rgba(16,185,129,0.1);">📐</div>
+                            <div>
+                                <h4>Alan Turing</h4>
+                                <div class="persona-badge">Logic &amp; DAG</div>
+                            </div>
+                        </div>
+                        <p class="persona-desc">Deterministic Directed Acyclic Graph evaluator. Verifies state transitions and eliminates cyclic locks.</p>
+                    </div>
+                    <div class="persona-card">
+                        <div class="persona-header">
+                            <div class="persona-avatar-icon" style="color:var(--purple); background:rgba(139,92,246,0.1);">📚</div>
+                            <div>
+                                <h4>Donald Knuth</h4>
+                                <div class="persona-badge">Data Architect</div>
+                            </div>
+                        </div>
+                        <p class="persona-desc">Trie prefix search and O(1) LRU tool cache engine. Eliminates latency spikes on flash memory.</p>
+                    </div>
+                    <div class="persona-card">
+                        <div class="persona-header">
+                            <div class="persona-avatar-icon" style="color:var(--magenta); background:rgba(255,0,127,0.1);">✨</div>
+                            <div>
+                                <h4>Ada Lovelace</h4>
+                                <div class="persona-badge">Sensory Science</div>
+                            </div>
+                        </div>
+                        <p class="persona-desc">Harmonic visual pulses, tactile haptic feedback, and natural conversational cadence.</p>
+                    </div>
+                    <div class="persona-card">
+                        <div class="persona-header">
+                            <div class="persona-avatar-icon">🎙️</div>
+                            <div>
+                                <h4>Vox Prime</h4>
+                                <div class="persona-badge">Voice Holodeck</div>
+                            </div>
+                        </div>
+                        <p class="persona-desc">Acoustic turn-taking controller with 100% hands-free conversational barge-in.</p>
+                    </div>
+                    <div class="persona-card">
+                        <div class="persona-header">
+                            <div class="persona-avatar-icon" style="color:#ef4444; background:rgba(239,68,68,0.1);">⚔️</div>
+                            <div>
+                                <h4>Cyber Valkyrie</h4>
+                                <div class="persona-badge">Offensive Ops</div>
+                            </div>
+                        </div>
+                        <p class="persona-desc">NetHunter penetration testing runner, automated nmap reconnaissance, and payload auditor.</p>
+                    </div>
+                    <div class="persona-card">
+                        <div class="persona-header">
+                            <div class="persona-avatar-icon" style="color:#00f0ff;">🛡️</div>
+                            <div>
+                                <h4>Sentinel</h4>
+                                <div class="persona-badge">Defensive Shield</div>
+                            </div>
+                        </div>
+                        <p class="persona-desc">Real-time local traffic monitoring, host anomaly scoring, and sandbox quarantine guard.</p>
+                    </div>
+                    <div class="persona-card">
+                        <div class="persona-header">
+                            <div class="persona-avatar-icon" style="color:#f59e0b; background:rgba(245,158,11,0.1);">🔑</div>
+                            <div>
+                                <h4>Cipher</h4>
+                                <div class="persona-badge">Cryptography</div>
+                            </div>
+                        </div>
+                        <p class="persona-desc">Zero-knowledge offline license validation, asymmetric SHA-256 verification, and key vault.</p>
+                    </div>
+                    <div class="persona-card">
+                        <div class="persona-header">
+                            <div class="persona-avatar-icon" style="color:#94a3b8;">👻</div>
+                            <div>
+                                <h4>Phantom</h4>
+                                <div class="persona-badge">Stealth Monitor</div>
+                            </div>
+                        </div>
+                        <p class="persona-desc">Ultra low-overhead telemetry polling with background power optimizations.</p>
+                    </div>
+                    <div class="persona-card">
+                        <div class="persona-header">
+                            <div class="persona-avatar-icon" style="color:#a855f7; background:rgba(168,85,247,0.1);">🔮</div>
+                            <div>
+                                <h4>Oracle</h4>
+                                <div class="persona-badge">Predictive Synthesis</div>
+                            </div>
+                        </div>
+                        <p class="persona-desc">Anticipates operator next-step needs and dynamically synthesizes sandbox widgets.</p>
+                    </div>
+                    <div class="persona-card">
+                        <div class="persona-header">
+                            <div class="persona-avatar-icon" style="color:#06b6d4;">📡</div>
+                            <div>
+                                <h4>Nova</h4>
+                                <div class="persona-badge">RF Spectrum</div>
+                            </div>
+                        </div>
+                        <p class="persona-desc">802.11 Wi-Fi channel analyzer, Bluetooth beacon discovery, and radio telemetry parsing.</p>
+                    </div>
+                    <div class="persona-card">
+                        <div class="persona-header">
+                            <div class="persona-avatar-icon" style="color:#10b981;">🐉</div>
+                            <div>
+                                <h4>Aegis</h4>
+                                <div class="persona-badge">Root Guardian</div>
+                            </div>
+                        </div>
+                        <p class="persona-desc">Superuser privilege mediator, enforcing least-privilege containment across subshells.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- COGNITIVE ARCHITECTURE (AGENTS) -->
+    <section class="agents-section" id="agents">
+        <div class="section-header">
+            <span class="section-tag">Cognitive Architecture</span>
+            <h2>Four Specialized Personas.<br><span class="accent">One Orchestrated Mind.</span></h2>
+            <p>Stop relying on single-threaded chatbots. Agentic Essence routes complex operations across four distinct cognitive philosophies, each running with real hardware telemetry and live tool synthesis.</p>
+        </div>
+
+        <div class="agents-grid">
+            <div class="agent-card commander">
+                <div class="agent-num">01 // QUANTUM CORE</div>
+                <div class="agent-icon-wrap">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                </div>
+                <div class="agent-role">Quantum Neural Core</div>
+                <h3>Agentic Swarm</h3>
+                <p>The operational backbone. Swarm executes asynchronous telemetry streaming, multi-step terminal workflows, and hardware diagnostics via the live NetHunter root daemon.</p>
+                <span class="agent-tag">Async Telemetry &bull; Shell Execution &bull; NetHunter Root</span>
+            </div>
+
+            <div class="agent-card developer">
+                <div class="agent-num">02 // ALGORITHMIC LOGIC</div>
+                <div class="agent-icon-wrap">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                </div>
+                <div class="agent-role">Algorithmic Logic</div>
+                <h3>Alan Turing</h3>
+                <p>The mathematical formalizer. Turing evaluates synthesized widgets via a deterministic Directed Acyclic Graph (DAG) state machine, eliminating cyclic locks and verifying sandbox integrity.</p>
+                <span class="agent-tag">Deterministic DAG &bull; AST Sandbox &bull; Cycle Elimination</span>
+            </div>
+
+            <div class="agent-card tester">
+                <div class="agent-num">03 // SYSTEMS &amp; CACHE</div>
+                <div class="agent-icon-wrap">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
+                </div>
+                <div class="agent-role">Systems &amp; Algorithms</div>
+                <h3>Donald Knuth</h3>
+                <p>The data structure architect. Knuth drives our in-memory Trie prefix search and O(1) LRU tool cache, eliminating NAND flash latency spikes and optimizing ARM memory footprint.</p>
+                <span class="agent-tag">Trie Prefix Search &bull; O(1) LRU Cache &bull; ARM Memory Tuning</span>
+            </div>
+
+            <div class="agent-card visionary">
+                <div class="agent-num">04 // SENSORY HUD</div>
+                <div class="agent-icon-wrap">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                </div>
+                <div class="agent-role">Poetic Science</div>
+                <h3>Ada Lovelace</h3>
+                <p>The sensory experience visionary. Lovelace unifies human intuition with machine telemetry, weaving harmonic visual pulses and rhythmic haptic motifs across the cyberdeck canvas.</p>
+                <span class="agent-tag">Sensory Reactive HUD &bull; Haptic Harmony &bull; Responsive UI</span>
+            </div>
+        </div>
+
+        <!-- VISUAL SWARM ARCHITECTURE FLOW -->
+        <div class="architecture-flow">
+            <div class="flow-diagram-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Autonomous Swarm Consensus &amp; Hardware Bridge Pipeline
+            </div>
+            <div class="flow-steps">
+                <div class="flow-node">
+                    <div class="node-step">01. INGESTION</div>
+                    <h5>Operator Directive</h5>
+                    <p>Natural voice acoustic wave or terminal prompt received</p>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-node">
+                    <div class="node-step">02. DECOMPOSITION</div>
+                    <h5>Swarm Core</h5>
+                    <p>Recursive DAG planning &amp; candidate model selection</p>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-node">
+                    <div class="node-step">03. VERIFICATION</div>
+                    <h5>Turing &amp; Knuth</h5>
+                    <p>AST sandbox checks, memory triage &amp; O(1) LRU lookup</p>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-node">
+                    <div class="node-step">04. HARDWARE RUN</div>
+                    <h5>NetHunter Root</h5>
+                    <p>Low-level root daemon or local GGUF offline execution</p>
+                </div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-node">
+                    <div class="node-step">05. FEEDBACK</div>
+                    <h5>Lovelace HUD</h5>
+                    <p>Dynamic 3D lip-sync, haptics &amp; widget materialize</p>
+                </div>
             </div>
         </div>
     </section>
@@ -180,60 +562,81 @@
             <h2>Unprecedented <span class="accent">Agent Control.</span></h2>
             <p>Everything you need to run a coordinated, self-contained AI swarm at the edge of what local software can do.</p>
         </div>
+
         <div class="props-grid">
             <div class="prop-card">
                 <div class="prop-icon">⚡</div>
                 <h3>Hybrid Cloud/Local LLM Routing</h3>
-                <p>Each agent is smartly routed to its own model. Blend premium cloud models with fully on-device inference, switching seamlessly as your needs change.</p>
+                <p>Each agent is smartly routed to its own model. Blend premium cloud models (Google Gemini 2.5 / 2.0 Flash) with fully on-device local inference (Ollama / GGUF), switching seamlessly without interruption.</p>
             </div>
+
             <div class="prop-card">
                 <div class="prop-icon">🔽</div>
                 <h3>On-Device Model Manager</h3>
-                <p>Download, verify (SHA-256), load, swap, and delete local GGUF models from inside the app. Run the entire swarm offline once models are in place.</p>
+                <p>Download, verify (SHA-256), load, swap, and delete local GGUF models from inside the app. Run the entire swarm offline once models are in place with zero internet dependencies.</p>
             </div>
+
             <div class="prop-card">
                 <div class="prop-icon">🐉</div>
                 <h3>Embedded Kali Linux VM Pane</h3>
-                <p>A built-in noVNC pane drops you straight into a Kali Linux VM — reconnaissance, tool-building, and testing without ever leaving the console.</p>
+                <p>A built-in headless Kali Linux VM console and noVNC pane drop you straight into reconnaissance, tool-building, and penetration testing without ever leaving the cyberdeck cockpit.</p>
             </div>
+
             <div class="prop-card">
                 <div class="prop-icon">🔄</div>
                 <h3>Self-Evolving Hot Reload</h3>
-                <p>The engine can restart its own backend and reload its UI on the fly — a hot-reload loop that lets the swarm reshape and refine itself continuously.</p>
+                <p>The engine can restart its own backend and reload its UI on the fly—a continuous hot-reload loop that lets the swarm inspect, reshape, and refine itself during live operations.</p>
             </div>
+
             <div class="prop-card">
                 <div class="prop-icon">🔐</div>
                 <h3>Zero-Trust Cryptographic Licensing</h3>
-                <p>Offline HWID locking backed by asymmetric key validation. One license key. Your deployment stays private and uncloneable.</p>
+                <p>Offline HWID locking backed by asymmetric cryptographic key validation. One perpetual license key. Your deployment stays completely private, tamper-proof, and uncloneable.</p>
             </div>
+
             <div class="prop-card">
                 <div class="prop-icon">📡</div>
                 <h3>No Cloud lock-in. Yours Forever.</h3>
-                <p>A local-first design. No telemetry, no rate limits, no subscriptions. Your prompts and your data stay on your machine.</p>
+                <p>A strict local-first design. Zero telemetry tracking, no analytics cookies, no hidden proxies, no subscriptions. Your prompts, keys, and session logs never leave your hardware.</p>
             </div>
         </div>
     </section>
 
-    <!-- DOWNLOAD -->
+    <!-- DEPLOYMENT & DOWNLOADS HUB -->
     <section class="pricing" id="download">
         <div class="section-header">
-            <span class="section-tag">Deploy</span>
+            <span class="section-tag">Deploy &amp; Launch</span>
             <h2>Download Free &amp; <span class="accent">Deploy Instantly.</span></h2>
             <p>100% free, local-first cyberdeck intelligence. Choose your platform below and launch in seconds.</p>
         </div>
+
+        <!-- Filter Pills -->
+        <div class="platform-filter-bar">
+            <button class="tab-btn active" onclick="filterDownloads('all', this)">All Platforms (3)</button>
+            <button class="tab-btn" onclick="filterDownloads('android', this)">Android Mobile</button>
+            <button class="tab-btn" onclick="filterDownloads('windows', this)">Windows PC Desktop</button>
+        </div>
+
         <div class="pricing-grid">
             <!-- CARD 1: AGENTIC VOX (VOICE EDITION) -->
-            <div class="pricing-card android-card featured" style="border-top: 3px solid var(--neon-magenta, #ff007f); box-shadow: 0 10px 40px rgba(255,0,127,0.22); position: relative;">
-                <div class="featured-badge" style="background: linear-gradient(135deg, #ff007f, #8b00ff); color: #fff; font-weight: 700; letter-spacing: 0.05em;">⚡ FEATURED — 100% HANDS-FREE VOICE EDITION</div>
-                <div class="pricing-card-header" style="margin-top: 0.5rem; display: flex; align-items: center; gap: 14px;">
-                    <img src="vox-logo.png" alt="Agentic Vox Logo" style="width: 52px; height: 52px; border-radius: 12px; box-shadow: 0 0 16px rgba(255,0,127,0.5); flex-shrink: 0;" />
+            <div class="pricing-card android-card featured" data-platform="android">
+                <div class="featured-badge">⚡ FEATURED — 100% HANDS-FREE VOICE EDITION</div>
+                
+                <div class="pricing-card-header" style="display:flex; align-items:center; gap:14px; margin-top:0.6rem;">
+                    <img src="vox-logo.png" alt="Agentic Vox Logo" style="width:54px; height:54px; border-radius:12px; box-shadow:0 0 16px rgba(255,0,127,0.5); flex-shrink:0;" />
                     <div>
-                        <h3 style="margin: 0;">Agentic Vox</h3>
-                        <div class="price" style="color: #ff007f;">Free</div>
+                        <h3 style="margin:0;">Agentic Vox</h3>
+                        <div class="price" style="color:#ff007f;">Free</div>
                         <div class="price-note">Spatial Holographic Voice Swarm &amp; Cyberdeck</div>
                     </div>
                 </div>
+
+                <div class="card-meta-pill" style="color:#ff007f; border-color:rgba(255,0,127,0.3); background:rgba(255,0,127,0.06);">
+                    APK &bull; ~280 KB &bull; Android 5.0 to 15+
+                </div>
+
                 <p class="card-desc">The standalone voice-controlled spatial holographic edition of Agentic Essence. 100% hands-free conversational turn-taking, 12 physical 3D persona avatars with dynamic lip-sync, zero chat boxes, and tactical cyber tools materialized out of thin air.</p>
+                
                 <ul>
                     <li><strong>100% voice-first turn-taking</strong> &amp; continuous acoustic listener</li>
                     <li><strong>12 persona avatars</strong> with 3D physical rendering &amp; dynamic lip-sync</li>
@@ -244,23 +647,36 @@
                     <li>Zero chat boxes or typing required — pure spatial holographic cockpit</li>
                     <li>Signed Android APK (Universal Android 5.0 to 15+)</li>
                 </ul>
-                <a href="downloads/AgenticVox-Android.apk" class="btn-primary" download style="background:linear-gradient(135deg, #ff007f 0%, #8b00ff 100%); font-weight: 700; font-size: 1.05rem; padding: 0.85rem 1.5rem; text-decoration: none; box-shadow: 0 8px 25px rgba(255,0,127,0.4);">
+
+                <a href="downloads/AgenticVox-Android.apk" class="btn-primary btn-vox" download>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
                     Download Agentic Vox APK
                 </a>
-                <div style="margin-top: 12px; text-align: center;">
+
+                <div class="checksum-box">
+                    <span class="checksum-text" title="ef67c447aedfabd25c94d1135504629290f9af75e91fa753ed6e6d66807039ac">SHA-256: ef67c447...39ac</span>
+                    <button class="copy-btn" onclick="copyToClipboard('ef67c447aedfabd25c94d1135504629290f9af75e91fa753ed6e6d66807039ac', 'Agentic Vox SHA-256')">Copy</button>
+                </div>
+
+                <div style="margin-top: 10px; text-align: center;">
                     <a href="#apikey" style="color: #67e8f9; font-size: 0.82rem; text-decoration: underline; font-family: var(--font-mono); font-weight: 500;">Need a free Google Gemini key? Read setup guide ↓</a>
                 </div>
             </div>
 
             <!-- CARD 2: ANDROID CYBERDECK -->
-            <div class="pricing-card android-card">
+            <div class="pricing-card android-card" data-platform="android" style="border-top:3px solid var(--emerald);">
                 <div class="pricing-card-header">
                     <h3>Android Cyberdeck</h3>
-                    <div class="price">v5.0</div>
-                    <div class="price-note">Free · Quantum Cyberdeck Edition</div>
+                    <div class="price" style="color:var(--emerald);">v5.0</div>
+                    <div class="price-note">Free &bull; Quantum Cyberdeck Edition</div>
                 </div>
+
+                <div class="card-meta-pill" style="color:var(--emerald); border-color:rgba(16,185,129,0.3); background:rgba(16,185,129,0.06);">
+                    APK &bull; ~492 KB &bull; Android 5.0 to 15+
+                </div>
+
                 <p class="card-desc">Advanced Android Cyberdeck with live Termux &amp; Kali NetHunter root bridge, natural conversational intelligence, regular tool runner, and on-demand tool synthesis.</p>
+                
                 <ul>
                     <li>Live Termux &amp; Kali NetHunter (<code>nh -r</code>) root bridge</li>
                     <li>Conversational AI pair programmer &amp; cybersecurity partner</li>
@@ -269,22 +685,34 @@
                     <li>Multi-path Termux bridge: HTTP daemon + <code>su</code> root + Intent</li>
                     <li>Hardware APIs: RF Wi-Fi scan, camera torch, haptics, battery, TTS</li>
                     <li>Universal Android 5.0 to 14/15+ support (Phones &amp; Tablets)</li>
-                    <li>Zero cloud lock-in · 100% private</li>
+                    <li>Zero cloud lock-in &bull; 100% private</li>
                 </ul>
-                <a href="downloads/AgenticEssence-Android.apk" class="btn-secondary" download style="text-decoration: none;">
+
+                <a href="downloads/AgenticEssence-Android.apk" class="btn-secondary" download>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.34a1 1 0 1 1-.002-2 1 1 0 0 1 .002 2m-11.046 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2m11.4-6.02 1.997-3.46a.417.417 0 0 0-.152-.567.416.416 0 0 0-.566.152l-2.023 3.505a12.51 12.51 0 0 0-5.133-1.08c-1.83 0-3.56.39-5.132 1.08L4.845 5.445a.416.416 0 0 0-.567-.152.417.417 0 0 0-.152.567l1.997 3.46C2.938 11.06.988 14.5.63 18.5h22.74c-.358-4-2.308-7.44-5.493-9.18"/></svg>
                     Download Cyberdeck APK
                 </a>
+
+                <div class="checksum-box">
+                    <span class="checksum-text" title="432c666741fa613040f2dc0b7c818acee23b871126be55648b866f40ce7a078b">SHA-256: 432c6667...078b</span>
+                    <button class="copy-btn" onclick="copyToClipboard('432c666741fa613040f2dc0b7c818acee23b871126be55648b866f40ce7a078b', 'Cyberdeck APK SHA-256')">Copy</button>
+                </div>
             </div>
 
             <!-- CARD 3: WINDOWS DESKTOP -->
-            <div class="pricing-card free-card">
+            <div class="pricing-card free-card" data-platform="windows" style="border-top:3px solid var(--accent);">
                 <div class="pricing-card-header">
                     <h3>Windows Desktop</h3>
-                    <div class="price">v3.0</div>
+                    <div class="price" style="color:var(--accent);">v3.0</div>
                     <div class="price-note">Standalone Desktop · ~65 MB Fast Download</div>
                 </div>
+
+                <div class="card-meta-pill" style="color:var(--accent); border-color:rgba(0,240,255,0.3); background:rgba(0,240,255,0.06);">
+                    Windows 10 / 11 &bull; 64-bit &bull; Setup &amp; Portable ZIP
+                </div>
+
                 <p class="card-desc">The official Tri-Agent cyberdeck for Windows PC. Delivers the complete Cyberdeck GUI, embedded headless Kali VM console (zero window hijacking), direct Ollama &amp; Gemini 3.8/3.5 routing, and zero bloat.</p>
+                
                 <ul>
                     <li>Complete Cyberdeck GUI (identical to mobile cyberdeck)</li>
                     <li>Embedded Headless Kali VM console (no window hijacking)</li>
@@ -293,78 +721,285 @@
                     <li>Lightweight ~65 MB installer (no 1.5 GB OS bloat)</li>
                     <li>100% Free Forever &amp; works fully offline</li>
                 </ul>
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <a href="https://github.com/laikaseriousjames-barkdog/Agentic-Essence/releases/download/v3.0.0/Agentic-Essence-Desktop-Setup.exe" class="btn-primary" download style="text-decoration: none; text-align: center; background: linear-gradient(135deg, #00f0ff 0%, #0077ff 100%); font-weight: 700;">
+
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <a href="https://github.com/laikaseriousjames-barkdog/Agentic-Essence/releases/download/v3.0.0/Agentic-Essence-Desktop-Setup.exe" class="btn-primary" download style="text-decoration:none;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                        Download Windows App (.EXE · 9 MB)
+                        Download Windows App (.EXE &bull; 9 MB)
                     </a>
-                    <a href="https://github.com/laikaseriousjames-barkdog/Agentic-Essence/releases/download/v3.0.0/Agentic-Essence-Desktop-v3.0.zip" class="btn-secondary" download style="text-decoration: none; font-size: 0.85rem; text-align: center; padding: 6px 12px; border-color: rgba(255,255,255,0.2);">
+                    
+                    <a href="https://github.com/laikaseriousjames-barkdog/Agentic-Essence/releases/download/v3.0.0/Agentic-Essence-Desktop-v3.0.zip" class="btn-secondary" download style="font-size:0.86rem; padding:0.6rem 1rem;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
                         Download Portable Windows Edition (.ZIP)
                     </a>
                 </div>
+
+                <div class="checksum-box">
+                    <span class="checksum-text" title="9c7990eb5f0267875762270c7e173ee2f36dc1f9c574e9f1c3e34232c92947b0">EXE: 9c7990eb...47b0</span>
+                    <button class="copy-btn" onclick="copyToClipboard('9c7990eb5f0267875762270c7e173ee2f36dc1f9c574e9f1c3e34232c92947b0', 'Windows EXE SHA-256')">Copy</button>
+                </div>
             </div>
         </div>
-        <p class="pricing-footnote">100% Free Forever &nbsp;·&nbsp; Zero Telemetry &nbsp;·&nbsp; Works fully offline</p>
+
+        <p class="pricing-footnote">100% Free Forever &bull; Zero Telemetry &bull; Works fully offline</p>
     </section>
 
-    <!-- GOOGLE API KEY PORTAL & GUIDE -->
-    <section class="apikey-section" id="apikey" style="padding: 7rem 2rem; background: var(--bg); border-top: 1px solid var(--border);">
-        <div class="section-header" style="max-width: 840px; margin: 0 auto 3.5rem; text-align: center;">
-            <span class="section-tag" style="background: rgba(0, 240, 255, 0.1); color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.3); padding: 0.35rem 1rem; border-radius: 100px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; display: inline-block; margin-bottom: 1rem;">Official Google Gemini Integration</span>
-            <h2 style="font-size: 2.4rem; font-weight: 800; margin-bottom: 1rem;">Get Your Free Google API Key.<br><span class="accent" style="color: var(--accent);">Zero Middlemen. Zero Cost.</span></h2>
-            <p style="color: var(--text-dim); font-size: 1.05rem; line-height: 1.65;">Agentic Essence and Agentic Vox are local-first, privacy-respecting cyberdecks. We never proxy, log, or sell your prompts. To unlock live intelligence across all personas, connect your own free Google Gemini API key directly from Google AI Studio, or point to local Ollama with zero cloud setup.</p>
+    <!-- GOOGLE GEMINI KEY PORTAL & VALIDATOR -->
+    <section class="apikey-section" id="apikey">
+        <div class="section-header" style="max-width:860px;">
+            <span class="section-tag" style="background:rgba(16,185,129,0.1); color:#10b981; border-color:rgba(16,185,129,0.3);">Official Google Gemini Integration</span>
+            <h2>Get Your Free Google API Key.<br><span class="accent">Zero Middlemen. Zero Cost.</span></h2>
+            <p>Agentic Essence and Agentic Vox are local-first, privacy-respecting cyberdecks. We never proxy, log, or sell your prompts. To unlock live intelligence across all personas, connect your own free Google Gemini API key directly from Google AI Studio, or point to local Ollama with zero cloud setup.</p>
             
-            <div style="margin-top: 2rem;">
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="btn-primary" style="font-size: 1.1rem; padding: 0.9rem 2.4rem; background: linear-gradient(135deg, #06b6d4 0%, #10b981 100%); display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(6,182,212,0.35); text-decoration: none;">
+            <div style="margin-top:2.2rem;">
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="btn-primary" style="font-size:1.05rem; padding:0.9rem 2.2rem; background:linear-gradient(135deg, #06b6d4 0%, #10b981 100%); box-shadow:0 10px 30px rgba(6,182,212,0.35);">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                     Get Free Google API Key (Google AI Studio) ↗
                 </a>
-                <p style="font-size: 0.82rem; color: #10b981; margin-top: 0.75rem; font-weight: 600;">✓ 100% Free Forever &nbsp;·&nbsp; ✓ No Credit Card Required &nbsp;·&nbsp; ✓ Direct Link to Google</p>
+                <p style="font-size:0.84rem; color:#10b981; margin-top:0.85rem; font-weight:600;">✓ 100% Free Forever &bull; ✓ No Credit Card Required &bull; ✓ Direct Link to Google</p>
             </div>
         </div>
 
-        <div class="props-grid" style="max-width: 1050px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;">
-            <div class="prop-card" style="border-top: 3px solid #00f0ff;">
-                <div class="prop-icon" style="color: #00f0ff; font-weight: 800; font-family: var(--font-mono); font-size: 1.8rem; margin-bottom: 0.8rem;">01</div>
+        <div class="props-grid" style="max-width:1100px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:1.5rem;">
+            <div class="prop-card" style="border-top:3px solid #00f0ff;">
+                <div class="prop-icon" style="color:#00f0ff; font-weight:800; font-family:var(--font-mono); font-size:1.6rem; margin-bottom:0.8rem;">01</div>
                 <h3>Visit Google AI Studio</h3>
-                <p>Click the button above or visit <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" style="color:#00f0ff; text-decoration:underline;">aistudio.google.com/app/apikey</a>. Sign in with any standard Google account.</p>
+                <p>Click the button above or visit <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" style="color:var(--accent); text-decoration:underline;">aistudio.google.com/app/apikey</a>. Sign in with any standard Google account.</p>
             </div>
-            <div class="prop-card" style="border-top: 3px solid #10b981;">
-                <div class="prop-icon" style="color: #10b981; font-weight: 800; font-family: var(--font-mono); font-size: 1.8rem; margin-bottom: 0.8rem;">02</div>
+            
+            <div class="prop-card" style="border-top:3px solid #10b981;">
+                <div class="prop-icon" style="color:#10b981; font-weight:800; font-family:var(--font-mono); font-size:1.6rem; margin-bottom:0.8rem;">02</div>
                 <h3>Click "Create API Key"</h3>
                 <p>Click the blue <strong>"Create API key"</strong> button in Google AI Studio. You can select an existing project or let Google auto-generate a new one.</p>
             </div>
-            <div class="prop-card" style="border-top: 3px solid #ffb700;">
-                <div class="prop-icon" style="color: #ffb700; font-weight: 800; font-family: var(--font-mono); font-size: 1.8rem; margin-bottom: 0.8rem;">03</div>
+            
+            <div class="prop-card" style="border-top:3px solid #f59e0b;">
+                <div class="prop-icon" style="color:#f59e0b; font-weight:800; font-family:var(--font-mono); font-size:1.6rem; margin-bottom:0.8rem;">03</div>
                 <h3>Copy Your Key</h3>
                 <p>Copy the generated key (it starts with <code>AIzaSy...</code>). Google's free tier provides generous rate limits (15 requests/min) with zero credit card or billing details required.</p>
             </div>
-            <div class="prop-card" style="border-top: 3px solid #ff007f;">
-                <div class="prop-icon" style="color: #ff007f; font-weight: 800; font-family: var(--font-mono); font-size: 1.8rem; margin-bottom: 0.8rem;">04</div>
+            
+            <div class="prop-card" style="border-top:3px solid #ff007f;">
+                <div class="prop-icon" style="color:#ff007f; font-weight:800; font-family:var(--font-mono); font-size:1.6rem; margin-bottom:0.8rem;">04</div>
                 <h3>Paste Into The App</h3>
                 <p>Launch <strong>Agentic Vox</strong> or <strong>Agentic Essence</strong>, tap the <strong>Settings (⚙)</strong> gear icon, paste your key into the <strong>Google API Key</strong> field, and tap <strong>SAVE</strong>.</p>
             </div>
         </div>
 
-        <div style="max-width: 800px; margin: 3rem auto 0; background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 1.5rem 2rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
-            <div style="font-size: 2.2rem; flex-shrink: 0;">🛡️</div>
-            <div style="flex: 1; min-width: 250px;">
-                <h4 style="font-size: 1rem; color: #10b981; margin-bottom: 0.35rem; font-weight: 700;">Your API Key Never Leaves Your Device</h4>
-                <p style="font-size: 0.88rem; color: var(--text-dim); line-height: 1.5; margin: 0;">Your Google API key is stored strictly on your device's local encrypted Android sandbox. All inference requests are dispatched directly and securely from your phone to Google's official endpoints.</p>
+        <!-- Interactive Client-Side API Key Validator Sandbox -->
+        <div class="apikey-validator-box">
+            <div class="validator-header">
+                <h4>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Interactive API Key Format Validator
+                </h4>
+                <span class="validator-badge">100% Client-Side &bull; Never Sent Online</span>
+            </div>
+            <p style="font-size:0.84rem; color:var(--text-muted); margin-bottom:0.8rem;">Test your Google API key format locally before pasting into the app. Validates prefix (<code>AIzaSy</code>) and standard key length in your browser sandbox.</p>
+            <div class="validator-input-wrap">
+                <input type="text" class="validator-input" id="apiKeyInput" placeholder="Paste your Google API key here (e.g. AIzaSy...)" oninput="validateGeminiKey(this.value)" autocomplete="off" spellcheck="false" />
+                <button class="btn-secondary" onclick="clearApiKeyInput()" style="padding:0.6rem 1rem; font-size:0.82rem;">Clear</button>
+            </div>
+            <div class="validator-feedback" id="apiKeyFeedback"></div>
+        </div>
+
+        <div style="max-width:800px; margin:3rem auto 0; background:rgba(16,185,129,0.05); border:1px solid rgba(16,185,129,0.25); border-radius:var(--radius-md); padding:1.5rem 2rem; display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap;">
+            <div style="font-size:2.2rem; flex-shrink:0;">🛡️</div>
+            <div style="flex:1; min-width:250px;">
+                <h4 style="font-size:1.02rem; color:#10b981; margin-bottom:0.35rem; font-weight:700;">Your API Key Never Leaves Your Device</h4>
+                <p style="font-size:0.88rem; color:var(--text-muted); line-height:1.55; margin:0;">Your Google API key is stored strictly on your device's local encrypted Android sandbox or local desktop storage. All inference requests are dispatched directly and securely from your device to Google's official endpoints.</p>
             </div>
         </div>
     </section>
 
-    <!-- CONTACT -->
-    <section class="pricing" id="contact">
+    <!-- QUICK-START & INSTALLATION HUB -->
+    <section class="quickstart-section" id="quickstart">
         <div class="section-header">
-            <span class="section-tag">Support</span>
-            <h2>Questions? <span class="accent">Get in touch.</span></h2>
-            <p>Licensing, bugs, or just curious about the swarm — we'd love to hear from you.</p>
+            <span class="section-tag">Zero Friction</span>
+            <h2>Quick Start &amp; <span class="accent">Installation Guide</span></h2>
+            <p>Get up and running in under two minutes on your phone, tablet, or PC.</p>
         </div>
-        <div class="contact-box" style="max-width:480px;margin:0 auto;text-align:center;padding:2rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);">
-            <p style="margin-bottom:1rem;">Email us anytime:</p>
-            <a href="mailto:laikaseriousjames@gmail.com" style="color:var(--accent);font-family:var(--font-mono);font-size:1.05rem;text-decoration:none;border-bottom:1px dashed var(--accent);">laikaseriousjames@gmail.com</a>
+
+        <div class="quickstart-grid">
+            <!-- Android Setup -->
+            <div class="quickstart-card">
+                <h3>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="color:var(--emerald);"><path d="M17.523 15.34a1 1 0 1 1-.002-2 1 1 0 0 1 .002 2m-11.046 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2m11.4-6.02 1.997-3.46a.417.417 0 0 0-.152-.567.416.416 0 0 0-.566.152l-2.023 3.505a12.51 12.51 0 0 0-5.133-1.08c-1.83 0-3.56.39-5.132 1.08L4.845 5.445a.416.416 0 0 0-.567-.152.417.417 0 0 0-.152.567l1.997 3.46C2.938 11.06.988 14.5.63 18.5h22.74c-.358-4-2.308-7.44-5.493-9.18"/></svg>
+                    Android Mobile (Vox &amp; Cyberdeck)
+                </h3>
+                <div class="qs-step">
+                    <div class="qs-step-num">1</div>
+                    <div class="qs-step-text">
+                        <h5>Download the APK</h5>
+                        <p>Download <a href="downloads/AgenticVox-Android.apk" style="color:var(--accent);">Agentic Vox</a> (Voice) or <a href="downloads/AgenticEssence-Android.apk" style="color:var(--accent);">Cyberdeck APK</a>.</p>
+                    </div>
+                </div>
+                <div class="qs-step">
+                    <div class="qs-step-num">2</div>
+                    <div class="qs-step-text">
+                        <h5>Allow Unknown Apps</h5>
+                        <p>In Android Settings &rarr; Security, enable <span class="code-inline">Install unknown apps</span> for your browser or file manager.</p>
+                    </div>
+                </div>
+                <div class="qs-step">
+                    <div class="qs-step-num">3</div>
+                    <div class="qs-step-text">
+                        <h5>Launch &amp; Connect Key</h5>
+                        <p>Open app, tap Settings (⚙), enter your free Google key or select Ollama. Grant mic permissions for voice recognition.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Windows PC Setup -->
+            <div class="quickstart-card">
+                <h3>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent);"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    Windows PC Desktop (v3.0)
+                </h3>
+                <div class="qs-step">
+                    <div class="qs-step-num">1</div>
+                    <div class="qs-step-text">
+                        <h5>Download Installer or ZIP</h5>
+                        <p>Grab <a href="https://github.com/laikaseriousjames-barkdog/Agentic-Essence/releases/download/v3.0.0/Agentic-Essence-Desktop-Setup.exe" style="color:var(--accent);">Desktop Setup (.exe)</a> or the portable standalone archive.</p>
+                    </div>
+                </div>
+                <div class="qs-step">
+                    <div class="qs-step-num">2</div>
+                    <div class="qs-step-text">
+                        <h5>Execute 1-Click Launcher</h5>
+                        <p>Run the installer or unpack the ZIP and launch <span class="code-inline">Launch-Agentic-Essence.bat</span>.</p>
+                    </div>
+                </div>
+                <div class="qs-step">
+                    <div class="qs-step-num">3</div>
+                    <div class="qs-step-text">
+                        <h5>Local Ollama or Cloud</h5>
+                        <p>The desktop auto-detects running Ollama models at <span class="code-inline">127.0.0.1:11434</span> or connects to Gemini 3.8/3.5.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kali NetHunter & Root Bridge -->
+            <div class="quickstart-card">
+                <h3>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#ff007f;"><path d="M12 2l7 4v6c0 5-3.5 9-7 10-3.5-1-7-5-7-10V6l7-4z"/></svg>
+                    Kali NetHunter &amp; Termux (Optional)
+                </h3>
+                <div class="qs-step">
+                    <div class="qs-step-num">1</div>
+                    <div class="qs-step-text">
+                        <h5>Root is 100% Optional</h5>
+                        <p>Basic voice, offline GGUF, and terminal features work on all standard unrooted Android devices.</p>
+                    </div>
+                </div>
+                <div class="qs-step">
+                    <div class="qs-step-num">2</div>
+                    <div class="qs-step-text">
+                        <h5>NetHunter Pairing</h5>
+                        <p>If rooted, grant superuser privilege when prompted, or run <span class="code-inline">nh -r</span> in Termux to connect the bridge daemon.</p>
+                    </div>
+                </div>
+                <div class="qs-step">
+                    <div class="qs-step-num">3</div>
+                    <div class="qs-step-text">
+                        <h5>Dispatch Tactical Tools</h5>
+                        <p>Ask Agentic Vox or Cyberdeck to execute network scans, inspect interfaces, or evaluate penetration test scripts.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FREQUENTLY ASKED QUESTIONS (FAQ) ACCORDION -->
+    <section class="faq-section" id="faq">
+        <div class="section-header">
+            <span class="section-tag">Knowledge Base</span>
+            <h2>Frequently Asked <span class="accent">Questions</span></h2>
+            <p>Everything you need to know about licensing, offline privacy, hardware compatibility, and root access.</p>
+        </div>
+
+        <div class="faq-list">
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    <span>Do I need root access on my Android device to use Agentic Essence?</span>
+                    <span class="faq-toggle-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    No, root is <strong>not required</strong> for normal operation. Agentic Vox and the Android Cyberdeck work seamlessly on standard Android 5.0 to 15+ devices for voice orchestration, Google Gemini routing, local model management, and built-in JavaScript tool execution. Root access (via Magisk, KernelSU, or Kali NetHunter <code>nh -r</code>) is only required if you wish to run low-level packet crafting, raw Wi-Fi monitor mode, or root shell terminal commands.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    <span>Is the Google Gemini API key really completely free?</span>
+                    <span class="faq-toggle-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    Yes! Google AI Studio provides a 100% free tier with <strong>no credit card required</strong>. The free tier includes generous rate limits (up to 15 requests per minute and 1,500 requests per day for Gemini Flash models), which is more than enough for daily personal AI cyberdeck and voice companion usage.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    <span>Can I run Agentic Essence 100% offline without any internet connection?</span>
+                    <span class="faq-toggle-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    Yes. Both the mobile and desktop cyberdecks include direct integration with local Ollama endpoints (<code>http://127.0.0.1:11434</code>) and local GGUF models. Once your models are loaded onto your device, all cognitive routing, tool execution, and persona dialog function completely air-gapped without touching the internet.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    <span>What is the difference between Agentic Vox and the Android Cyberdeck?</span>
+                    <span class="faq-toggle-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <strong>Agentic Vox</strong> is our 100% voice-first holographic spatial cockpit: it eliminates traditional chat boxes in favor of continuous acoustic listening, 12 physical 3D persona avatars with dynamic lip-sync, and floating 3D widgets. <strong>Android Cyberdeck</strong> is our tactical text and terminal console designed for power users who want a full screen keyboard, deep Termux integration, script synthesis, and live shell telemetry.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    <span>Does Agentic Essence collect telemetry, prompts, or analytics?</span>
+                    <span class="faq-toggle-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    Zero telemetry. We do not track, collect, log, or sell your data. There are no analytics libraries, advertising SDKs, or background phoning home. Your API keys are encrypted locally in your device's sandboxed storage and requests are sent directly to official provider endpoints. Review our <a href="docs/privacy.html" style="color:var(--accent);">Privacy Policy</a> for full details.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(this)">
+                    <span>How do I update to newer releases?</span>
+                    <span class="faq-toggle-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    You can download the updated APK or Windows executable directly from this site or from our GitHub Releases page. Simply install the new APK over the existing installation; your local preferences and API keys are preserved safely in your device's private sandbox.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACT & COMMUNITY -->
+    <section class="contact-section" id="contact">
+        <div class="section-header">
+            <span class="section-tag">Direct Support</span>
+            <h2>Questions? <span class="accent">Get in touch.</span></h2>
+            <p>Licensing, bug reports, or suggestions for the swarm — we'd love to hear from you.</p>
+        </div>
+        <div class="contact-box">
+            <p style="margin-bottom:0.75rem; color:var(--text-muted);">Reach out to the lead maintainer directly:</p>
+            <a href="mailto:laikaseriousjames@gmail.com" class="mail-link">laikaseriousjames@gmail.com</a>
+            <div style="margin-top:1.8rem; display:flex; justify-content:center; gap:1.2rem; flex-wrap:wrap;">
+                <a href="https://github.com/laikaseriousjames-barkdog/Agentic-Essence" target="_blank" rel="noopener" class="btn-secondary" style="font-size:0.86rem; padding:0.6rem 1.4rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    GitHub Repository
+                </a>
+                <a href="https://github.com/laikaseriousjames-barkdog/Agentic-Essence/releases" target="_blank" rel="noopener" class="btn-secondary" style="font-size:0.86rem; padding:0.6rem 1.4rem;">
+                    Releases &amp; Changelog
+                </a>
+            </div>
         </div>
     </section>
 
@@ -374,92 +1009,286 @@
             <div class="footer-brand">
                 <a href="#" class="logo-link">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" height="32" style="border-radius:6px;flex-shrink:0;">
-                      <rect width="500" height="500" fill="#0B0C10"/>
-                      <polygon points="250,40 460,150 460,350 250,460 40,350 40,150" fill="none" stroke="#45A29E" stroke-width="6" stroke-opacity="0.4"/>
-                      <path d="M 250 100 L 400 400 L 320 400 L 250 250 L 180 400 L 100 400 Z" fill="#66FCF1"/>
-                      <circle cx="250" cy="250" r="30" fill="#1F2833"/>
-                      <circle cx="250" cy="250" r="15" fill="#66FCF1"/>
+                      <rect width="500" height="500" fill="#060913"/>
+                      <polygon points="250,40 460,150 460,350 250,460 40,350 40,150" fill="none" stroke="#00f0ff" stroke-width="6" stroke-opacity="0.4"/>
+                      <path d="M 250 100 L 400 400 L 320 400 L 250 250 L 180 400 L 100 400 Z" fill="#00f0ff"/>
+                      <circle cx="250" cy="250" r="30" fill="#0d1426"/>
+                      <circle cx="250" cy="250" r="15" fill="#00f0ff"/>
                     </svg>
                     <span class="logo">agentic_essence<span class="dim">//</span></span>
                 </a>
                 <p class="footer-tagline">Autonomous AI, Untethered.</p>
             </div>
+            
             <div class="footer-links">
                 <a href="docs/eula.html">EULA</a>
+                <a href="docs/privacy.html">Privacy Policy</a>
                 <a href="mailto:laikaseriousjames@gmail.com">Contact</a>
                 <a href="https://github.com/laikaseriousjames-barkdog/Agentic-Essence" target="_blank" rel="noopener">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
                     GitHub
                 </a>
             </div>
-            <span class="dim footer-copy">&copy; 2026 Agentic Essence. All rights reserved.</span>
+            
+            <div class="footer-copy">&copy; 2026 Agentic Essence. All rights reserved. Open-source local-first AI cyberdeck suite.</div>
         </div>
     </footer>
 
+    <!-- INTERACTIVE TOAST NOTIFICATION -->
+    <div class="toast" id="toast">Copied to clipboard!</div>
+
+    <!-- JAVASCRIPT CONTROLLERS -->
     <script>
-    // Hamburger menu
+    // ─── Hamburger Menu Controller ───
     function toggleMenu() {
-        document.getElementById('nav-menu').classList.toggle('open');
+        const navMenu = document.getElementById('nav-menu');
+        const hamburger = document.getElementById('navHamburger');
+        navMenu.classList.toggle('open');
+        hamburger.classList.toggle('open');
     }
     document.querySelectorAll('.nav-links a').forEach(a => {
-        a.addEventListener('click', () => document.getElementById('nav-menu').classList.remove('open'));
+        a.addEventListener('click', () => {
+            const navMenu = document.getElementById('nav-menu');
+            const hamburger = document.getElementById('navHamburger');
+            if (navMenu) navMenu.classList.remove('open');
+            if (hamburger) hamburger.classList.remove('open');
+        });
     });
 
-    // Animated terminal fallback
-    const lines = [
-        { text: '[SYSTEM] Agentic Essence v3.0 (Desktop & Cyberdeck Edition) booting...', color: '#94a3b8', delay: 0 },
-        { text: '[Planner]  Decomposing goal into recursive task queue...', color: '#06b6d4', delay: 600 },
-        { text: '[Hybrid]   Routing Planner → cloud · Builder → local GGUF', color: '#10b981', delay: 1200 },
-        { text: '[Models]   3 local models verified. Offline inference: READY', color: '#8b5cf6', delay: 1800 },
-        { text: '', delay: 2200 },
-        { text: '$ /api/vm/connect "Kali Primary"', color: '#f8fafc', delay: 2600 },
-        { text: '  → Opening Kali Linux VM pane (noVNC)...', color: '#94a3b8', delay: 3200 },
-        { text: '  → VM interactive. Tool-build sandbox armed.', color: '#10b981', delay: 3800 },
-        { text: '', delay: 4200 },
-        { text: '[Builder]  Drafting solution payload from Planner brief...', color: '#f8fafc', delay: 4600 },
-        { text: '[Auditor]  Cross-checking output for flaws... 0 found', color: '#10b981', delay: 5400 },
-        { text: '', delay: 6400 },
-        { text: '$ /api/system/hot-reload', color: '#f8fafc', delay: 6800 },
-        { text: '  → Backend restarting. UI reload in progress...', color: '#94a3b8', delay: 7400 },
-        { text: '  → Engine online. 0 regressions.', color: '#10b981', delay: 8000 },
-        { text: '', delay: 8400 },
-        { text: '[SYSTEM] Swarm nominal. Awaiting next directive.', color: '#06b6d4', delay: 8800 },
-        { text: '█', color: '#06b6d4', delay: 9400 },
-    ];
+    // ─── Showcase Tab Switcher ───
+    function switchShowcaseTab(paneId, btn) {
+        document.querySelectorAll('.showcase-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.hardware-frame .tab-pane').forEach(p => p.classList.remove('active'));
+        
+        btn.classList.add('active');
+        const target = document.getElementById(paneId);
+        if (target) target.classList.add('active');
 
-    const terminal = document.getElementById('terminal');
-    if (terminal) {
-        lines.forEach(({ text, color, delay }) => {
-            setTimeout(() => {
-                const line = document.createElement('div');
-                line.className = 'terminal-line';
-                line.style.color = color || '#94a3b8';
-                line.textContent = text;
-                terminal.appendChild(line);
-                terminal.scrollTop = terminal.scrollHeight;
-            }, delay);
+        // Update header title based on active tab
+        const screenTitle = document.getElementById('screenTitle');
+        if (paneId === 'terminal-pane') screenTitle.textContent = 'agentic_essence — Hybrid LLM & Kali VM Console';
+        else if (paneId === 'vox-video-pane') screenTitle.textContent = 'agentic_vox — 100% Hands-Free Spatial Holodeck';
+        else if (paneId === 'cyber-video-pane') screenTitle.textContent = 'agentic_cyberdeck — Termux & NetHunter Superuser Bridge';
+        else if (paneId === 'personas-pane') screenTitle.textContent = 'agentic_matrix — 12 Physical 3D Persona Collective';
+    }
+
+    // ─── Platform Download Filter ───
+    function filterDownloads(platform, btn) {
+        document.querySelectorAll('.platform-filter-bar .tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        const cards = document.querySelectorAll('.pricing-card');
+        cards.forEach(card => {
+            if (platform === 'all' || card.getAttribute('data-platform') === platform) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
         });
     }
 
-    // Smooth active nav highlight on scroll
-    const sections = document.querySelectorAll('section[id], header[id]');
-    const navLinks = document.querySelectorAll('.nav-links a');
+    // ─── FAQ Accordion ───
+    function toggleFaq(btn) {
+        const item = btn.closest('.faq-item');
+        const isOpen = item.classList.contains('open');
+        document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+        if (!isOpen) {
+            item.classList.add('open');
+        }
+    }
+
+    // ─── Interactive Terminal Simulator ───
+    const terminalLines = [
+        { text: '[SYSTEM] Agentic Essence v3.0 (Desktop & Cyberdeck Edition) booting...', color: '#94a3b8', delay: 0 },
+        { text: '[Planner]  Decomposing goal into recursive task queue...', color: '#00f0ff', delay: 600 },
+        { text: '[Hybrid]   Routing Planner → Google Gemini 2.5 Flash · Builder → local GGUF', color: '#10b981', delay: 1200 },
+        { text: '[Models]   3 local models verified (SHA-256 ok). Offline inference: READY', color: '#8b5cf6', delay: 1800 },
+        { text: '', delay: 2200 },
+        { text: '$ /api/vm/connect "Kali Primary"', color: '#f8fafc', delay: 2600 },
+        { text: '  → Opening Kali Linux NetHunter VM pane (noVNC console)...', color: '#94a3b8', delay: 3200 },
+        { text: '  → NetHunter root daemon interactive. Tool-build sandbox armed.', color: '#10b981', delay: 3800 },
+        { text: '', delay: 4200 },
+        { text: '[Builder]  Drafting solution payload from Alan Turing brief...', color: '#f8fafc', delay: 4600 },
+        { text: '[Auditor]  Deterministic DAG state machine evaluating sandbox integrity... 0 cyclic locks', color: '#10b981', delay: 5400 },
+        { text: '[Knuth]    LRU tool cache hot-updated. O(1) latency confirmed.', color: '#8b5cf6', delay: 6000 },
+        { text: '', delay: 6400 },
+        { text: '$ /api/system/hot-reload', color: '#f8fafc', delay: 6800 },
+        { text: '  → Backend restarting without dropped sockets. UI reload in progress...', color: '#94a3b8', delay: 7400 },
+        { text: '  → Engine online. 0 regressions. Telemetry nominal.', color: '#10b981', delay: 8000 },
+        { text: '', delay: 8400 },
+        { text: '[SYSTEM] Swarm nominal. Awaiting next operator directive.', color: '#00f0ff', delay: 8800 },
+        { text: '█', color: '#00f0ff', delay: 9400 }
+    ];
+
+    let termTimers = [];
+    let isTermPaused = false;
+    let termCurrentIndex = 0;
+    const terminalEl = document.getElementById('terminal');
+
+    function startTerminalPlayback(startIndex = 0) {
+        clearTerminalTimers();
+        const baseDelay = terminalLines[startIndex] ? terminalLines[startIndex].delay : 0;
+        for (let i = startIndex; i < terminalLines.length; i++) {
+            const item = terminalLines[i];
+            const delay = Math.max(0, item.delay - baseDelay);
+            const timer = setTimeout(() => {
+                if (isTermPaused) return;
+                termCurrentIndex = i;
+                appendTermLine(item.text, item.color);
+            }, delay);
+            termTimers.push(timer);
+        }
+    }
+
+    function appendTermLine(text, color) {
+        if (!terminalEl) return;
+        const line = document.createElement('div');
+        line.className = 'terminal-line';
+        line.style.color = color || '#94a3b8';
+        line.textContent = text;
+        terminalEl.appendChild(line);
+        terminalEl.scrollTop = terminalEl.scrollHeight;
+    }
+
+    function clearTerminalTimers() {
+        termTimers.forEach(t => clearTimeout(t));
+        termTimers = [];
+    }
+
+    function restartTerminal() {
+        if (!terminalEl) return;
+        terminalEl.innerHTML = '';
+        termCurrentIndex = 0;
+        isTermPaused = false;
+        const btn = document.getElementById('termToggleBtn');
+        if (btn) btn.textContent = '⏸ Pause';
+        startTerminalPlayback(0);
+    }
+
+    function toggleTerminalPlayback() {
+        const btn = document.getElementById('termToggleBtn');
+        if (!isTermPaused) {
+            isTermPaused = true;
+            clearTerminalTimers();
+            if (btn) btn.textContent = '▶ Resume';
+        } else {
+            isTermPaused = false;
+            if (btn) btn.textContent = '⏸ Pause';
+            startTerminalPlayback(termCurrentIndex + 1);
+        }
+    }
+
+    function injectTermCommand(cmd) {
+        appendTermLine('', '');
+        appendTermLine(`$ ${cmd}`, '#f8fafc');
+        setTimeout(() => {
+            appendTermLine(`  [Swarm] Executing "${cmd}" across active telemetry bus...`, '#00f0ff');
+            appendTermLine(`  [Bridge] Response: OK (exit code: 0, 100% verified)`, '#10b981');
+        }, 300);
+    }
+
+    function copyTerminalText() {
+        if (!terminalEl) return;
+        const text = terminalEl.innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Terminal logs copied to clipboard!');
+        });
+    }
+
+    // ─── Audio Sample Player ───
+    let currentAudio = null;
+    let currentAudioBtn = null;
+
+    function toggleAudioPreview(audioUrl, btnId) {
+        const btn = document.getElementById(btnId);
+        if (currentAudio && !currentAudio.paused) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            if (currentAudioBtn) currentAudioBtn.textContent = '▶';
+            if (currentAudioBtn === btn) {
+                currentAudio = null;
+                currentAudioBtn = null;
+                return;
+            }
+        }
+        
+        currentAudio = new Audio(audioUrl);
+        currentAudioBtn = btn;
+        btn.textContent = '⏸';
+        currentAudio.play().catch(e => console.log('Audio playback error:', e));
+        currentAudio.onended = () => {
+            btn.textContent = '▶';
+            currentAudio = null;
+            currentAudioBtn = null;
+        };
+    }
+
+    // ─── Toast Notifications ───
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        if (!toast) return;
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2800);
+    }
+
+    function copyToClipboard(text, label) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast(`${label} copied to clipboard!`);
+        });
+    }
+
+    // ─── Client-Side API Key Validator ───
+    function validateGeminiKey(key) {
+        const feedback = document.getElementById('apiKeyFeedback');
+        if (!feedback) return;
+        const trimmed = key.trim();
+        if (!trimmed) {
+            feedback.textContent = '';
+            return;
+        }
+        if (trimmed.startsWith('AIzaSy') && trimmed.length === 39) {
+            feedback.innerHTML = '<span style="color:#10b981;">✓ Valid Google Gemini API Key Format! Ready to paste into Agentic Vox or Essence.</span>';
+        } else if (trimmed.startsWith('AIzaSy')) {
+            feedback.innerHTML = `<span style="color:#f59e0b;">⚡ Valid prefix detected (${trimmed.length}/39 characters entered)...</span>`;
+        } else {
+            feedback.innerHTML = '<span style="color:#ef4444;">✗ Standard Gemini keys begin with "AIzaSy". Check that you copied the complete key from Google AI Studio.</span>';
+        }
+    }
+
+    function clearApiKeyInput() {
+        const input = document.getElementById('apiKeyInput');
+        const feedback = document.getElementById('apiKeyFeedback');
+        if (input) input.value = '';
+        if (feedback) feedback.textContent = '';
+    }
+
+    // ─── Smooth Active Nav Link on Scroll ───
+    const observedSections = document.querySelectorAll('section[id], header[id]');
+    const navAnchors = document.querySelectorAll('.nav-links a');
     window.addEventListener('scroll', () => {
         let current = '';
-        sections.forEach(s => {
-            if (window.scrollY >= s.offsetTop - 120) current = s.id;
+        observedSections.forEach(s => {
+            if (window.scrollY >= s.offsetTop - 140) current = s.id;
         });
-        navLinks.forEach(a => {
+        navAnchors.forEach(a => {
             a.classList.remove('active');
             if (a.getAttribute('href') === '#' + current) a.classList.add('active');
         });
     }, { passive: true });
 
-    // Aggressive Cache Purge & Service Worker Sync
+    // ─── Start Terminal Playback on Load ───
+    window.addEventListener('DOMContentLoaded', () => {
+        startTerminalPlayback(0);
+    });
+
+    // ─── Service Worker & Cache Purge ───
     if ('caches' in window) {
         caches.keys().then(keys => {
             keys.forEach(key => {
-                if (key !== 'agentic-vox-v8.0') {
+                if (key !== 'agentic-essence-v9.0') {
                     console.log('[Cache] Purging stale cache:', key);
                     caches.delete(key);
                 }
@@ -474,10 +1303,10 @@
                     registration.update();
                 }
             });
-            navigator.serviceWorker.register('/sw.js?v=8.0').then(reg => {
+            navigator.serviceWorker.register('/sw.js?v=9.0').then(reg => {
                 reg.update();
             }).catch(err => {
-                console.log('ServiceWorker registration failed: ', err);
+                console.log('ServiceWorker registration error:', err);
             });
         });
     }
