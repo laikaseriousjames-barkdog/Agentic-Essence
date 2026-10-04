@@ -1,0 +1,28 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Build artifacts
+*.class
+*.dex
+!**/assets/rish_shizuku.dex
+*.idsig
+**/obj/
+**/bin/unaligned.apk
+**/bin/unsigned.apk
+**/R.java
+.gradle/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+website/downloads
+
+# Secrets & Local Configurations
+.cloudflare_credentials.json
+.env
+.env.*
