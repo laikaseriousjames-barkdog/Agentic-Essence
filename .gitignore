@@ -22,3 +22,7 @@ Thumbs.db
 
 website/downloads
 
+# Secrets & Local Configurations
+.cloudflare_credentials.json
+.env
+.env.*
