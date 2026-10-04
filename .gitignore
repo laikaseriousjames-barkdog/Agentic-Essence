@@ -26,3 +26,7 @@ website/downloads
 .cloudflare_credentials.json
 .env
 .env.*
+
+# Desktop runtime cache
+desktop-app/runtime/
+

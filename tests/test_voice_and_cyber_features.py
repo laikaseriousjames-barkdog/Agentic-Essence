@@ -1,0 +1,540 @@
+import os
+import re
+import json
+import pytest
+
+TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_DIR = os.path.dirname(TESTS_DIR)
+HOLO_DIR = os.path.join(REPO_DIR, "holo-app")
+APP_DIR = os.path.join(REPO_DIR, "android-app")
+
+EXPECTED_PERSONAS = [
+    "swarm", "turing", "knuth", "lovelace"
+]
+
+PRUNED_LEGACY_PERSONAS = [
+    "shadow", "sentry", "cipher", "valkyrie",
+    "matrix", "ghost", "glitch", "archon"
+]
+
+def test_holo_personas_completeness():
+    """Verify only the 4 core personas are defined in holo-app app.js."""
+    app_js_path = os.path.join(HOLO_DIR, "assets/www/app.js")
+    assert os.path.isfile(app_js_path)
+    with open(app_js_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    for p in EXPECTED_PERSONAS:
+        assert f"{p}: {{" in content or f'"{p}": {{' in content, f"Missing persona {p} in holo-app app.js"
+    for p in PRUNED_LEGACY_PERSONAS:
+        assert f"{p}: {{" not in content and f'"{p}": {{' not in content, f"Pruned persona {p} should not be in holo-app app.js"
+
+
+def test_voice_engine_acoustic_profiles_and_triggers():
+    """Verify acoustic profiles exist in voice-engine.js for core personas."""
+    voice_js_path = os.path.join(HOLO_DIR, "assets/www/voice-engine.js")
+    assert os.path.isfile(voice_js_path)
+    with open(voice_js_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Verify core personas have defined acoustic tuning in PERSONA_VOICES
+    assert "PERSONA_VOICES" in content
+    for p in EXPECTED_PERSONAS:
+        assert p in content, f"Persona {p} missing in voice-engine.js"
+    for p in PRUNED_LEGACY_PERSONAS:
+        assert f"switch to {p}" not in content, f"Pruned voice trigger for {p} found"
+
+    # Verify cyber operation triggers
+    assert "scan port" in content
+    assert "reverse shell" in content
+    assert "hash analyzer" in content
+    assert "mitre attack" in content
+    assert "security audit" in content
+
+    # Verify voice selection APIs
+    assert "getAvailableVoices" in content
+    assert "setSelectedVoice" in content
+    assert "setVoicePitch" in content
+    assert "setVoiceRate" in content
+    assert "auditionVoice" in content
+
+
+def test_spatial_tasks_cyber_cards():
+    """Verify cybersecurity floating cards are implemented in spatial-tasks.js."""
+    spatial_js_path = os.path.join(HOLO_DIR, "assets/www/spatial-tasks.js")
+    assert os.path.isfile(spatial_js_path)
+    with open(spatial_js_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert "spawnPortScannerCard" in content
+    assert "spawnPayloadGeneratorCard" in content
+    assert "spawnHashAnalyzerCard" in content
+    assert "spawnWifiReconCard" in content
+    assert "spawnMitreAttackCard" in content
+    assert "spawnSecurityPostureCard" in content
+    assert "spawnMissionReportCard" in content
+    assert "spawnDiagnosticsCard" in content
+    assert "executePortScan" in content
+
+
+def test_holo_renderer_all_persona_drawers():
+    """Verify 3D avatars exist for all personas in holo-renderer.js."""
+    renderer_js_path = os.path.join(HOLO_DIR, "assets/www/holo-renderer.js")
+    assert os.path.isfile(renderer_js_path)
+    with open(renderer_js_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Original required personas
+    assert "drawSwarm" in content
+    assert "drawTuring" in content
+    assert "drawKnuth" in content
+    assert "drawLovelace" in content
+
+    # Cyber professional personas
+    assert "drawShadow" in content
+    assert "drawSentry" in content
+    assert "drawCipher" in content
+    assert "drawValkyrie" in content
+    assert "drawMatrix" in content
+    assert "drawGhost" in content
+    assert "drawGlitch" in content
+    assert "drawArchon" in content
+
+
+def test_native_bridge_cyber_and_voice_methods():
+    """Verify native Java bridge has voice and security posture methods."""
+    holo_java = os.path.join(HOLO_DIR, "src/org/antigravity/agenticvox/HoloBridgeInterface.java")
+    app_java = os.path.join(APP_DIR, "src/org/antigravity/agenticdeck/WebAppInterface.java")
+
+    for path in [holo_java, app_java]:
+        assert os.path.isfile(path)
+        with open(path, "r", encoding="utf-8") as f:
+            code = f.read()
+        assert "getAvailableVoices" in code
+        assert "setVoice" in code
+        assert "setVoicePitch" in code
+        assert "setVoiceSpeechRate" in code
+        assert "getDeviceSecurityPosture" in code
+        assert "runPortScan" in code
+
+
+def test_cyberdeck_personas_and_cyber_tools():
+    """Verify android-app cyberdeck includes personas and cyber tools."""
+    app_js_path = os.path.join(APP_DIR, "assets/www/app.js")
+    assert os.path.isfile(app_js_path)
+    with open(app_js_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    for p in EXPECTED_PERSONAS:
+        assert p in content, f"Persona {p} missing in android-app app.js"
+
+    assert "openCyberTool" in content
+    assert "runDeckPortScan" in content
+    assert "updateDeckPayload" in content
+    assert "analyzeDeckHash" in content
+    assert "downloadMissionReport" in content
+    assert "pingInferenceLoopback" in content
+
+
+def test_tri_agent_dock_and_voice_studio_ui():
+    """Verify Tri-Agent floating dock and Voice Studio modal in index.html."""
+    html_path = os.path.join(HOLO_DIR, "assets/www/index.html")
+    assert os.path.isfile(html_path)
+    with open(html_path, "r", encoding="utf-8") as f:
+        html = f.read()
+
+    # Verify Tri-Agent dock
+    assert "holo-agent-dock" in html
+    assert 'data-persona="swarm"' in html
+    assert 'data-persona="turing"' in html
+    assert 'data-persona="knuth"' in html
+    assert "PLANNER" in html
+    assert "BUILDER" in html
+    assert "AUDITOR" in html
+
+    # Verify Voice Studio modal and controls
+    assert 'id="voiceModal"' in html
+    assert "VOICE STUDIO" in html
+    assert "voice-studio-agent-tabs" in html
+    assert 'id="vsTab-swarm"' in html
+    assert 'id="vsTab-turing"' in html
+    assert 'id="vsTab-knuth"' in html
+    assert "voice-presets-grid" in html
+    assert 'id="studioVoiceSelect"' in html
+    assert 'id="studioPitchSlider"' in html
+    assert 'id="studioRateSlider"' in html
+    assert "auditionStudioVoice" in html
+    assert "saveStudioVoice" in html
+
+
+def test_voice_engine_presets_and_agent_tuning():
+    """Verify acoustic presets and per-agent configuration in voice-engine.js."""
+    voice_js_path = os.path.join(HOLO_DIR, "assets/www/voice-engine.js")
+    with open(voice_js_path, "r", encoding="utf-8") as f:
+        code = f.read()
+
+    assert "VOICE_PRESETS" in code
+    assert "getVoicePresets" in code
+    assert "getAgentVoiceConfig" in code
+    assert "setAgentVoiceConfig" in code
+    assert "auditionAgentVoice" in code
+
+    # Spoken triggers for Tri-Agent and Voice Studio
+    assert "switch to planner" in code
+    assert "switch to builder" in code
+    assert "switch to auditor" in code
+    assert "voice studio" in code
+
+
+def test_translucent_glass_hud_styles():
+    """Verify translucent frosted glass HUD styles in styles.css."""
+    css_path = os.path.join(HOLO_DIR, "assets/www/styles.css")
+    with open(css_path, "r", encoding="utf-8") as f:
+        css = f.read()
+
+    assert ".holo-agent-dock" in css
+    assert ".agent-dock-tab" in css
+    assert ".holo-modal-glass" in css
+    assert "backdrop-filter: blur" in css
+    assert ".voice-studio-agent-tabs" in css
+    assert ".voice-preset-card" in css
+
+
+def test_tri_agent_profiles_and_personalities():
+    """Verify Tri-Agent profiles metadata, bios, and personalities in app.js and index.html."""
+    app_js_path = os.path.join(HOLO_DIR, "assets/www/app.js")
+    with open(app_js_path, "r", encoding="utf-8") as f:
+        app_js = f.read()
+
+    assert "AGENT_PROFILES" in app_js
+    assert "Alan Turing" in app_js
+    assert "Donald Knuth" in app_js
+    assert "Ada Lovelace" in app_js
+    assert "openProfilesModal" in app_js
+    assert "closeProfilesModal" in app_js
+    assert "renderAgentProfiles" in app_js
+    assert "personality" in app_js
+
+    html_path = os.path.join(HOLO_DIR, "assets/www/index.html")
+    with open(html_path, "r", encoding="utf-8") as f:
+        html = f.read()
+
+    assert 'id="profilesModal"' in html
+    assert 'id="agentProfilesList"' in html
+    assert "openProfilesModal" in html
+
+
+def test_dynamic_gemini_models_and_google_api_sync():
+    """Verify Gemini dynamic model registry and live Google AI Studio API sync."""
+    app_js_path = os.path.join(HOLO_DIR, "assets/www/app.js")
+    with open(app_js_path, "r", encoding="utf-8") as f:
+        app_js = f.read()
+
+    assert "DEFAULT_GEMINI_MODELS" in app_js
+    assert "gemini-2.5-flash" in app_js
+    assert "gemini-2.5-pro" in app_js
+    assert "gemini-2.0-flash" in app_js
+    assert "refreshGeminiModelsFromGoogle" in app_js
+    assert "populateGeminiModelOptions" in app_js
+    assert "onModelSelectChange" in app_js
+    assert "https://generativelanguage.googleapis.com/v1beta/models" in app_js
+
+    html_path = os.path.join(HOLO_DIR, "assets/www/index.html")
+    with open(html_path, "r", encoding="utf-8") as f:
+        html = f.read()
+
+    assert 'id="geminiModelGroup"' in html
+    assert 'id="modelSelect"' in html
+    assert "refreshGeminiModelsFromGoogle" in html
+    assert "gemini-2.5-flash" in html
+
+
+def test_speech_noise_filtering_and_tts_handshake():
+    """Verify ambient noise filtering and native TTS completion handshake."""
+    voice_js_path = os.path.join(HOLO_DIR, "assets/www/voice-engine.js")
+    with open(voice_js_path, "r", encoding="utf-8") as f:
+        voice_js = f.read()
+
+    assert "isLikelyNoise" in voice_js
+    assert "onNativeSpeechFinished" in voice_js
+
+    holo_java = os.path.join(HOLO_DIR, "src/org/antigravity/agenticvox/HoloBridgeInterface.java")
+    with open(holo_java, "r", encoding="utf-8") as f:
+        java_code = f.read()
+
+    assert "onNativeSpeechFinished" in java_code
+    assert "onDone" in java_code
+
+
+def test_no_broken_gemini_3_hallucinations():
+    """Verify neither app defaults to non-existent gemini-3.1-flash-lite."""
+    for base in [HOLO_DIR, APP_DIR]:
+        app_js = os.path.join(base, "assets/www/app.js")
+        index_html = os.path.join(base, "assets/www/index.html")
+        with open(app_js, "r", encoding="utf-8") as f:
+            js = f.read()
+        with open(index_html, "r", encoding="utf-8") as f:
+            html = f.read()
+
+        assert "gemini-3.1-flash-lite" not in js
+        assert "gemini-3.1-flash-lite" not in html
+        assert "gemini-2.5-flash" in js
+
+
+def test_google_gemini_connection_resilience_and_multiturn():
+    """Verify Gemini API client sanitizes multiturn messages and uses robust timeout."""
+    for base in [HOLO_DIR, APP_DIR]:
+        app_js = os.path.join(base, "assets/www/app.js")
+        with open(app_js, "r", encoding="utf-8") as f:
+            js = f.read()
+
+        # Verify API key encoding and trimming
+        assert "encodeURIComponent" in js
+        # Verify timeout is at least 20000ms
+        assert "25000" in js or "20000" in js
+        # Verify candidate models fallback
+        assert "candidateModels" in js
+        assert "gemini-2.0-flash" in js
+        assert "gemini-1.5-flash" in js
+
+
+def test_free_copy_paste_model_and_live_verification():
+    """Verify both APK apps support freely copying and pasting any model and live testing."""
+    for base in [HOLO_DIR, APP_DIR]:
+        app_js_path = os.path.join(base, "assets/www/app.js")
+        index_html_path = os.path.join(base, "assets/www/index.html")
+        with open(app_js_path, "r", encoding="utf-8") as f:
+            js = f.read()
+        with open(index_html_path, "r", encoding="utf-8") as f:
+            html = f.read()
+
+        # Both apps must have a real editable modelInput
+        assert 'id="modelInput"' in html
+        # Both apps must have clipboard paste functions for model and key
+        assert "pasteModelFromClipboard" in js
+        assert "pasteApiKeyFromClipboard" in js
+        assert "pasteModelFromClipboard" in html
+        assert "pasteApiKeyFromClipboard" in html
+        # Both apps must have autoSaveModel and saveModelDirect
+        assert "autoSaveModel" in js
+        assert "saveModelDirect" in js
+        # Both apps must have quick model selection chips
+        assert "selectQuickModel" in js
+        assert "selectQuickModel" in html
+        # Both apps must have live LLM test connection
+        assert "testAIConnectionLive" in js
+        assert "testAIConnectionLive" in html
+
+    # Verify Android bridge clipboard methods exist in Java sources
+    holo_java = os.path.join(HOLO_DIR, "src/org/antigravity/agenticvox/HoloBridgeInterface.java")
+    app_java = os.path.join(APP_DIR, "src/org/antigravity/agenticdeck/WebAppInterface.java")
+    for jpath in [holo_java, app_java]:
+        with open(jpath, "r", encoding="utf-8") as f:
+            java_src = f.read()
+        assert "getClipboardText" in java_src
+        assert "copyToClipboard" in java_src
+
+
+def test_terminal_styling_and_gemini_auto_discovery():
+    """Verify terminal-style coloring palette and Gemini 3 auto-discovery across both apps."""
+    for base in [HOLO_DIR, APP_DIR]:
+        app_js_path = os.path.join(base, "assets/www/app.js")
+        styles_css_path = os.path.join(base, "assets/www/styles.css")
+        with open(app_js_path, "r", encoding="utf-8") as f:
+            js = f.read()
+        with open(styles_css_path, "r", encoding="utf-8") as f:
+            css = f.read()
+
+        # Verify active Gemini 3.8 Flash model support in JS
+        assert "gemini-3.8-flash" in js
+        # Verify candidate fallback list includes modern flash models
+        assert "gemini-3.5-flash-lite" in js
+        # Verify terminal colors in CSS
+        assert "#00ff88" in css
+
+    # Verify android-app specific terminal variables and discovery functions
+    ae_js = os.path.join(APP_DIR, "assets/www/app.js")
+    with open(ae_js, "r", encoding="utf-8") as f:
+        js = f.read()
+    assert "fetchLiveGoogleModels" in js
+
+    ae_css = os.path.join(APP_DIR, "assets/www/styles.css")
+    with open(ae_css, "r", encoding="utf-8") as f:
+        css = f.read()
+    assert "--term-green" in css
+    assert "--term-amber" in css
+
+
+def test_voice_engine_continuous_mode_and_anti_loop():
+    """Verify voice engine defaults to non-continuous listening and prevents infinite listen loops."""
+    voice_js_path = os.path.join(HOLO_DIR, "assets/www/voice-engine.js")
+    with open(voice_js_path, "r", encoding="utf-8") as f:
+        code = f.read()
+
+    # Continuous listening must default to false unless explicitly opted in
+    assert "localStorage.getItem('holo_continuous_voice') === 'true'" in code
+    # Must track consecutive timeouts to pause rather than infinite loop
+    assert "consecutiveTimeouts" in code
+    # Must stop on permission denied (error 9)
+    assert "code === 9" in code or "permission denied" in code.lower()
+
+    # UI toggle must not be hardcoded checked
+    holo_html = os.path.join(HOLO_DIR, "assets/www/index.html")
+    with open(holo_html, "r", encoding="utf-8") as f:
+        html = f.read()
+    assert 'id="continuousVoiceToggle" checked' not in html
+
+
+def test_gemini_candidate_fallbacks_and_recovery():
+    """Verify both apps have candidate model rollover for Gemini 404/endpoint failures."""
+    for base in [HOLO_DIR, APP_DIR]:
+        app_js_path = os.path.join(base, "assets/www/app.js")
+        with open(app_js_path, "r", encoding="utf-8") as f:
+            code = f.read()
+
+        assert "gemini-2.5-flash" in code
+        assert "gemini-2.0-flash" in code
+        assert "gemini-1.5-flash" in code
+        # Verify testAIConnectionLive iterates through candidates
+        assert "uniqueCandidates" in code or "candidateModels" in code
+        # Verify candidate models in queryGemini
+        assert "candidateModels" in code
+
+
+def test_ollama_connectivity_and_loopback_probing():
+    """Verify both apps support Ollama loopback candidate probing and customUrl state."""
+    for base in [HOLO_DIR, APP_DIR]:
+        app_js_path = os.path.join(base, "assets/www/app.js")
+        with open(app_js_path, "r", encoding="utf-8") as f:
+            code = f.read()
+
+        assert "customUrl" in code
+        assert "127.0.0.1:11434" in code
+        assert "10.0.2.2:11434" in code
+        assert "candidateBases" in code
+        assert "/api/tags" in code
+        assert "/api/chat" in code
+
+
+def test_live_ollama_daemon_and_chat_generation():
+    """Verify real live Ollama server connectivity and model generation if daemon is running."""
+    import urllib.request
+    import urllib.error
+
+    try:
+        req = urllib.request.Request("http://127.0.0.1:11434/api/tags")
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            models = [m.get("name") or m.get("model") for m in data.get("models", [])]
+            assert len(models) > 0, "Ollama daemon has no installed models"
+            assert any("llama3" in m or "qwen" in m for m in models)
+
+            # Test live chat ping on first available model
+            model_to_test = models[0]
+            chat_payload = json.dumps({
+                "model": model_to_test,
+                "messages": [{"role": "user", "content": "Respond with CONNECTED"}],
+                "stream": False
+            }).encode("utf-8")
+
+            chat_req = urllib.request.Request(
+                "http://127.0.0.1:11434/api/chat",
+                data=chat_payload,
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(chat_req, timeout=25) as chat_resp:
+                chat_data = json.loads(chat_resp.read().decode("utf-8"))
+                reply = chat_data.get("message", {}).get("content", "")
+                assert len(reply.strip()) > 0, f"Ollama {model_to_test} returned empty response"
+    except (urllib.error.URLError, TimeoutError, ConnectionRefusedError) as e:
+        pytest.skip(f"Ollama daemon not reachable at 127.0.0.1:11434: {e}")
+
+
+def test_speech_recognition_json_quoting_and_security():
+    """Verify that speech results evaluated in JavaScript use JSONObject.quote for injection safety."""
+    holo_bridge = os.path.join(HOLO_DIR, "src/org/antigravity/agenticvox/HoloBridgeInterface.java")
+    holo_main = os.path.join(HOLO_DIR, "src/org/antigravity/agenticvox/MainActivity.java")
+    app_main = os.path.join(APP_DIR, "src/org/antigravity/agenticdeck/MainActivity.java")
+
+    for path in [holo_bridge, holo_main, app_main]:
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
+        assert "JSONObject.quote(" in content, f"Missing JSONObject.quote in {path}"
+
+
+def test_activity_lifecycle_destroy_cleanup():
+    """Verify that both apps properly implement onDestroy and bridge destroy methods to prevent resource leaks."""
+    holo_main = os.path.join(HOLO_DIR, "src/org/antigravity/agenticvox/MainActivity.java")
+    app_main = os.path.join(APP_DIR, "src/org/antigravity/agenticdeck/MainActivity.java")
+    holo_bridge = os.path.join(HOLO_DIR, "src/org/antigravity/agenticvox/HoloBridgeInterface.java")
+    app_bridge = os.path.join(APP_DIR, "src/org/antigravity/agenticdeck/WebAppInterface.java")
+
+    with open(holo_main, "r", encoding="utf-8") as f:
+        assert "onDestroy()" in f.read()
+    with open(app_main, "r", encoding="utf-8") as f:
+        assert "onDestroy()" in f.read()
+    with open(holo_bridge, "r", encoding="utf-8") as f:
+        assert "public void destroy()" in f.read()
+    with open(app_bridge, "r", encoding="utf-8") as f:
+        assert "public void destroy()" in f.read()
+
+
+def test_google_key_portal_in_both_apps():
+    """Verify that openGoogleKeyPortal is available and linked in both Android Cyberdeck and Hologram apps."""
+    for base_dir in [HOLO_DIR, APP_DIR]:
+        js_path = os.path.join(base_dir, "assets/www/app.js")
+        html_path = os.path.join(base_dir, "assets/www/index.html")
+        with open(js_path, "r", encoding="utf-8") as f:
+            js = f.read()
+        with open(html_path, "r", encoding="utf-8") as f:
+            html = f.read()
+        assert "openGoogleKeyPortal" in js, f"openGoogleKeyPortal missing from {js_path}"
+        assert "openGoogleKeyPortal()" in html, f"openGoogleKeyPortal missing from {html_path}"
+        assert "aistudio.google.com/app/apikey" in js, f"API key URL missing from {js_path}"
+
+
+def test_default_model_consistency():
+    """Verify that both applications initialize with consistent and valid default model configuration."""
+    for base_dir in [HOLO_DIR, APP_DIR]:
+        html_path = os.path.join(base_dir, "assets/www/index.html")
+        js_path = os.path.join(base_dir, "assets/www/app.js")
+        with open(html_path, "r", encoding="utf-8") as f:
+            html = f.read()
+        with open(js_path, "r", encoding="utf-8") as f:
+            js = f.read()
+
+        assert 'value="gemini-2.5-flash"' in html, f"Default model input value inconsistent in {html_path}"
+        assert "'gemini-2.5-flash'" in js, f"gemini-2.5-flash missing from default state in {js_path}"
+
+
+def test_model_fallback_chains_coverage():
+    """Verify comprehensive fallback chains in both apps to recover from HTTP 404 or unreleased models."""
+    for base_dir in [HOLO_DIR, APP_DIR]:
+        js_path = os.path.join(base_dir, "assets/www/app.js")
+        with open(js_path, "r", encoding="utf-8") as f:
+            js = f.read()
+
+        expected_candidates = [
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-1.5-flash",
+            "gemini-2.5-pro",
+            "gemini-3.8-flash",
+            "gemini-3.5-flash-lite",
+            "gemini-3.5-flash"
+        ]
+        for cand in expected_candidates:
+            assert cand in js, f"Candidate model {cand} missing from fallback chain in {js_path}"
+
+
+def test_ollama_endpoints_probing_and_fallback():
+    """Verify multi-target loopback fallback endpoints in both apps."""
+    for base_dir in [HOLO_DIR, APP_DIR]:
+        js_path = os.path.join(base_dir, "assets/www/app.js")
+        with open(js_path, "r", encoding="utf-8") as f:
+            js = f.read()
+
+        assert "http://127.0.0.1:11434" in js
+        assert "http://localhost:11434" in js
+        assert "http://10.0.2.2:11434" in js
+
