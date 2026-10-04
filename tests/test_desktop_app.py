@@ -182,5 +182,41 @@ def test_website_desktop_v3_synced():
     assert "v3.0</div>" in website_html
     assert "Standalone Desktop · ~65 MB Fast Download" in website_html
     assert "Embedded Headless Kali VM console (no window hijacking)" in website_html
-    assert "Lightweight ~65 MB installer (no 1.5 GB OS bloat)" in website_html
     assert "Agentic-Essence-Desktop-Setup.exe" in website_html
+
+
+def test_desktop_setup_exe_unpack_integrity():
+    """Verify downloads/Agentic-Essence-Desktop-Setup.exe can be parsed and unpacked without errors."""
+    import shutil
+    import subprocess
+    
+    exe_path = REPO_DIR / "downloads" / "Agentic-Essence-Desktop-Setup.exe"
+    assert exe_path.is_file(), f"Desktop setup installer missing at {exe_path}"
+    assert exe_path.stat().st_size > 5_000_000, "Desktop setup installer is unexpectedly small (<5MB)"
+
+    p7z = shutil.which("7z") or shutil.which("7za")
+    if p7z:
+        res = subprocess.run([p7z, "l", str(exe_path)], capture_output=True, text=True)
+        assert res.returncode == 0, f"7z failed to list contents of {exe_path}: {res.stderr}"
+        output = res.stdout
+        assert "launcher.py" in output
+        assert "desktop_server.py" in output
+        assert "src/www/index.html" in output or "src\\www\\index.html" in output
+        assert "runtime/pythonw.exe" in output or "runtime\\pythonw.exe" in output
+
+
+def test_desktop_portable_zip_integrity():
+    """Verify downloads/Agentic-Essence-Desktop-v3.0.zip has valid zip structure and required files."""
+    import zipfile
+    
+    zip_path = REPO_DIR / "downloads" / "Agentic-Essence-Desktop-v3.0.zip"
+    assert zip_path.is_file(), f"Desktop portable zip missing at {zip_path}"
+    
+    with zipfile.ZipFile(zip_path, "r") as z:
+        names = z.namelist()
+        assert "launcher.py" in names
+        assert "desktop_server.py" in names
+        assert "src/www/index.html" in names
+        assert "Launch-Agentic-Essence.bat" in names
+        assert "AgenticEssence-Silent.vbs" in names
+

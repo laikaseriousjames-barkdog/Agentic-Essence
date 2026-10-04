@@ -18,8 +18,44 @@ import urllib.error
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+def get_www_dir():
+    """Locate www directory across frozen PyInstaller, embedded Python, or standard development."""
+    candidates = []
+
+    # 1. PyInstaller frozen path
+    if getattr(sys, "frozen", False):
+        if hasattr(sys, "_MEIPASS"):
+            meipass = Path(sys._MEIPASS)
+            candidates.append(meipass / "_internal" / "src" / "www")
+            candidates.append(meipass / "src" / "www")
+            candidates.append(meipass / "www")
+        try:
+            exe_dir = Path(sys.executable).resolve().parent
+            candidates.append(exe_dir / "src" / "www")
+            candidates.append(exe_dir / "www")
+        except Exception:
+            pass
+
+    # 2. Script and module directory
+    script_dir = Path(__file__).resolve().parent
+    candidates.append(script_dir / "src" / "www")
+    candidates.append(script_dir / "www")
+    candidates.append(script_dir.parent / "src" / "www")
+
+    # 3. Current working directory fallbacks
+    candidates.append(Path.cwd() / "src" / "www")
+    candidates.append(Path.cwd() / "desktop-app" / "src" / "www")
+
+    for c in candidates:
+        if c.exists() and (c / "index.html").exists():
+            return c
+
+    # Fallback to default
+    return script_dir / "src" / "www"
+
+
 BASE_DIR = Path(__file__).resolve().parent
-WWW_DIR = BASE_DIR / "src" / "www"
+WWW_DIR = get_www_dir()
 
 DEFAULT_PORT = 52400
 FALLBACK_PORTS = [52400, 52401, 52402, 8765, 8080]

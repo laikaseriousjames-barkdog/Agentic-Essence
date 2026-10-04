@@ -22,6 +22,22 @@ if str(BASE_DIR) not in sys.path:
 from desktop_server import DesktopServer, DEFAULT_PORT
 
 
+def get_user_profile_dir():
+    """Get persistent directory for browser app-mode profile without temp extraction locks."""
+    if platform.system() == "Windows":
+        app_data = os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA") or str(Path.home())
+        p = Path(app_data) / "AgenticEssence" / "browser_profile"
+    elif platform.system() == "Darwin":
+        p = Path.home() / "Library" / "Application Support" / "AgenticEssence" / "browser_profile"
+    else:
+        p = Path.home() / ".config" / "agentic-essence" / "browser_profile"
+    try:
+        p.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+    return p
+
+
 def find_app_mode_browser():
     """Find Microsoft Edge, Google Chrome, or Brave to run in dedicated --app window mode."""
     if platform.system() == "Windows":
@@ -33,9 +49,17 @@ def find_app_mode_browser():
             os.path.expandvars(r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"),
             os.path.expandvars(r"%LocalAppData%\Google\Chrome\Application\chrome.exe"),
             os.path.expandvars(r"%ProgramFiles%\BraveSoftware\Brave-Browser\Application\brave.exe"),
+            os.path.expandvars(r"%LocalAppData%\BraveSoftware\Brave-Browser\Application\brave.exe"),
+            os.path.expandvars(r"%ProgramFiles%\Vivaldi\Application\vivaldi.exe"),
+            os.path.expandvars(r"%LocalAppData%\Vivaldi\Application\vivaldi.exe"),
         ]
+        for name in ("msedge.exe", "msedge", "chrome.exe", "chrome", "brave.exe", "brave"):
+            found = shutil.which(name)
+            if found:
+                candidates.append(found)
+
         for p in candidates:
-            if os.path.isfile(p):
+            if p and os.path.isfile(p):
                 return p
     elif platform.system() == "Linux":
         candidates = [
@@ -88,8 +112,7 @@ def launch_desktop(server_only=False):
 
     if browser_bin:
         print(f"  → Launching native Cyberdeck window via: {os.path.basename(browser_bin)}")
-        user_data = BASE_DIR / ".ae_desktop_profile"
-        user_data.mkdir(exist_ok=True)
+        user_data = get_user_profile_dir()
         cmd = [
             browser_bin,
             f"--app={app_url}",
