@@ -1,10 +1,13 @@
-const CACHE_NAME = 'agentic-vox-v8.0';
+const CACHE_NAME = 'agentic-essence-v9.0';
 const ASSETS = [
   '/',
   '/index.html',
   '/styles.css',
   '/manifest.json',
-  '/favicon.svg'
+  '/favicon.svg',
+  '/vox-logo.png',
+  '/docs/eula.html',
+  '/docs/privacy.html'
 ];
 
 // Install: activate immediately
@@ -15,7 +18,7 @@ self.addEventListener('install', event => {
   );
 });
 
-// Activate: clean up ANY old cache (especially old 2.5.0 cache)
+// Activate: purge any older caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -31,7 +34,7 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch: NETWORK FIRST strategy so users always get the freshest version of the site
+// Fetch: NETWORK FIRST strategy with graceful offline fallback
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 

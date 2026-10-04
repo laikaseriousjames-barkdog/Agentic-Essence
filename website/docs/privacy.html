@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Agentic Essence & Agentic Vox End User License Agreement (EULA).">
-    <title>EULA — Agentic Essence &amp; Agentic Vox</title>
+    <meta name="description" content="Agentic Essence & Agentic Vox Privacy Policy — Zero Telemetry, 100% Local Privacy.">
+    <title>Privacy Policy — Agentic Essence &amp; Agentic Vox</title>
     <link rel="icon" type="image/svg+xml" href="../favicon.svg">
     <link rel="stylesheet" href="../styles.css?v=9.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,6 +19,7 @@
         .doc-card ul { padding-left: 1.5rem; margin-bottom: 1.5rem; }
         .back-link { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; margin-bottom: 2rem; }
         .back-link:hover { text-decoration: underline; }
+        .badge-privacy { display: inline-block; padding: 4px 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; border-radius: 100px; font-size: 0.8rem; font-weight: 700; margin-bottom: 1.5rem; }
     </style>
 </head>
 <body>
@@ -49,30 +50,27 @@
         </a>
 
         <div class="doc-card">
-            <h1>End User License Agreement (EULA)</h1>
-            <div class="doc-meta">Effective Date: October 2026 &bull; Version 3.0 &bull; Local-First Perpetual License</div>
+            <div class="badge-privacy">🛡️ ZERO-TELEMETRY GUARANTEE</div>
+            <h1>Privacy Policy</h1>
+            <div class="doc-meta">Effective Date: October 2026 &bull; Version 3.0</div>
 
-            <h2>1. Grant of License</h2>
-            <p>Subject to the terms of this Agreement, the creators of Agentic Essence and Agentic Vox hereby grant you a personal, non-exclusive, non-transferable, and revocable license to install, execute, and operate the binary distributions (including Android APK, Windows Desktop Executable, and Portable ZIP distributions) on devices owned or legitimately controlled by you.</p>
+            <h2>1. Zero Telemetry &amp; No Tracking</h2>
+            <p>Agentic Essence, Agentic Vox, and our accompanying website do not collect, harvest, store, or sell any personal data. There are no tracking cookies, analytics trackers, fingerprinters, or marketing beacons embedded in the software or this website.</p>
 
-            <h2>2. Local-First &amp; Hardware-Locked Operations</h2>
-            <p>Agentic Essence is engineered under a strict local-first philosophy. Cryptographic hardware verification, license token verification, and model persistence run strictly on your local hardware environment without persistent cloud verification servers or background phoning home.</p>
+            <h2>2. Local Storage of Credentials</h2>
+            <p>Any API keys you supply (such as your Google Gemini API key or Ollama endpoint configuration) are stored exclusively in your local device's sandboxed encrypted storage. They are never transmitted to any proxy, server, or intermediate service maintained by us.</p>
 
-            <h2>3. Authorized Security &amp; Ethical Research Declaration</h2>
-            <p>Agentic Essence and Agentic Vox feature native bridge integrations with Termux, Kali NetHunter, and terminal environments, capable of dispatching low-level network diagnostics, packet audits, and system tool executions.</p>
-            <ul>
-                <li>You agree to utilize all network, scanning, and penetration testing capabilities strictly on systems, networks, and infrastructure that you own or for which you have received express, authorized, and written permission.</li>
-                <li>The authors explicitly prohibit the usage of this software for unauthorized intrusions, denial-of-service, malicious surveillance, or illegal activities.</li>
-            </ul>
+            <h2>3. Direct API Communication</h2>
+            <p>When you trigger requests using Google Gemini, your client communicates directly with Google's official endpoints (<code>https://generativelanguage.googleapis.com</code>) via HTTPS. When you utilize local Ollama (<code>http://127.0.0.1:11434</code>), all inference remains 100% on your device, completely isolated from external networks.</p>
 
-            <h2>4. Third-Party Services &amp; Direct API Endpoints</h2>
-            <p>When utilizing cloud inference features (e.g., Google Gemini 2.5 / 2.0 Flash / Pro), requests are dispatched directly from your device to the official Google API endpoints using your provided credentials. You remain subject to the respective terms and acceptable use policies of third-party providers.</p>
+            <h2>4. Microphone &amp; Speech Privacy (Agentic Vox)</h2>
+            <p>Agentic Vox utilizes the on-device Android Speech Recognizer and Text-to-Speech engines. Audio waveforms are processed in-memory for continuous acoustic turn-taking and are not permanently recorded, uploaded, or analyzed for advertising profiles.</p>
 
-            <h2>5. Disclaimer of Warranties</h2>
-            <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM THE USE OF THE SOFTWARE.</p>
+            <h2>5. Changes to This Policy</h2>
+            <p>Any updates to this policy will be committed directly to our public repository with transparent version tracking.</p>
 
-            <h2>6. Contact &amp; Governance</h2>
-            <p>For questions regarding licensing, source audits, or enterprise deployment, please reach out directly at <a href="mailto:laikaseriousjames@gmail.com" style="color:var(--accent);">laikaseriousjames@gmail.com</a>.</p>
+            <h2>6. Contact</h2>
+            <p>If you have any questions regarding privacy architecture, please contact <a href="mailto:laikaseriousjames@gmail.com" style="color:var(--accent);">laikaseriousjames@gmail.com</a>.</p>
         </div>
     </main>
 
@@ -81,7 +79,7 @@
             <span class="logo">agentic_essence<span class="dim">//</span></span>
             <div class="footer-links">
                 <a href="../index.html">Home</a>
-                <a href="privacy.html">Privacy Policy</a>
+                <a href="eula.html">EULA</a>
                 <a href="mailto:laikaseriousjames@gmail.com">Contact</a>
             </div>
             <span class="dim footer-copy">&copy; 2026 Agentic Essence. All rights reserved.</span>
