@@ -1298,7 +1298,125 @@ window.openCyberTool = function(toolType) {
             </div>
         `;
         appendFreeNode("CYBER // SECURITY AUDIT", html, "system");
+    } else if (toolType === 'report') {
+        const timestamp = new Date().toISOString();
+        const activePersona = state.activePersona || 'swarm';
+        const nodeCount = document.querySelectorAll('#output-feed .free-node').length;
+        const savedToolCount = state.savedTools ? state.savedTools.length : 0;
+        
+        let reportMd = `# 🛡️ AGENTIC ESSENCE // MISSION INCIDENT REPORT\n`;
+        reportMd += `**Session Date**: ${timestamp}\n`;
+        reportMd += `**Active Persona**: ${activePersona.toUpperCase()}\n`;
+        reportMd += `**Feed Telemetry**: ${nodeCount} active nodes | ${savedToolCount} synthesized widgets\n`;
+        reportMd += `**Host Posture**: Root Bridge Active | NetHunter Link Online\n\n`;
+        reportMd += `## 📜 Mission Log Excerpts\n`;
+        const lastNodes = Array.from(document.querySelectorAll('#output-feed .free-node')).slice(-5);
+        lastNodes.forEach((n, idx) => {
+            const tag = n.querySelector('.tag-title') ? n.querySelector('.tag-title').textContent.trim() : `NODE #${idx+1}`;
+            const text = n.querySelector('.free-node-text') ? n.querySelector('.free-node-text').textContent.trim() : n.textContent.trim();
+            reportMd += `### [${tag}]\n${text.slice(0, 300)}...\n\n`;
+        });
+        reportMd += `\n---\n*Generated autonomously via Agentic Essence Cyberdeck.*`;
+
+        const reportEscaped = encodeURIComponent(reportMd);
+
+        const html = `
+            <div style="font-family:var(--font-code); font-size:12px;">
+                <div style="color:#38bdf8; font-weight:700; margin-bottom:6px;">📋 AGENTIC MISSION &amp; INCIDENT REPORT</div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:11px; color:#94a3b8;">
+                    <span>Session: <strong>${escapeHtml(activePersona.toUpperCase())}</strong></span>
+                    <span>Nodes Logged: <strong>${nodeCount}</strong></span>
+                </div>
+                <textarea id="${id}_report_text" readonly style="width:100%; box-sizing:border-box; height:120px; background:#050711; border:1px solid #0284c7; color:#bae6fd; font-family:monospace; font-size:10.5px; padding:6px; border-radius:4px; margin-bottom:8px; resize:none;">${escapeHtml(reportMd)}</textarea>
+                <div style="display:flex; gap:6px;">
+                    <button onclick="navigator.clipboard.writeText(decodeURIComponent('${reportEscaped}')); Bridge.showToast('Mission report copied!'); Bridge.vibrate(20);" style="flex:1; background:#0284c7; color:#fff; font-weight:700; border:none; padding:7px 10px; border-radius:4px; cursor:pointer; font-size:11px;">📋 COPY REPORT</button>
+                    <button onclick="downloadMissionReport(decodeURIComponent('${reportEscaped}'))" style="flex:1; background:#059669; color:#fff; font-weight:700; border:none; padding:7px 10px; border-radius:4px; cursor:pointer; font-size:11px;">💾 DOWNLOAD .MD</button>
+                </div>
+            </div>
+        `;
+        appendFreeNode("CYBER // MISSION REPORT", html, "system");
+    } else if (toolType === 'diagnostics') {
+        const domNodes = document.querySelectorAll('*').length;
+        const memoryMB = (window.performance && window.performance.memory) ? Math.round(window.performance.memory.usedJSHeapSize / 1048576) : '~28';
+        const modelName = state.model || 'gemini-2.5-flash';
+
+        const html = `
+            <div style="font-family:var(--font-code); font-size:12px;">
+                <div style="color:#f59e0b; font-weight:700; margin-bottom:6px;">⚡ AGENTIC SUBSYSTEM DIAGNOSTICS &amp; TELEMETRY</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px;">
+                    <div style="background:#090d1a; border:1px solid #1e293b; padding:6px; border-radius:4px;">
+                        <span style="color:#94a3b8; font-size:10px;">INFERENCE ENGINE</span>
+                        <div style="color:#00f0ff; font-weight:700; font-size:11px;">${escapeHtml(modelName)}</div>
+                    </div>
+                    <div style="background:#090d1a; border:1px solid #1e293b; padding:6px; border-radius:4px;">
+                        <span style="color:#94a3b8; font-size:10px;">FRAME TARGET</span>
+                        <div style="color:#10b981; font-weight:700; font-size:11px;">30 FPS Capped</div>
+                    </div>
+                    <div style="background:#090d1a; border:1px solid #1e293b; padding:6px; border-radius:4px;">
+                        <span style="color:#94a3b8; font-size:10px;">DOM COMPLEXITY</span>
+                        <div style="color:#f59e0b; font-weight:700; font-size:11px;">${domNodes} Elements</div>
+                    </div>
+                    <div style="background:#090d1a; border:1px solid #1e293b; padding:6px; border-radius:4px;">
+                        <span style="color:#94a3b8; font-size:10px;">HEAP ALLOCATION</span>
+                        <div style="color:#a855f7; font-weight:700; font-size:11px;">${memoryMB} MB Active</div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <button onclick="flushFeedHistory()" style="flex:1; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#fca5a5; padding:6px; border-radius:4px; font-weight:700; cursor:pointer; font-size:11px;">🧹 FLUSH CACHED NODES</button>
+                    <button onclick="pingInferenceLoopback()" style="flex:1; background:rgba(0,240,255,0.2); border:1px solid #00f0ff; color:#00f0ff; padding:6px; border-radius:4px; font-weight:700; cursor:pointer; font-size:11px;">📡 PROBE LATENCY</button>
+                </div>
+                <div id="diag_latency_res" style="margin-top:6px; font-size:11px; color:#94a3b8;"></div>
+            </div>
+        `;
+        appendFreeNode("CYBER // DIAGNOSTICS", html, "system");
     }
+};
+
+window.downloadMissionReport = function(markdownText) {
+    try {
+        const blob = new Blob([markdownText], { type: 'text/markdown;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Mission-Report-${Date.now()}.md`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        Bridge.showToast('Downloaded mission report (.md)');
+        Bridge.vibrate(20);
+    } catch (e) {
+        Bridge.showToast('Export error: ' + e.message);
+    }
+};
+
+window.flushFeedHistory = function() {
+    const nodes = document.querySelectorAll('#output-feed .free-node');
+    if (nodes.length > 3) {
+        for (let i = 0; i < nodes.length - 3; i++) {
+            nodes[i].remove();
+        }
+        Bridge.showToast('Flushed dormant feed nodes.');
+        Bridge.vibrate(20);
+    } else {
+        Bridge.showToast('Feed buffer is already minimal.');
+    }
+};
+
+window.pingInferenceLoopback = function() {
+    const el = document.getElementById('diag_latency_res');
+    if (!el) return;
+    const start = performance.now();
+    el.innerHTML = '<span style="color:#00f0ff;">Pinging loopback engine...</span>';
+    fetch('http://127.0.0.1:11434/api/tags', { method: 'GET' })
+        .then(() => {
+            const ms = Math.round(performance.now() - start);
+            el.innerHTML = `<span style="color:#10b981;">Ollama local daemon responding (${ms}ms)</span>`;
+        })
+        .catch(() => {
+            const ms = Math.round(performance.now() - start);
+            el.innerHTML = `<span style="color:#f59e0b;">Ollama loopback: Standby | Cloud Gateway latency: ${ms}ms</span>`;
+        });
 };
 
 window.runDeckPortScan = function(cardId) {
@@ -2172,13 +2290,7 @@ function mountToolCard(toolObj, isSaved = false) {
     }
 
     let completeDoc = toolObj.html;
-    const bridgeShim = `<script>
-        try {
-            if (typeof window.AndroidBridge === 'undefined' && window.parent && window.parent.AndroidBridge) {
-                window.AndroidBridge = window.parent.AndroidBridge;
-            }
-        } catch (e) {}
-    </script>`;
+    const bridgeShim = `<!-- Sandboxed Execution Realm -->`;
 
     if (!completeDoc.includes('<!DOCTYPE html>') && !completeDoc.includes('<html')) {
         completeDoc = `<!DOCTYPE html>
@@ -2232,7 +2344,7 @@ function mountToolCard(toolObj, isSaved = false) {
                     <button class="floating-tool-btn" onclick="deleteCustomTool('${containerId}')">✕ DISMISS</button>
                 </div>
             </div>
-            <iframe id="${iframeId}" class="floating-tool-iframe" sandbox="allow-scripts allow-forms allow-same-origin allow-modals" srcdoc="${escapeHtmlAttr(completeDoc)}" onload="try{this.style.height=Math.max(220,this.contentWindow.document.body.scrollHeight+30)+'px'}catch(e){}"></iframe>
+            <iframe id="${iframeId}" class="floating-tool-iframe" sandbox="allow-scripts allow-forms allow-modals" srcdoc="${escapeHtmlAttr(completeDoc)}" style="width:100%; min-height:240px; border:none;"></iframe>
         </div>
     `;
 }

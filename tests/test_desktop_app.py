@@ -148,6 +148,27 @@ def test_desktop_server_endpoints():
             content = res.read().decode()
             assert "DesktopBridge" in content
 
+        # 8. Cross-Origin RCE Attack Blocking (Security Audit Fix)
+        evil_req = urllib.request.Request(
+            f"{base_url}/api/shell",
+            data=json.dumps({"command": "echo PWNED"}).encode(),
+            headers={
+                "Content-Type": "application/json",
+                "Origin": "https://evil-attacker.example.com"
+            }
+        )
+        with pytest.raises(urllib.error.HTTPError) as exc_info:
+            urllib.request.urlopen(evil_req)
+        assert exc_info.value.code == 403, "Cross-origin POST request was NOT rejected with HTTP 403!"
+
+        evil_get = urllib.request.Request(
+            f"{base_url}/api/health",
+            headers={"Origin": "https://evil-attacker.example.com"}
+        )
+        with pytest.raises(urllib.error.HTTPError) as exc_info:
+            urllib.request.urlopen(evil_get)
+        assert exc_info.value.code == 403, "Cross-origin GET API request was NOT rejected with HTTP 403!"
+
     finally:
         server.stop()
 

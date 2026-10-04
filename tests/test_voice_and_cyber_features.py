@@ -72,6 +72,8 @@ def test_spatial_tasks_cyber_cards():
     assert "spawnWifiReconCard" in content
     assert "spawnMitreAttackCard" in content
     assert "spawnSecurityPostureCard" in content
+    assert "spawnMissionReportCard" in content
+    assert "spawnDiagnosticsCard" in content
     assert "executePortScan" in content
 
 
@@ -130,6 +132,8 @@ def test_cyberdeck_personas_and_cyber_tools():
     assert "runDeckPortScan" in content
     assert "updateDeckPayload" in content
     assert "analyzeDeckHash" in content
+    assert "downloadMissionReport" in content
+    assert "pingInferenceLoopback" in content
 
 
 def test_tri_agent_dock_and_voice_studio_ui():

@@ -85,6 +85,10 @@ public class MainActivity extends Activity {
         mWebView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                if (url.startsWith("http://") || url.startsWith("https://")) {
+                    mBridge.openExternalUrl(url);
+                    return true;
+                }
                 view.loadUrl(url);
                 return true;
             }

@@ -364,6 +364,22 @@ window.HoloVoice = (function() {
             }
         }
 
+        if (lower.includes('mission report') || lower.includes('generate report') || lower.includes('export report') || lower.includes('incident report')) {
+            if (window.SpatialTasks && window.SpatialTasks.spawnMissionReportCard) {
+                SpatialTasks.spawnMissionReportCard();
+                speakAgent("Tactical mission incident report generated.");
+                return;
+            }
+        }
+
+        if (lower.includes('diagnostics') || lower.includes('subsystem health') || lower.includes('system diagnostics') || lower.includes('telemetry check')) {
+            if (window.SpatialTasks && window.SpatialTasks.spawnDiagnosticsCard) {
+                SpatialTasks.spawnDiagnosticsCard();
+                speakAgent("Subsystem telemetry and diagnostics materialized.");
+                return;
+            }
+        }
+
         // 4. Direct hardware query interception
         if (lower.includes('battery') || lower.includes('power state')) {
             const res = executeHardware('battery');

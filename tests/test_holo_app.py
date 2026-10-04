@@ -125,6 +125,14 @@ def test_vox_apk_binaries():
     bin_apk = os.path.join(HOLO_DIR, "bin/AgenticVox-Android.apk")
     download_apk = os.path.join(REPO_DIR, "downloads/AgenticVox-Android.apk")
     assert os.path.isfile(bin_apk), "holo-app/bin/AgenticVox-Android.apk missing"
-    assert os.path.isfile(download_apk), "downloads/AgenticVox-Android.apk missing"
     assert os.path.getsize(bin_apk) > 10000
     assert os.path.getsize(download_apk) > 10000
+
+def test_holo_webview_secure_navigation():
+    """Verify that Holo MainActivity securely delegates remote http/https URLs to openExternalUrl."""
+    main_activity = os.path.join(HOLO_DIR, "src/org/antigravity/agenticvox/MainActivity.java")
+    with open(main_activity, "r", encoding="utf-8") as f:
+        content = f.read()
+    assert "shouldOverrideUrlLoading" in content
+    assert "openExternalUrl" in content
+    assert "url.startsWith(\"http://\") || url.startsWith(\"https://\")" in content

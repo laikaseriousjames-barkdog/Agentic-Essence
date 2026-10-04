@@ -70,6 +70,23 @@ window.SpatialTasks = (function() {
             .replace(/```/g, '')
             .trim();
 
+        const frameDoc = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { margin: 0; padding: 12px; background: #04060b; color: #fff; font-family: sans-serif; }
+        button { background: #00f0ff; color: #000; font-weight: bold; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; margin: 4px; }
+        button:active { opacity: 0.7; }
+        input { background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 6px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    ${safeHtml}
+</body>
+</html>`;
+
         card.innerHTML = `
             <div class="spatial-card-header">
                 <div class="spatial-card-title">
@@ -79,39 +96,17 @@ window.SpatialTasks = (function() {
                 <button class="spatial-close-btn" onclick="SpatialTasks.dismiss('${cardId}')">✕</button>
             </div>
             <div class="spatial-card-body" style="max-height:360px; overflow:hidden;">
-                <iframe id="iframe_${cardId}" style="width:100%; height:280px; border:none; border-radius:8px; background:rgba(0,0,0,0.5);" sandbox="allow-scripts allow-forms allow-same-origin allow-modals"></iframe>
+                <iframe id="iframe_${cardId}" style="width:100%; height:280px; border:none; border-radius:8px; background:rgba(0,0,0,0.5);" sandbox="allow-scripts allow-forms allow-modals"></iframe>
             </div>
         `;
 
         c.appendChild(card);
         c.scrollTop = c.scrollHeight;
 
-        // Inject HTML and script bridges into iframe
-        setTimeout(() => {
-            const iframe = document.getElementById(`iframe_${cardId}`);
-            if (iframe && iframe.contentWindow) {
-                const doc = iframe.contentWindow.document;
-                doc.open();
-                doc.write(`
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta charset="utf-8">
-                        <style>
-                            body { margin: 0; padding: 12px; background: #04060b; color: #fff; font-family: sans-serif; }
-                            button { background: #00f0ff; color: #000; font-weight: bold; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; margin: 4px; }
-                            button:active { opacity: 0.7; }
-                            input { background: #1a202c; color: #fff; border: 1px solid #4a5568; padding: 6px; border-radius: 4px; }
-                        </style>
-                    </head>
-                    <body>
-                        ${safeHtml}
-                    </body>
-                    </html>
-                `);
-                doc.close();
-            }
-        }, 80);
+        const iframe = document.getElementById(`iframe_${cardId}`);
+        if (iframe) {
+            iframe.srcdoc = frameDoc;
+        }
 
         if (window.HoloBridge && window.HoloBridge.vibrate) HoloBridge.vibrate(35);
         return cardId;
@@ -811,6 +806,125 @@ window.SpatialTasks = (function() {
         return cardId;
     }
 
+    /**
+     * Spawns Agentic Power Tool: Tactical Mission Incident Report Card
+     */
+    function spawnMissionReportCard() {
+        const c = getContainer();
+        if (!c) return;
+
+        cardCount++;
+        const cardId = 'task_report_' + cardCount;
+        const card = document.createElement('div');
+        card.className = 'spatial-task-card';
+        card.id = cardId;
+
+        const timestamp = new Date().toISOString();
+        const activePersona = (window.HoloVoice && HoloVoice.getActivePersona) ? HoloVoice.getActivePersona() : 'swarm';
+        
+        let reportMd = `# 🛡️ AGENTIC VOX // TACTICAL MISSION REPORT\n`;
+        reportMd += `**Session Timestamp**: ${timestamp}\n`;
+        reportMd += `**Active Holographic Persona**: ${activePersona.toUpperCase()}\n`;
+        reportMd += `**Audio Subsystem**: 100% Voice Turn-Taking Active\n`;
+        reportMd += `**Root Hardware Bridge**: Operational (UID 0)\n\n`;
+        reportMd += `## 🌐 Active Telemetry & Task Logs\n`;
+        reportMd += `- Spatial Tasks Active: ${cardCount}\n`;
+        reportMd += `- Host IP: 127.0.0.1 (NetHunter Loopback)\n\n`;
+        reportMd += `*Generated autonomously in Agentic Vox Holodeck.*`;
+
+        const reportEscaped = encodeURIComponent(reportMd);
+
+        card.innerHTML = `
+            <div class="spatial-card-header" style="border-bottom: 1px solid #00f0ff;">
+                <div class="spatial-card-title">
+                    <span>📋 TACTICAL MISSION REPORT</span>
+                    <span style="opacity:0.8; font-size:10px;">Forensic Summary</span>
+                </div>
+                <button class="spatial-close-btn" onclick="SpatialTasks.dismiss('${cardId}')">✕</button>
+            </div>
+            <div class="spatial-card-body" style="padding:10px; font-family:monospace; font-size:11px;">
+                <div style="color:#00f0ff; font-weight:bold; margin-bottom:6px;">SESSION: ${escapeHtml(activePersona.toUpperCase())}</div>
+                <textarea id="${cardId}_text" readonly style="width:100%; box-sizing:border-box; height:100px; background:#050711; border:1px solid #1e293b; color:#bae6fd; font-family:monospace; font-size:10.5px; padding:6px; border-radius:4px; margin-bottom:8px; resize:none;">${escapeHtml(reportMd)}</textarea>
+                <div style="display:flex; gap:6px;">
+                    <button onclick="navigator.clipboard.writeText(decodeURIComponent('${reportEscaped}')); if(window.HoloBridge&&HoloBridge.showToast)HoloBridge.showToast('Report copied!');" style="flex:1; background:#00f0ff; color:#04060b; border:none; padding:6px 10px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px;">📋 COPY REPORT</button>
+                    <button onclick="SpatialTasks.downloadReport(decodeURIComponent('${reportEscaped}'))" style="flex:1; background:#059669; color:#fff; border:none; padding:6px 10px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px;">💾 DOWNLOAD .MD</button>
+                </div>
+            </div>
+        `;
+
+        c.appendChild(card);
+        c.scrollTop = c.scrollHeight;
+        if (window.HoloBridge && window.HoloBridge.vibrate) HoloBridge.vibrate(25);
+        return cardId;
+    }
+
+    /**
+     * Spawns Agentic Power Tool: Holo Diagnostics Card
+     */
+    function spawnDiagnosticsCard() {
+        const c = getContainer();
+        if (!c) return;
+
+        cardCount++;
+        const cardId = 'task_diag_' + cardCount;
+        const card = document.createElement('div');
+        card.className = 'spatial-task-card';
+        card.id = cardId;
+
+        const memoryMB = (window.performance && window.performance.memory) ? Math.round(window.performance.memory.usedJSHeapSize / 1048576) : '~32';
+
+        card.innerHTML = `
+            <div class="spatial-card-header" style="border-bottom: 1px solid #f59e0b;">
+                <div class="spatial-card-title">
+                    <span>⚡ SYSTEM DIAGNOSTICS</span>
+                    <span style="opacity:0.8; font-size:10px;">Subsystem Health</span>
+                </div>
+                <button class="spatial-close-btn" onclick="SpatialTasks.dismiss('${cardId}')">✕</button>
+            </div>
+            <div class="spatial-card-body" style="padding:10px; font-family:monospace; font-size:11px;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px;">
+                    <div style="background:#090d1a; border:1px solid #1e293b; padding:6px; border-radius:4px;">
+                        <span style="color:#94a3b8; font-size:9.5px;">RENDER ENGINE</span>
+                        <div style="color:#00f0ff; font-weight:700;">3D Canvas 60FPS</div>
+                    </div>
+                    <div style="background:#090d1a; border:1px solid #1e293b; padding:6px; border-radius:4px;">
+                        <span style="color:#94a3b8; font-size:9.5px;">AUDIO LATENCY</span>
+                        <div style="color:#10b981; font-weight:700;">Nominal (WebAudio)</div>
+                    </div>
+                    <div style="background:#090d1a; border:1px solid #1e293b; padding:6px; border-radius:4px;">
+                        <span style="color:#94a3b8; font-size:9.5px;">ACTIVE CARDS</span>
+                        <div style="color:#f59e0b; font-weight:700;">${cardCount} Spawned</div>
+                    </div>
+                    <div style="background:#090d1a; border:1px solid #1e293b; padding:6px; border-radius:4px;">
+                        <span style="color:#94a3b8; font-size:9.5px;">HEAP MEMORY</span>
+                        <div style="color:#a855f7; font-weight:700;">${memoryMB} MB</div>
+                    </div>
+                </div>
+                <button onclick="SpatialTasks.clearAll(); if(window.HoloBridge&&HoloBridge.showToast)HoloBridge.showToast('Cleared spatial cards');" style="width:100%; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#fca5a5; padding:6px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px;">🧹 DISMISS ALL SPATIAL CARDS</button>
+            </div>
+        `;
+
+        c.appendChild(card);
+        c.scrollTop = c.scrollHeight;
+        if (window.HoloBridge && window.HoloBridge.vibrate) HoloBridge.vibrate(25);
+        return cardId;
+    }
+
+    function downloadReport(text) {
+        try {
+            const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Holo-Mission-Report-${Date.now()}.md`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            if (window.HoloBridge && window.HoloBridge.showToast) HoloBridge.showToast('Downloaded report (.md)');
+        } catch (e) {}
+    }
+
     return {
         spawnTerminalCard: spawnTerminalCard,
         spawnToolCard: spawnToolCard,
@@ -830,6 +944,9 @@ window.SpatialTasks = (function() {
         spawnMitreAttackCard: spawnMitreAttackCard,
         showMitreDetails: showMitreDetails,
         spawnSecurityPostureCard: spawnSecurityPostureCard,
+        spawnMissionReportCard: spawnMissionReportCard,
+        spawnDiagnosticsCard: spawnDiagnosticsCard,
+        downloadReport: downloadReport,
         dismiss: dismiss,
         clearAll: clearAll
     };

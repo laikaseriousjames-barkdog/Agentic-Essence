@@ -260,19 +260,50 @@ class AgenticDesktopHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(WWW_DIR), **kwargs)
 
+    def _is_origin_allowed(self):
+        origin = self.headers.get("Origin")
+        if not origin:
+            referer = self.headers.get("Referer")
+            if referer:
+                try:
+                    from urllib.parse import urlparse
+                    ref_host = urlparse(referer).hostname
+                    if ref_host not in ("127.0.0.1", "localhost"):
+                        return False
+                except Exception:
+                    return False
+            return True
+
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(origin)
+            return parsed.hostname in ("127.0.0.1", "localhost")
+        except Exception:
+            return False
+
     def end_headers(self):
-        # Enable CORS and disable aggressive caching for dev
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        # Strict origin validation: only echo verified local loopback origin, NEVER wildcard '*'
+        origin = self.headers.get("Origin")
+        if origin and self._is_origin_allowed():
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Agentic-Client")
+        self.send_header("X-Content-Type-Options", "nosniff")
         super().end_headers()
 
     def do_OPTIONS(self):
+        if not self._is_origin_allowed():
+            self.send_error(403, "Forbidden: Cross-origin access denied")
+            return
         self.send_response(200)
         self.end_headers()
 
     def do_GET(self):
         path = self.path.split("?")[0]
+        if path.startswith("/api/"):
+            if not self._is_origin_allowed():
+                self.send_error(403, "Forbidden: Cross-origin access denied")
+                return
 
         if path == "/api/health":
             self._send_json({
@@ -313,6 +344,10 @@ class AgenticDesktopHandler(SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def do_POST(self):
+        if not self._is_origin_allowed():
+            self.send_error(403, "Forbidden: Cross-origin access denied")
+            return
+
         path = self.path.split("?")[0]
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_length).decode("utf-8", errors="ignore") if content_length > 0 else "{}"
