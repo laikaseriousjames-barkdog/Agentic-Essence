@@ -173,7 +173,7 @@
         <!-- Voice Agent & Acoustic Lab -->
         <div class="drawer-block">
             <label class="drawer-label">VOICE AGENT &amp; ACOUSTIC ENGINE</label>
-            <select id="deckVoiceSelect" class="holo-input" onchange="localStorage.setItem('ae_selected_voice', this.value); Bridge.speak('Voice profile updated.');" style="margin-bottom:8px;">
+            <select id="deckVoiceSelect" class="holo-input" onchange="SafeStorage.setItem('ae_selected_voice', this.value); Bridge.speak('Voice profile updated.');" style="margin-bottom:8px;">
                 <option value="">Default Persona Voice Profile</option>
             </select>
             <button type="button" onclick="Bridge.speak('Agentic Cyberdeck voice synthesis active. All tactical cybersecurity systems nominal.');" class="hw-matrix-btn cyan" style="width:100%; font-size:12px; padding:6px;">🗣️ Audition Spoken Voice</button>

@@ -1,3 +1,35 @@
+// ===================== SAFE STORAGE WRAPPER =====================
+const SafeStorage = {
+    _mem: {},
+    getItem(k) {
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) return window.SafeStorage.getItem(k);
+        } catch (e) {}
+        return Object.prototype.hasOwnProperty.call(this._mem, k) ? this._mem[k] : null;
+    },
+    setItem(k, v) {
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) window.SafeStorage.setItem(k, String(v));
+        } catch (e) {}
+        this._mem[k] = String(v);
+    },
+    removeItem(k) {
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) window.SafeStorage.removeItem(k);
+        } catch (e) {}
+        delete this._mem[k];
+    },
+    clear() {
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) window.SafeStorage.clear();
+        } catch (e) {}
+        this._mem = {};
+    }
+};
+if (typeof window !== 'undefined') {
+    window.SafeStorage = SafeStorage;
+}
+
 /**
  * Agentic Hologram — Voice Control & Real-Time Conversational Engine
  * Continuous Voice-First Turn-Taking // Audio Reactive Lip-Sync // Speech Recognition
@@ -7,16 +39,21 @@ window.HoloVoice = (function() {
     let recognition = null;
     let isListening = false;
     let isSpeaking = false;
-    let isContinuous = (localStorage.getItem('holo_continuous_voice') === 'true');
+    let isContinuous = false;
+    try {
+        isContinuous = (localStorage.getItem('holo_continuous_voice') === 'true');
+    } catch (e) {
+        isContinuous = (SafeStorage.getItem('holo_continuous_voice') === 'true');
+    }
     let consecutiveTimeouts = 0;
     let currentSpeechText = '';
     let speechSilenceTimer = null;
     let audioAnimInterval = null;
 
     // Operator Voice Preferences & Acoustic Profiles
-    let selectedSystemVoiceName = localStorage.getItem('holo_selected_voice') || '';
-    let userVoicePitch = parseFloat(localStorage.getItem('holo_voice_pitch') || '1.0');
-    let userVoiceRate = parseFloat(localStorage.getItem('holo_voice_rate') || '1.0');
+    let selectedSystemVoiceName = SafeStorage.getItem('holo_selected_voice') || '';
+    let userVoicePitch = parseFloat(SafeStorage.getItem('holo_voice_pitch') || '1.0');
+    let userVoiceRate = parseFloat(SafeStorage.getItem('holo_voice_rate') || '1.0');
 
     // Canonical Tri-Agent Acoustic Presets & Audio Personas
     const VOICE_PRESETS = {
@@ -46,7 +83,7 @@ window.HoloVoice = (function() {
 
     function getAgentVoiceConfig(agentKey) {
         const canonical = canonicalAgentKey(agentKey);
-        const stored = localStorage.getItem('holo_agent_voice_' + canonical);
+        const stored = SafeStorage.getItem('holo_agent_voice_' + canonical);
         if (stored) {
             try {
                 return JSON.parse(stored);
@@ -57,7 +94,7 @@ window.HoloVoice = (function() {
 
     function setAgentVoiceConfig(agentKey, config) {
         const canonical = canonicalAgentKey(agentKey);
-        localStorage.setItem('holo_agent_voice_' + canonical, JSON.stringify(config));
+        SafeStorage.setItem('holo_agent_voice_' + canonical, JSON.stringify(config));
         if (window.updateDockVoiceTags) window.updateDockVoiceTags();
     }
 
@@ -721,7 +758,7 @@ window.HoloVoice = (function() {
 
     function setSelectedVoice(name) {
         selectedSystemVoiceName = name || '';
-        localStorage.setItem('holo_selected_voice', selectedSystemVoiceName);
+        SafeStorage.setItem('holo_selected_voice', selectedSystemVoiceName);
         if (window.HoloBridge && window.HoloBridge.setVoice) {
             window.HoloBridge.setVoice(selectedSystemVoiceName);
         }
@@ -733,7 +770,7 @@ window.HoloVoice = (function() {
 
     function setVoicePitch(p) {
         userVoicePitch = parseFloat(p) || 1.0;
-        localStorage.setItem('holo_voice_pitch', userVoicePitch);
+        SafeStorage.setItem('holo_voice_pitch', userVoicePitch);
         if (window.HoloBridge && window.HoloBridge.setVoicePitch) {
             window.HoloBridge.setVoicePitch(userVoicePitch);
         }
@@ -741,7 +778,7 @@ window.HoloVoice = (function() {
 
     function setVoiceRate(r) {
         userVoiceRate = parseFloat(r) || 1.0;
-        localStorage.setItem('holo_voice_rate', userVoiceRate);
+        SafeStorage.setItem('holo_voice_rate', userVoiceRate);
         if (window.HoloBridge && window.HoloBridge.setVoiceSpeechRate) {
             window.HoloBridge.setVoiceSpeechRate(userVoiceRate);
         }
@@ -786,7 +823,7 @@ window.HoloVoice = (function() {
         onNativeAudioLevel: onNativeAudioLevel,
         setContinuous: function(val) {
             isContinuous = !!val;
-            localStorage.setItem('holo_continuous_voice', isContinuous ? 'true' : 'false');
+            SafeStorage.setItem('holo_continuous_voice', isContinuous ? 'true' : 'false');
             consecutiveTimeouts = 0;
             if (!isContinuous && isListening) {
                 stopListening();

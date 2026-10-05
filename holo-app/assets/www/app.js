@@ -1,16 +1,48 @@
+// ===================== SAFE STORAGE WRAPPER =====================
+const SafeStorage = {
+    _mem: {},
+    getItem(k) {
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) return window.SafeStorage.getItem(k);
+        } catch (e) {}
+        return Object.prototype.hasOwnProperty.call(this._mem, k) ? this._mem[k] : null;
+    },
+    setItem(k, v) {
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) window.SafeStorage.setItem(k, String(v));
+        } catch (e) {}
+        this._mem[k] = String(v);
+    },
+    removeItem(k) {
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) window.SafeStorage.removeItem(k);
+        } catch (e) {}
+        delete this._mem[k];
+    },
+    clear() {
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) window.SafeStorage.clear();
+        } catch (e) {}
+        this._mem = {};
+    }
+};
+if (typeof window !== 'undefined') {
+    window.SafeStorage = SafeStorage;
+}
+
 /**
  * Agentic Hologram — Cognitive Swarm & Spatial Brain Engine
  * Four Personas // Zero Chat Boxes // Spawns Tasks Out of Thin Air
  */
 
-const savedHoloPersona = localStorage.getItem('holo_persona') || localStorage.getItem('ae_persona');
-const savedHoloModel = localStorage.getItem('holo_model') || localStorage.getItem('ae_model');
+const savedHoloPersona = SafeStorage.getItem('holo_persona') || SafeStorage.getItem('ae_persona');
+const savedHoloModel = SafeStorage.getItem('holo_model') || SafeStorage.getItem('ae_model');
 const initialHoloModel = savedHoloModel ? savedHoloModel.replace(/^models\//, '') : 'gemini-2.5-flash';
 const state = {
     persona: (savedHoloPersona && ['swarm', 'turing', 'knuth', 'lovelace'].includes(savedHoloPersona)) ? savedHoloPersona : 'swarm',
-    provider: localStorage.getItem('holo_provider') || localStorage.getItem('ae_provider') || 'gemini',
-    apiKey: localStorage.getItem('holo_api_key') || localStorage.getItem('ae_api_key') || '',
-    customUrl: localStorage.getItem('holo_custom_url') || localStorage.getItem('ae_custom_url') || '',
+    provider: SafeStorage.getItem('holo_provider') || SafeStorage.getItem('ae_provider') || 'gemini',
+    apiKey: SafeStorage.getItem('holo_api_key') || SafeStorage.getItem('ae_api_key') || '',
+    customUrl: SafeStorage.getItem('holo_custom_url') || SafeStorage.getItem('ae_custom_url') || '',
     model: initialHoloModel,
     isGenerating: false,
     lastGenerateTime: 0,
@@ -24,7 +56,7 @@ const state = {
 
 if (!state.model) {
     state.model = 'gemini-2.5-flash';
-    localStorage.setItem('holo_model', 'gemini-2.5-flash');
+    SafeStorage.setItem('holo_model', 'gemini-2.5-flash');
 }
 
 const SYSTEM_GROUNDING = `
@@ -178,7 +210,7 @@ window.switchPersona = function(newPersona) {
 
     if (!PERSONAS[newPersona]) newPersona = 'swarm';
     state.persona = newPersona;
-    localStorage.setItem('holo_persona', newPersona);
+    SafeStorage.setItem('holo_persona', newPersona);
 
     const p = PERSONAS[newPersona];
     document.body.className = p.colorClass;
@@ -546,7 +578,7 @@ const DEFAULT_GEMINI_MODELS = [
 
 function getCachedGeminiModels() {
     try {
-        const raw = localStorage.getItem('holo_cached_gemini_models');
+        const raw = SafeStorage.getItem('holo_cached_gemini_models');
         if (raw) {
             const parsed = JSON.parse(raw);
             if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -594,8 +626,8 @@ window.populateGeminiModelOptions = function(models) {
 window.autoSaveModel = function(val) {
     const clean = (val || '').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
     state.model = clean || 'gemini-2.5-flash';
-    localStorage.setItem('holo_model', state.model);
-    localStorage.setItem('ae_model', state.model);
+    SafeStorage.setItem('holo_model', state.model);
+    SafeStorage.setItem('ae_model', state.model);
 
     const mInput = document.getElementById('modelInput');
     if (mInput && mInput.value !== val) {
@@ -843,7 +875,7 @@ window.testAIConnectionLive = async function() {
         }
 
         state.customUrl = workingBase;
-        localStorage.setItem('holo_custom_url', workingBase);
+        SafeStorage.setItem('holo_custom_url', workingBase);
 
         // Determine model to test
         let testModel = (state.model && !state.model.startsWith('gemini')) ? state.model : '';
@@ -955,7 +987,7 @@ window.refreshGeminiModelsFromGoogle = async function(silent = false) {
                     return rank(a.id) - rank(b.id);
                 });
 
-                localStorage.setItem('holo_cached_gemini_models', JSON.stringify(liveModels));
+                SafeStorage.setItem('holo_cached_gemini_models', JSON.stringify(liveModels));
                 populateGeminiModelOptions(liveModels);
 
                 if (statusBadge) {
@@ -1073,7 +1105,7 @@ async function queryAIProvider(messages) {
                         if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
                             if (modelName !== userModel) {
                                 state.model = modelName;
-                                localStorage.setItem('holo_model', modelName);
+                                SafeStorage.setItem('holo_model', modelName);
                                 const mInput = document.getElementById('modelInput');
                                 if (mInput) mInput.value = modelName;
                             }
@@ -1105,7 +1137,7 @@ async function queryAIProvider(messages) {
                                             uniqueModels.splice(idx + 1, 0, ...newModels);
                                             if (idx === 0) {
                                                 state.model = newModels[0];
-                                                localStorage.setItem('holo_model', state.model);
+                                                SafeStorage.setItem('holo_model', state.model);
                                                 const mInput = document.getElementById('modelInput');
                                                 if (mInput) mInput.value = state.model;
                                             }
@@ -1208,7 +1240,7 @@ async function queryAIProvider(messages) {
                     if (reply) {
                         if (base !== state.customUrl) {
                             state.customUrl = base;
-                            localStorage.setItem('holo_custom_url', base);
+                            SafeStorage.setItem('holo_custom_url', base);
                         }
                         return reply.trim();
                     }
@@ -1221,7 +1253,7 @@ async function queryAIProvider(messages) {
                             if (avail && avail !== ollamaModel) {
                                 ollamaModel = avail;
                                 state.model = avail;
-                                localStorage.setItem('holo_model', avail);
+                                SafeStorage.setItem('holo_model', avail);
                                 const retryRes = await fetch(`${base}/api/chat`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
@@ -1259,7 +1291,7 @@ window.onProviderChange = function() {
     const select = document.getElementById('providerSelect');
     if (!select) return;
     state.provider = select.value;
-    localStorage.setItem('holo_provider', state.provider);
+    SafeStorage.setItem('holo_provider', state.provider);
 
     const keyLabel = document.getElementById('apiKeyLabel');
     const keyInput = document.getElementById('apiKeyInput');
@@ -1342,7 +1374,7 @@ window.openSettingsModal = function() {
     const mInput = document.getElementById('modelInput');
     if (mInput) mInput.value = state.model || 'gemini-2.5-flash';
     const contToggle = document.getElementById('continuousVoiceToggle');
-    if (contToggle) contToggle.checked = (localStorage.getItem('holo_continuous_voice') === 'true');
+    if (contToggle) contToggle.checked = (SafeStorage.getItem('holo_continuous_voice') === 'true');
     populateGeminiModelOptions();
     if (state.apiKey && state.provider === 'gemini') {
         refreshGeminiModelsFromGoogle(true);
@@ -1359,9 +1391,9 @@ window.populateSystemVoices = function() {
     const rateDisp = document.getElementById('rateDisplay');
     if (!select) return;
 
-    const currentVoice = localStorage.getItem('holo_selected_voice') || '';
-    const currentPitch = localStorage.getItem('holo_voice_pitch') || '1.0';
-    const currentRate = localStorage.getItem('holo_voice_rate') || '1.0';
+    const currentVoice = SafeStorage.getItem('holo_selected_voice') || '';
+    const currentPitch = SafeStorage.getItem('holo_voice_pitch') || '1.0';
+    const currentRate = SafeStorage.getItem('holo_voice_rate') || '1.0';
 
     if (pitchSlider) pitchSlider.value = currentPitch;
     if (rateSlider) rateSlider.value = currentRate;
@@ -1423,12 +1455,12 @@ window.closeSettingsModal = function(e) {
 window.autoSaveApiKey = function(val) {
     const trimmed = (val || '').trim();
     state.apiKey = trimmed;
-    localStorage.setItem('holo_api_key', state.apiKey);
-    localStorage.setItem('ae_api_key', state.apiKey);
+    SafeStorage.setItem('holo_api_key', state.apiKey);
+    SafeStorage.setItem('ae_api_key', state.apiKey);
     if (state.provider === 'ollama' || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
         state.customUrl = trimmed;
-        localStorage.setItem('holo_custom_url', state.customUrl);
-        localStorage.setItem('ae_custom_url', state.customUrl);
+        SafeStorage.setItem('holo_custom_url', state.customUrl);
+        SafeStorage.setItem('ae_custom_url', state.customUrl);
     }
 };
 

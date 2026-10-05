@@ -3,19 +3,61 @@
  * State-of-the-Art Futuristic UI // Translucent // Alive Neon Quantum Canvas
  */
 
+// ===================== SAFE STORAGE WRAPPER =====================
+// Resilient storage that falls back to in-memory dictionary when running inside
+// Android WebView on file:///android_asset/ schemes (where window.localStorage throws SecurityError).
+const SafeStorage = {
+    _mem: {},
+    getItem(k) {
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) {
+                return window.SafeStorage.getItem(k);
+            }
+        } catch (e) {}
+        return Object.prototype.hasOwnProperty.call(this._mem, k) ? this._mem[k] : null;
+    },
+    setItem(k, v) {
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) {
+                window.SafeStorage.setItem(k, String(v));
+            }
+        } catch (e) {}
+        this._mem[k] = String(v);
+    },
+    removeItem(k) {
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) {
+                window.SafeStorage.removeItem(k);
+            }
+        } catch (e) {}
+        delete this._mem[k];
+    },
+    clear() {
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) {
+                window.SafeStorage.clear();
+            }
+        } catch (e) {}
+        this._mem = {};
+    }
+};
+if (typeof window !== 'undefined') {
+    window.SafeStorage = SafeStorage;
+}
+
 // ===================== STATE & PERSONAS =====================
-const savedPersona = localStorage.getItem('ae_persona');
-const savedModel = localStorage.getItem('ae_model');
+const savedPersona = SafeStorage.getItem('ae_persona');
+const savedModel = SafeStorage.getItem('ae_model');
 const initialModel = savedModel ? savedModel.replace(/^models\//, '') : 'gemini-2.5-flash';
 const state = {
     persona: (savedPersona && ['swarm', 'turing', 'knuth', 'lovelace'].includes(savedPersona)) ? savedPersona : 'swarm',
-    provider: localStorage.getItem('ae_provider') || 'gemini',
-    apiKey: localStorage.getItem('ae_api_key') || '',
+    provider: SafeStorage.getItem('ae_provider') || 'gemini',
+    apiKey: SafeStorage.getItem('ae_api_key') || '',
     model: initialModel,
-    customUrl: localStorage.getItem('ae_custom_url') || '',
-    ttsEnabled: localStorage.getItem('ae_tts') === 'true',
-    hapticsEnabled: localStorage.getItem('ae_haptics') !== 'false',
-    savedTools: JSON.parse(localStorage.getItem('ae_saved_tools') || '[]'),
+    customUrl: SafeStorage.getItem('ae_custom_url') || '',
+    ttsEnabled: SafeStorage.getItem('ae_tts') === 'true',
+    hapticsEnabled: SafeStorage.getItem('ae_haptics') !== 'false',
+    savedTools: JSON.parse(SafeStorage.getItem('ae_saved_tools') || '[]'),
     isGenerating: false,
     personaHistories: {
         swarm: [],
@@ -53,7 +95,7 @@ window.state = state;
 
 if (!state.model) {
     state.model = 'gemini-2.5-flash';
-    localStorage.setItem('ae_model', 'gemini-2.5-flash');
+    SafeStorage.setItem('ae_model', 'gemini-2.5-flash');
 }
 
 const SYSTEM_GROUNDING = `
@@ -198,7 +240,7 @@ const Bridge = {
             lovelace: { pitch: 1.18, rate: 1.02 }
         };
         const prof = profiles[pKey] || { pitch: 1.0, rate: 1.0 };
-        const savedVoice = localStorage.getItem('ae_selected_voice') || '';
+        const savedVoice = SafeStorage.getItem('ae_selected_voice') || '';
 
         const b = this.getBridge();
         if (b && b.speakText) {
@@ -427,7 +469,7 @@ function initHoloCanvas() {
         { r: 255, g: 183, b: 0 }    // Terminal Amber (accent)
     ];
 
-    const NODE_COUNT = Math.min(48, Math.floor((width * height) / 16000));
+    const NODE_COUNT = Math.min(24, Math.floor((width * height) / 24000));
     const nodes = [];
 
     for (let i = 0; i < NODE_COUNT; i++) {
@@ -527,7 +569,7 @@ function initHoloCanvas() {
             ctx.arc(n.x, n.y, currentR, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(${n.color.r}, ${n.color.g}, ${n.color.b}, 0.85)`;
             ctx.shadowColor = `rgb(${n.color.r}, ${n.color.g}, ${n.color.b})`;
-            ctx.shadowBlur = 8;
+            ctx.shadowBlur = 0;
             ctx.fill();
             ctx.shadowBlur = 0;
         }
@@ -571,7 +613,7 @@ window.closeDrawer = function() {
 window.populateDeckVoices = function() {
     const sel = document.getElementById('deckVoiceSelect');
     if (!sel) return;
-    const current = localStorage.getItem('ae_selected_voice') || '';
+    const current = SafeStorage.getItem('ae_selected_voice') || '';
     sel.innerHTML = '<option value="">Default Persona Voice Profile</option>';
 
     let list = [];
@@ -632,7 +674,7 @@ function initSettingsDrawer() {
 window.switchPersona = function(key) {
     if (!PERSONAS[key]) key = 'swarm';
     state.persona = key;
-    localStorage.setItem('ae_persona', key);
+    SafeStorage.setItem('ae_persona', key);
     updatePersonaTabs();
     Bridge.vibrate(20);
     appendFreeNode(
@@ -645,7 +687,7 @@ window.switchPersona = function(key) {
 function updatePersonaTabs() {
     if (!PERSONAS[state.persona]) {
         state.persona = 'swarm';
-        localStorage.setItem('ae_persona', 'swarm');
+        SafeStorage.setItem('ae_persona', 'swarm');
     }
     document.querySelectorAll('.persona-stream-btn').forEach(btn => {
         if (btn.dataset.persona === state.persona) {
@@ -663,7 +705,7 @@ window.onProviderChange = function() {
     const mInput = document.getElementById('modelInput');
     const prov = pSelect ? pSelect.value : (state.provider || 'gemini');
     state.provider = prov;
-    localStorage.setItem('ae_provider', prov);
+    SafeStorage.setItem('ae_provider', prov);
 
     if (prov === 'gemini') {
         if (label) label.textContent = "GEMINI API KEY";
@@ -751,7 +793,7 @@ window.fetchLiveGoogleModels = async function(apiKey) {
                         return 10;
                     };
                     live.sort((a, b) => rank(a.id) - rank(b.id));
-                    localStorage.setItem('ae_cached_gemini_models', JSON.stringify(live));
+                    SafeStorage.setItem('ae_cached_gemini_models', JSON.stringify(live));
                     updateModelDatalist(live);
                     return live;
                 }
@@ -778,12 +820,12 @@ function updateModelDatalist(models) {
 window.autoSaveApiKey = function(val) {
     const k = (val || '').replace(/^["']|["']$/g, '').trim();
     state.apiKey = k;
-    localStorage.setItem('ae_api_key', k);
-    localStorage.setItem('holo_api_key', k);
+    SafeStorage.setItem('ae_api_key', k);
+    SafeStorage.setItem('holo_api_key', k);
     if (state.provider === 'ollama' || k.startsWith('http://') || k.startsWith('https://')) {
         state.customUrl = k;
-        localStorage.setItem('ae_custom_url', k);
-        localStorage.setItem('holo_custom_url', k);
+        SafeStorage.setItem('ae_custom_url', k);
+        SafeStorage.setItem('holo_custom_url', k);
     }
     const status = document.getElementById('apiKeySaveStatus');
     if (status) {
@@ -814,7 +856,7 @@ window.saveApiKeyDirect = function() {
 window.autoSaveModel = function(val) {
     const clean = (val || '').replace(/^["']|["']$/g, '').trim().replace(/^models\//, '');
     state.model = clean || 'gemini-2.5-flash';
-    localStorage.setItem('ae_model', state.model);
+    SafeStorage.setItem('ae_model', state.model);
 
     const mInput = document.getElementById('modelInput');
     if (mInput && mInput.value !== val) {
@@ -1083,8 +1125,8 @@ window.testAIConnectionLive = async function() {
         }
 
         state.customUrl = workingBase;
-        localStorage.setItem('ae_custom_url', workingBase);
-        localStorage.setItem('holo_custom_url', workingBase);
+        SafeStorage.setItem('ae_custom_url', workingBase);
+        SafeStorage.setItem('holo_custom_url', workingBase);
 
         let testModel = (state.model && !state.model.startsWith('gemini')) ? state.model : '';
         if (!testModel || (availableModels.length > 0 && !availableModels.includes(testModel))) {
@@ -1132,14 +1174,14 @@ window.saveSettings = function() {
     state.apiKey = (aInput ? aInput.value : state.apiKey).trim();
     state.model = (mInput ? mInput.value : state.model).trim();
 
-    localStorage.setItem('ae_provider', state.provider);
-    localStorage.setItem('ae_api_key', state.apiKey);
-    localStorage.setItem('ae_model', state.model);
+    SafeStorage.setItem('ae_provider', state.provider);
+    SafeStorage.setItem('ae_api_key', state.apiKey);
+    SafeStorage.setItem('ae_model', state.model);
 
     if (state.provider === 'ollama' || state.apiKey.startsWith('http://') || state.apiKey.startsWith('https://')) {
         state.customUrl = state.apiKey;
-        localStorage.setItem('ae_custom_url', state.customUrl);
-        localStorage.setItem('holo_custom_url', state.customUrl);
+        SafeStorage.setItem('ae_custom_url', state.customUrl);
+        SafeStorage.setItem('holo_custom_url', state.customUrl);
     }
 
     Bridge.showToast("Configuration locked");
@@ -1531,7 +1573,37 @@ function generatePersonaCognition(personaKey, prompt) {
         return `Repetitive buffer stream verified and stabilized (${cleanPrompt.length} chars). Syntactic entropy nominal; queue execution preserved without heap degradation.`;
     }
 
-    // 2. Turing: Logic, Halting Problem, DAG cycle detection, formal complexity
+    // 2. Greetings & Salutations
+    if (/^(hi|hello|hey|greetings|sup|yo|good (morning|afternoon|evening)|howdy)\b/i.test(cleanPrompt) || cleanPrompt === 'hi' || cleanPrompt === 'hello') {
+        if (pKey === 'turing') {
+            return `Greetings. Turing algorithmic core active. My analytical faculties are at your service—what mathematical, architectural, or logic problem are we decomposing today?`;
+        } else if (pKey === 'knuth') {
+            return `Hello. Knuth synthesis engine online. Ready to craft elegant algorithms and inspect data structures under rigorous spatial and temporal constraints. How may I assist?`;
+        } else if (pKey === 'lovelace') {
+            return `Welcome. Lovelace creative engine initialized. Here, where poetical science weaves mathematics with cyberdeck intuition, what harmony shall we explore?`;
+        } else {
+            return `✦ Agentic Swarm operational. Dual-engine matrix linked to Kali NetHunter root and Shizuku ADB. All telemetry nominal. What is your directive?`;
+        }
+    }
+
+    // 3. Status & Identity
+    if (lower.includes('who are you') || lower.includes('what are you') || lower.includes('identity')) {
+        const p = PERSONAS[pKey] || PERSONAS.swarm;
+        return `I am ${p.name}, operating on this Android Cyberdeck console. I function with full local-first intelligence, capable of direct root terminal execution [EXEC: <cmd>], Android Shizuku automation [SHIZUKU: <cmd>], dynamic tool synthesis (/synth), and cloud LLM reasoning.`;
+    }
+
+    if (lower.includes('status') || lower.includes('health') || lower.includes('telemetry') || lower.includes('battery')) {
+        const ip = (typeof Bridge !== 'undefined' && Bridge.getDeviceIpAddress) ? Bridge.getDeviceIpAddress() : '127.0.0.1';
+        const batt = (typeof Bridge !== 'undefined' && Bridge.getBatteryLevel) ? Bridge.getBatteryLevel() : 98;
+        return `[CYBERDECK SYSTEM TELEMETRY]\n` +
+               `• Persona: ${pKey.toUpperCase()}\n` +
+               `• Host OS: Linux 5.15 aarch64 (Android NetHunter Root UID 0)\n` +
+               `• Network: wlan0 (${ip})\n` +
+               `• Battery: ${batt}%\n` +
+               `• Subsystems: Shell Bridge Online, Shizuku ADB Available, Local Tool Sandbox Active.`;
+    }
+
+    // 4. Turing: Logic, Halting Problem, DAG cycle detection, formal complexity
     if (pKey === 'turing' || lower.includes('halting') || lower.includes('dag') || lower.includes('cycle detection') || lower.includes('turing')) {
         if (lower.includes('halting') || lower.includes('dag') || lower.includes('cycle')) {
             return `Regarding the halting problem on a deterministic Directed Acyclic Graph (DAG): By mathematical definition, a finite DAG admits a strict topological ordering with zero directed cycles. Every state transition progresses strictly forward, guaranteeing that any path evaluation terminates in at most |V| - 1 steps, where V is the vertex cardinality. By incorporating cycle detection algorithms—such as Kahn's in-degree zero elimination or Tarjan's depth-first search back-edge classification—any non-terminating cycle is detected in O(V + E) linear time. Consequently, the halting problem is fully decidable and solvable on finite deterministic DAGs with cycle detection.`;
@@ -1539,7 +1611,7 @@ function generatePersonaCognition(personaKey, prompt) {
         return `From an algorithmic perspective, any deterministic discrete system can be formalized as state transitions over finite tape configurations. By analyzing topological invariants and graph acyclicity, termination is guaranteed under linear time complexity.`;
     }
 
-    // 3. Knuth: Craftsmanship, Trie vs LRU Cache, Memory layout, ARM64 cache constraints
+    // 5. Knuth: Craftsmanship, Trie vs LRU Cache, Memory layout, ARM64 cache constraints
     if (pKey === 'knuth' || lower.includes('knuth') || lower.includes('lru') || lower.includes('trie') || lower.includes('cache')) {
         if (lower.includes('trie') || lower.includes('lru') || lower.includes('arm64') || lower.includes('cache')) {
             return `Comparing Trie prefix indexing with an O(1) LRU cache under tight ARM64 cache constraints reveals fundamental architectural trade-offs. While a Trie provides prefix retrieval and ordered traversal, its pointer-rich nodes lead to severe memory fragmentation and continuous L1/L2 cache misses on typical 64-byte ARM cache lines. Conversely, an O(1) LRU cache utilizing an open-addressed hash map coupled with a contiguous doubly-linked index minimizes pointer chasing and optimizes temporal locality. Under severe ARM64 cache pressure, a cache-aligned Radix trie or Robin Hood hash table significantly reduces TLB evictions and latency.`;
@@ -1547,7 +1619,7 @@ function generatePersonaCognition(personaKey, prompt) {
         return `When engineering algorithms for resource-constrained architectures, data structure layout and cache line alignment dictate real-world throughput. Structural elegance and spatial locality must guide our implementation.`;
     }
 
-    // 4. Lovelace: Poetical science, mathematical harmonics, cyberdeck HUD
+    // 6. Lovelace: Poetical science, mathematical harmonics, cyberdeck HUD
     if (pKey === 'lovelace' || lower.includes('lovelace') || lower.includes('harmonics') || lower.includes('hud') || lower.includes('poetical')) {
         if (lower.includes('harmonics') || lower.includes('sensory') || lower.includes('hud')) {
             return `The sensory union between mathematical harmonics and the cyberdeck HUD is the purest manifestation of Poetical Science. Just as the Jacquard loom weaves intricate tapestries from simple punched cards, our engine weaves raw telemetry—electromagnetic radio signals, CPU oscillation harmonics, and memory flux—into glowing, translucent geometric forms. The cyberdeck HUD is not a static display; it is an intuitive sensory canvas where abstract mathematical harmony is rendered visible, uniting rigorous computation with perceptual resonance.`;
@@ -1555,19 +1627,19 @@ function generatePersonaCognition(personaKey, prompt) {
         return `We may say that the analytical engine weaves algebraical patterns just as the Jacquard loom weaves flowers and leaves. In uniting mathematical rigor with aesthetic perception, we discover the harmonious beauty of computational science.`;
     }
 
-    // 5. Swarm: Tactical NetHunter telemetry, root, network, processes
+    // 7. Swarm: Tactical NetHunter telemetry, root, network, processes
     if (pKey === 'swarm' || lower.includes('swarm') || lower.includes('telemetry') || lower.includes('nethunter') || lower.includes('root') || lower.includes('processes')) {
-        const ip = Bridge.getDeviceIpAddress ? Bridge.getDeviceIpAddress() : '127.0.0.1';
-        const batt = Bridge.getBatteryLevel ? Bridge.getBatteryLevel() : 98;
-        return `[SWARM // KALI NETHUNTER TELEMETRY]
-Kernel: Linux 5.15 aarch64 // Privilege: NetHunter Root (UID 0 active)
-Telemetry: Interface wlan0 (${ip}) // Power: ${batt}% nominal
-Subsystems: Hardware bridge synchronized, reactive execution pipelines primed. Standing by for command dispatch.`;
+        const ip = (typeof Bridge !== 'undefined' && Bridge.getDeviceIpAddress) ? Bridge.getDeviceIpAddress() : '127.0.0.1';
+        const batt = (typeof Bridge !== 'undefined' && Bridge.getBatteryLevel) ? Bridge.getBatteryLevel() : 98;
+        return `[SWARM // KALI NETHUNTER TELEMETRY]\n` +
+               `Kernel: Linux 5.15 aarch64 // Privilege: NetHunter Root (UID 0 active)\n` +
+               `Telemetry: Interface wlan0 (${ip}) // Power: ${batt}% nominal\n` +
+               `Subsystems: Hardware bridge synchronized, reactive execution pipelines primed. Standing by for command dispatch.`;
     }
 
-    // 6. Generic persona responses
+    // 8. Generic intelligent persona responses
     const p = PERSONAS[pKey] || PERSONAS.swarm;
-    return `${p.name} intelligence active. Systems, memory pipelines, and tactical tooling operational under root execution matrix.`;
+    return `${p.name} intelligence active. Systems, memory pipelines, and tactical tooling operational under root execution matrix. Ready for shell commands, tool synthesis, or tactical workflows.`;
 }
 
 /**
@@ -1692,6 +1764,15 @@ window.sendMessage = async function() {
     if (!text) return;
 
     state.isGenerating = true;
+    const watchdog = setTimeout(() => {
+        if (state.isGenerating) {
+            console.warn('[Watchdog] Auto-recovering hung isGenerating state');
+            clearTimeout(watchdog);
+        state.isGenerating = false;
+            const btn = document.getElementById('execute-btn');
+            if (btn) { btn.disabled = false; btn.classList.remove('busy'); }
+        }
+    }, 35000);
     const execBtn = document.getElementById('execute-btn');
     if (execBtn) {
         execBtn.disabled = true;
@@ -1751,22 +1832,18 @@ window.sendMessage = async function() {
         return;
     }
 
-    // If offline and not a tool request, deliver prompt to enter API key
+        // If offline and not a tool request, run offline persona cognition seamlessly!
     if (!hasAIConfig) {
-        appendFreeNode(
-            "SYSTEM // NEURAL LINK OFFLINE",
-            `<div style="border-left:3px solid #00f0ff; padding:10px 14px; background:rgba(0,240,255,0.06); border-radius:6px; font-family:var(--font-code); font-size:12px; margin:4px 0;">` +
-            `<div style="color:#00f0ff; font-weight:700; margin-bottom:4px;">🔑 API Key Required for Live Intelligence</div>` +
-            `<div style="color:#cbd5e1; margin-bottom:8px;">No ${escapeHtml(state.provider.toUpperCase())} API key configured. Enter your free Google Gemini API key to activate live persona intelligence.</div>` +
-            `<div style="display:flex; gap:8px;">` +
-            `<button type="button" onclick="openDrawer()" class="hw-matrix-btn cyan" style="padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;">⚙️ Enter API Key</button>` +
-            `<button type="button" onclick="pasteApiKeyFromClipboard()" class="hw-matrix-btn magenta" style="padding:6px 12px; font-size:11px; font-weight:700; cursor:pointer;">📋 Paste Key</button>` +
-            `</div>` +
-            `</div>`,
-            "system"
-        );
-        Bridge.speak("No API key configured. Please enter your Gemini API key in the routing drawer.");
-        openDrawer();
+        const cogReply = generatePersonaCognition(state.persona, text);
+        let contentHtml = renderAssistantContent(cogReply, null, isGreeting);
+        contentHtml += `
+            <div style="margin-top:8px; border-left:2px solid rgba(0,240,255,0.4); padding:6px 10px; background:rgba(0,240,255,0.03); border-radius:4px; font-family:var(--font-code); font-size:11px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:#94a3b8;">🔒 Offline Cyberdeck Engine (Root Shell & Tools Active)</span>
+                <button type="button" onclick="openDrawer()" style="background:transparent; border:1px solid #00f0ff; color:#00f0ff; padding:2px 8px; border-radius:3px; cursor:pointer; font-size:10px;">⚙️ Add API Key for Cloud LLM</button>
+            </div>`;
+        appendFreeNode(currentPersona.tag, contentHtml, "assistant");
+        state.history.push({ role: 'assistant', content: cogReply });
+        Bridge.speak(cogReply);
         return;
     }
 
@@ -1896,6 +1973,7 @@ DO NOT run commands, DO NOT recite system status or verification checklists, and
         state.history.push({ role: 'assistant', content: `[Exception: ${err.message}]` });
         appendFreeNode("SYSTEM // EXCEPTION", `<span style="color:#ff007f;">${escapeHtml(err.message)}</span>`, "system");
     } finally {
+        clearTimeout(watchdog);
         state.isGenerating = false;
         const execBtn = document.getElementById('execute-btn');
         if (execBtn) {
@@ -2354,7 +2432,7 @@ window.saveCustomTool = function(toolJsonEscaped, id) {
         const tool = JSON.parse(decodeURIComponent(toolJsonEscaped));
         if (!state.savedTools.some(t => t.title === tool.title)) {
             state.savedTools.push(tool);
-            localStorage.setItem('ae_saved_tools', JSON.stringify(state.savedTools));
+            SafeStorage.setItem('ae_saved_tools', JSON.stringify(state.savedTools));
             if (typeof toolTrie !== 'undefined') toolTrie.insert(tool.title, tool);
             if (typeof toolLRU !== 'undefined') toolLRU.put(tool.id || tool.title, tool);
             updateToolboxBadge();
@@ -2895,7 +2973,7 @@ async function queryGemini(messages) {
                                     uniqueModels.splice(idx + 1, 0, ...newModels);
                                     if (idx === 0) {
                                         state.model = newModels[0];
-                                        localStorage.setItem('ae_model', state.model);
+                                        SafeStorage.setItem('ae_model', state.model);
                                         const mInput = document.getElementById('modelInput');
                                         if (mInput) mInput.value = state.model;
                                     }
@@ -2917,7 +2995,7 @@ async function queryGemini(messages) {
                 if (replyText) {
                     if (modelName !== userModel) {
                         state.model = modelName;
-                        localStorage.setItem('ae_model', modelName);
+                        SafeStorage.setItem('ae_model', modelName);
                         const mInput = document.getElementById('modelInput');
                         if (mInput) mInput.value = modelName;
                     }
@@ -3014,7 +3092,7 @@ async function queryOllama(base, messages) {
                 if (reply) {
                     if (b !== state.customUrl) {
                         state.customUrl = b;
-                        localStorage.setItem('ae_custom_url', b);
+                        SafeStorage.setItem('ae_custom_url', b);
                     }
                     return reply.trim();
                 }
@@ -3027,7 +3105,7 @@ async function queryOllama(base, messages) {
                         if (avail && avail !== ollamaModel) {
                             ollamaModel = avail;
                             state.model = avail;
-                            localStorage.setItem('ae_model', avail);
+                            SafeStorage.setItem('ae_model', avail);
                             const retryRes = await fetch(`${b}/api/chat`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -3516,7 +3594,7 @@ class SessionStateManager {
             const data = JSON.parse(jsonString);
             if (data.savedTools && Array.isArray(data.savedTools)) {
                 state.savedTools = data.savedTools;
-                localStorage.setItem('ae_saved_tools', JSON.stringify(state.savedTools));
+                SafeStorage.setItem('ae_saved_tools', JSON.stringify(state.savedTools));
                 updateToolboxBadge();
                 renderSavedToolsList();
                 populateTrieFromStoredTools();
@@ -3524,15 +3602,15 @@ class SessionStateManager {
             if (data.settings) {
                 if (data.settings.persona) {
                     state.persona = data.settings.persona;
-                    localStorage.setItem('ae_persona', state.persona);
+                    SafeStorage.setItem('ae_persona', state.persona);
                 }
                 if (data.settings.provider) {
                     state.provider = data.settings.provider;
-                    localStorage.setItem('ae_provider', state.provider);
+                    SafeStorage.setItem('ae_provider', state.provider);
                 }
                 if (data.settings.model) {
                     state.model = data.settings.model;
-                    localStorage.setItem('ae_model', state.model);
+                    SafeStorage.setItem('ae_model', state.model);
                 }
             }
             Bridge.showToast("Configuration restored successfully.");
