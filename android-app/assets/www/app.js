@@ -8,37 +8,57 @@
 // Android WebView on file:///android_asset/ schemes (where window.localStorage throws SecurityError).
 const SafeStorage = {
     _mem: {},
-    getItem(k) {
+    _hasLs: null,
+    _checkLs() {
+        if (this._hasLs !== null) return this._hasLs;
         try {
-            if (typeof window !== 'undefined' && window.localStorage) {
-                return window.SafeStorage.getItem(k);
+            if (typeof window !== 'undefined' && 'localStorage' in window && window.localStorage !== null) {
+                const probe = '__ae_storage_probe__';
+                window.localStorage.setItem(probe, probe);
+                const val = window.localStorage.getItem(probe);
+                window.localStorage.removeItem(probe);
+                this._hasLs = (val === probe);
+                return this._hasLs;
             }
-        } catch (e) {}
+        } catch (e) {
+            this._hasLs = false;
+        }
+        this._hasLs = false;
+        return false;
+    },
+    getItem(k) {
+        if (this._checkLs()) {
+            try {
+                const v = window.localStorage.getItem(k);
+                if (v !== null && v !== undefined) return v;
+            } catch (e) {}
+        }
         return Object.prototype.hasOwnProperty.call(this._mem, k) ? this._mem[k] : null;
     },
     setItem(k, v) {
-        try {
-            if (typeof window !== 'undefined' && window.localStorage) {
-                window.SafeStorage.setItem(k, String(v));
-            }
-        } catch (e) {}
-        this._mem[k] = String(v);
+        const str = String(v);
+        this._mem[k] = str;
+        if (this._checkLs()) {
+            try {
+                window.localStorage.setItem(k, str);
+            } catch (e) {}
+        }
     },
     removeItem(k) {
-        try {
-            if (typeof window !== 'undefined' && window.localStorage) {
-                window.SafeStorage.removeItem(k);
-            }
-        } catch (e) {}
         delete this._mem[k];
+        if (this._checkLs()) {
+            try {
+                window.localStorage.removeItem(k);
+            } catch (e) {}
+        }
     },
     clear() {
-        try {
-            if (typeof window !== 'undefined' && window.localStorage) {
-                window.SafeStorage.clear();
-            }
-        } catch (e) {}
         this._mem = {};
+        if (this._checkLs()) {
+            try {
+                window.localStorage.clear();
+            } catch (e) {}
+        }
     }
 };
 if (typeof window !== 'undefined') {
@@ -412,41 +432,84 @@ if (typeof window.Bridge === 'undefined' || !window.Bridge.executeNetHunter) {
 // ===================== DOM REFS & INIT =====================
 let drawer, omniInput, outputFeed;
 
-document.addEventListener("DOMContentLoaded", () => {
-    drawer = document.getElementById('settings-panel');
-    omniInput = document.getElementById('omni-input');
-    outputFeed = document.getElementById('output-feed');
+function getFeed() {
+    if (!outputFeed || !outputFeed.isConnected) {
+        outputFeed = document.getElementById('output-feed') || document.querySelector('.holo-canvas-feed');
+    }
+    return outputFeed;
+}
+
+function getInput() {
+    if (!omniInput || !omniInput.isConnected) {
+        omniInput = document.getElementById('omni-input');
+    }
+    return omniInput;
+}
+
+function getDrawer() {
+    if (!drawer || !drawer.isConnected) {
+        drawer = document.getElementById('settings-panel');
+    }
+    return drawer;
+}
+
+function initApp() {
+    drawer = getDrawer();
+    omniInput = getInput();
+    outputFeed = getFeed();
 
     // 1. Launch the alive multi-neon quantum canvas
-    initHoloCanvas();
+    try { initHoloCanvas(); } catch (e) { console.warn('[Init] Canvas:', e); }
 
     // 2. Gesture and Drawer System
-    initSwipeGestures();
-    initSettingsDrawer();
-    updateToolboxBadge();
-    renderSavedToolsList();
+    try { initSwipeGestures(); } catch (e) { console.warn('[Init] Gestures:', e); }
+    try { initSettingsDrawer(); } catch (e) { console.warn('[Init] Drawer:', e); }
+    try { updateToolboxBadge(); } catch (e) { console.warn('[Init] Toolbox:', e); }
+    try { renderSavedToolsList(); } catch (e) { console.warn('[Init] SavedTools:', e); }
 
-    // 3. Check Kali NetHunter Bridge Status & Start Telemetry
+    // 3. Check Kali NetHunter Bridge Status & Start Telemetry asynchronously
     if (typeof telemetry !== 'undefined') {
         telemetry.start(4000);
     } else {
-        updateNetHunterPill();
+        setTimeout(updateNetHunterPill, 100);
         setInterval(updateNetHunterPill, 12000);
     }
 
     // 4. Initialize Knuth Trie & LRU Cache from Stored Tools
     if (typeof populateTrieFromStoredTools === 'function') {
-        populateTrieFromStoredTools();
+        try { populateTrieFromStoredTools(); } catch (e) { console.warn('[Init] Trie:', e); }
     }
 
-    // 3. Keyboard Submission
-    omniInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
+    // 5. Input & Keyboard Submission Handlers
+    if (omniInput) {
+        omniInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        omniInput.addEventListener('focus', () => {
+            setTimeout(() => {
+                const feed = getFeed();
+                if (feed) feed.scrollTop = feed.scrollHeight;
+            }, 300);
+        });
+    }
+
+    const execBtn = document.getElementById('execute-btn');
+    if (execBtn) {
+        execBtn.onclick = (e) => {
             e.preventDefault();
             sendMessage();
-        }
-    });
-});
+        };
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener("DOMContentLoaded", initApp);
+} else {
+    initApp();
+}
 
 // ===================== 1. THE ALIVE MULTI-NEON QUANTUM CANVAS =====================
 function initHoloCanvas() {
@@ -1190,15 +1253,18 @@ window.saveSettings = function() {
 };
 
 window.clearCanvas = function() {
-    outputFeed.innerHTML = `
-        <div class="free-node intro-node">
-            <div class="holo-node-tag">
-                <span class="tag-pulse"></span>
-                <span class="tag-title">SYSTEM // CANVAS PURGED</span>
+    const feed = getFeed();
+    if (feed) {
+        feed.innerHTML = `
+            <div class="free-node intro-node">
+                <div class="holo-node-tag">
+                    <span class="tag-pulse"></span>
+                    <span class="tag-title">SYSTEM // CANVAS PURGED</span>
+                </div>
+                <div class="free-node-text">HUD stream cleared. Standing by for commands.</div>
             </div>
-            <div class="free-node-text">HUD stream cleared. Standing by for commands.</div>
-        </div>
-    `;
+        `;
+    }
     state.history = [];
     Bridge.vibrate(20);
     Bridge.showToast("HUD purged");
@@ -1206,7 +1272,8 @@ window.clearCanvas = function() {
 
 // ===================== 3. MESSAGING & FREE-FLOATING DISPATCH =====================
 window.execQuick = function(cmd) {
-    omniInput.value = cmd;
+    const input = getInput();
+    if (input) input.value = cmd;
     sendMessage();
 };
 
@@ -1760,7 +1827,9 @@ function extractExecutionDirectives(text) {
 window.sendMessage = async function() {
     if (state.isGenerating) return;
 
-    const text = omniInput.value.trim();
+    const input = getInput();
+    if (!input) return;
+    const text = input.value.trim();
     if (!text) return;
 
     state.isGenerating = true;
@@ -1768,7 +1837,7 @@ window.sendMessage = async function() {
         if (state.isGenerating) {
             console.warn('[Watchdog] Auto-recovering hung isGenerating state');
             clearTimeout(watchdog);
-        state.isGenerating = false;
+            state.isGenerating = false;
             const btn = document.getElementById('execute-btn');
             if (btn) { btn.disabled = false; btn.classList.remove('busy'); }
         }
@@ -1780,7 +1849,7 @@ window.sendMessage = async function() {
     }
 
     try {
-        omniInput.value = '';
+        input.value = '';
         Bridge.vibrate(25);
 
     // 1. Render user command as free-floating node
@@ -1988,6 +2057,11 @@ DO NOT run commands, DO NOT recite system status or verification checklists, and
  * NO BOXES — pure holographic typography and subtle cyber-edge filaments.
  */
 function appendFreeNode(tagText, contentHtml, type = "assistant") {
+    const feed = getFeed();
+    if (!feed) {
+        console.warn('[appendFreeNode] Feed container not found');
+        return;
+    }
     const node = document.createElement('div');
     node.className = `free-node ${type}-node`;
 
@@ -2009,8 +2083,8 @@ function appendFreeNode(tagText, contentHtml, type = "assistant") {
         <div class="free-node-text">${contentHtml}</div>
     `;
 
-    outputFeed.appendChild(node);
-    outputFeed.scrollTop = outputFeed.scrollHeight;
+    feed.appendChild(node);
+    feed.scrollTop = feed.scrollHeight;
 }
 
 // ===================== 4. REGULAR TOOLS & SHELL EXECUTION =====================
@@ -3264,23 +3338,48 @@ window.updateNetHunterPill = function() {
     const pill = document.getElementById('nh-bridge-pill');
     const pillText = document.getElementById('nh-pill-text');
     const drawerStatus = document.getElementById('nh-drawer-status');
-    const isOnline = Bridge.isNetHunterOnline();
 
-    if (pillText) {
-        pillText.textContent = isOnline ? "NH: ROOT" : "NH: STANDBY";
-    }
-    if (pill) {
-        if (isOnline) {
-            pill.className = "hud-pill-btn neon-emerald";
-            pill.title = "Kali NetHunter Root Bridge: ONLINE (127.0.0.1:8765)";
-        } else {
-            pill.className = "hud-pill-btn neon-magenta";
-            pill.title = "Kali NetHunter Bridge: STANDBY (Run 'agentic bridge start' in nh -r)";
+    function applyStatus(isOnline) {
+        if (pillText) {
+            pillText.textContent = isOnline ? "NH: ROOT" : "NH: STANDBY";
+        }
+        if (pill) {
+            if (isOnline) {
+                pill.className = "hud-pill-btn neon-emerald";
+                pill.title = "Kali NetHunter Root Bridge: ONLINE (127.0.0.1:8765)";
+            } else {
+                pill.className = "hud-pill-btn neon-magenta";
+                pill.title = "Kali NetHunter Bridge: STANDBY (Run 'agentic bridge start' in nh -r)";
+            }
+        }
+        if (drawerStatus) {
+            drawerStatus.textContent = isOnline ? "ONLINE (ROOT)" : "STANDBY";
+            drawerStatus.style.color = isOnline ? "var(--neon-emerald)" : "var(--neon-magenta)";
         }
     }
-    if (drawerStatus) {
-        drawerStatus.textContent = isOnline ? "ONLINE (ROOT)" : "STANDBY";
-        drawerStatus.style.color = isOnline ? "var(--neon-emerald)" : "var(--neon-magenta)";
+
+    try {
+        if (typeof fetch === 'function') {
+            const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            const timer = ctrl ? setTimeout(() => ctrl.abort(), 1200) : null;
+            fetch('http://127.0.0.1:8765/api/status', { method: 'GET', signal: ctrl ? ctrl.signal : undefined })
+                .then(r => {
+                    if (timer) clearTimeout(timer);
+                    applyStatus(r.ok);
+                })
+                .catch(() => {
+                    if (timer) clearTimeout(timer);
+                    try {
+                        applyStatus(Bridge.isNetHunterOnline());
+                    } catch (e) {
+                        applyStatus(false);
+                    }
+                });
+        } else {
+            applyStatus(Bridge.isNetHunterOnline());
+        }
+    } catch (e) {
+        applyStatus(false);
     }
 };
 

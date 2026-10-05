@@ -239,6 +239,24 @@
                 Ask a question, run basic shell tasks, or tap any terminal command below:
             </div>
         </div>
+
+        <!-- Active Persona Welcome Dialogue -->
+        <div class="free-node assistant-node" id="welcome-chat-node">
+            <div class="holo-node-tag">
+                <span class="tag-pulse"></span>
+                <span class="tag-title" id="welcome-persona-tag">SWARM // QUANTUM AGENT ONLINE</span>
+            </div>
+            <div class="free-node-text" id="welcome-persona-text">
+                <p style="margin-bottom:8px;"><strong>✦ System initialized.</strong> Dual-engine intelligence operational with Kali NetHunter root and local offline persona cognition. Chat with me, execute shell commands, or run any tool below:</p>
+                <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;">
+                    <button class="holo-chip chip-cyan" onclick="execQuick('ping -c 2 8.8.8.8')">🌐 Test Ping</button>
+                    <button class="holo-chip chip-cyan" onclick="execQuick('whoami &amp;&amp; uname -a')">⚡ Shell Id</button>
+                    <button class="holo-chip chip-cyan" onclick="execQuick('wifi scan')">📡 Wi-Fi Scan</button>
+                    <button class="holo-chip chip-gold" onclick="execQuick('/synth system monitor')">🧮 Synth Tool</button>
+                    <button class="holo-chip chip-gold" onclick="execQuick('hello')">💬 Chat</button>
+                </div>
+            </div>
+        </div>
     </main>
 
     <!-- Free-Floating Terminal Command Chips -->
@@ -259,18 +277,20 @@
 
     <!-- Free-Floating Glassmorphic Command Nebula -->
     <footer class="holo-command-nebula">
-        <button id="micBtn" class="nebula-voice-btn" onclick="triggerVoiceInput()" title="Vocal Command">
+        <button id="micBtn" type="button" class="nebula-voice-btn" onclick="triggerVoiceInput()" title="Vocal Command">
             <span class="voice-wave"></span>
             🎙️
         </button>
-        <div class="nebula-input-wrapper">
-            <input type="text" id="omni-input" name="messageInput" placeholder="Command agent, run shell, or build tool..." autocomplete="off" />
-            <div class="input-glow-line"></div>
-        </div>
-        <button id="execute-btn" name="sendBtn" class="nebula-exec-btn" onclick="sendMessage()">
-            <span class="exec-text">RUN</span>
-            <span class="exec-arrow">›</span>
-        </button>
+        <form id="chat-form" onsubmit="event.preventDefault(); sendMessage();" style="display:flex; flex:1; align-items:center; margin:0; padding:0; gap:8px;">
+            <div class="nebula-input-wrapper">
+                <input type="text" id="omni-input" name="messageInput" placeholder="Command agent, run shell, or build tool..." autocomplete="off" />
+                <div class="input-glow-line"></div>
+            </div>
+            <button id="execute-btn" type="submit" name="sendBtn" class="nebula-exec-btn">
+                <span class="exec-text">RUN</span>
+                <span class="exec-arrow">›</span>
+            </button>
+        </form>
     </footer>
 </div>
 

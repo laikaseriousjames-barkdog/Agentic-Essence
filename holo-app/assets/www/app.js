@@ -1,29 +1,57 @@
 // ===================== SAFE STORAGE WRAPPER =====================
 const SafeStorage = {
     _mem: {},
-    getItem(k) {
+    _hasLs: null,
+    _checkLs() {
+        if (this._hasLs !== null) return this._hasLs;
         try {
-            if (typeof window !== 'undefined' && window.localStorage) return window.SafeStorage.getItem(k);
-        } catch (e) {}
+            if (typeof window !== 'undefined' && 'localStorage' in window && window.localStorage !== null) {
+                const probe = '__ae_storage_probe__';
+                window.localStorage.setItem(probe, probe);
+                const val = window.localStorage.getItem(probe);
+                window.localStorage.removeItem(probe);
+                this._hasLs = (val === probe);
+                return this._hasLs;
+            }
+        } catch (e) {
+            this._hasLs = false;
+        }
+        this._hasLs = false;
+        return false;
+    },
+    getItem(k) {
+        if (this._checkLs()) {
+            try {
+                const v = window.localStorage.getItem(k);
+                if (v !== null && v !== undefined) return v;
+            } catch (e) {}
+        }
         return Object.prototype.hasOwnProperty.call(this._mem, k) ? this._mem[k] : null;
     },
     setItem(k, v) {
-        try {
-            if (typeof window !== 'undefined' && window.localStorage) window.SafeStorage.setItem(k, String(v));
-        } catch (e) {}
-        this._mem[k] = String(v);
+        const str = String(v);
+        this._mem[k] = str;
+        if (this._checkLs()) {
+            try {
+                window.localStorage.setItem(k, str);
+            } catch (e) {}
+        }
     },
     removeItem(k) {
-        try {
-            if (typeof window !== 'undefined' && window.localStorage) window.SafeStorage.removeItem(k);
-        } catch (e) {}
         delete this._mem[k];
+        if (this._checkLs()) {
+            try {
+                window.localStorage.removeItem(k);
+            } catch (e) {}
+        }
     },
     clear() {
-        try {
-            if (typeof window !== 'undefined' && window.localStorage) window.SafeStorage.clear();
-        } catch (e) {}
         this._mem = {};
+        if (this._checkLs()) {
+            try {
+                window.localStorage.clear();
+            } catch (e) {}
+        }
     }
 };
 if (typeof window !== 'undefined') {

@@ -92,8 +92,8 @@ public class MainActivity extends Activity {
         settings.setAllowUniversalAccessFromFileURLs(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setTextZoom(100); // 100% native font scale
-        settings.setUseWideViewPort(false); // Eliminates blur: renders at native 1:1 device pixels
-        settings.setLoadWithOverviewMode(false); // Eliminates overview downsampling blur
+        settings.setUseWideViewPort(true); // Supports viewport meta tag
+        settings.setLoadWithOverviewMode(true);
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
         settings.setSupportZoom(false);
@@ -113,6 +113,11 @@ public class MainActivity extends Activity {
                 }
                 view.loadUrl(url);
                 return true;
+            }
+
+            @Override
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                Log.e(TAG, "[WebView Error] (" + errorCode + ") " + description + " URL: " + failingUrl);
             }
         });
 

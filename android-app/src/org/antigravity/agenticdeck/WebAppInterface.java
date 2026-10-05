@@ -997,14 +997,19 @@ public class WebAppInterface implements TextToSpeech.OnInitListener {
     }
 
     @JavascriptInterface
+    public boolean isNetHunterOnline() {
+        return isNetHunterBridgeOnline();
+    }
+
+    @JavascriptInterface
     public boolean isNetHunterBridgeOnline() {
         for (String baseUrl : BRIDGE_URLS) {
             HttpURLConnection conn = null;
             try {
                 URL url = new URL(baseUrl + "/api/status");
                 conn = (HttpURLConnection) url.openConnection();
-                conn.setConnectTimeout(2000);
-                conn.setReadTimeout(2000);
+                conn.setConnectTimeout(500);
+                conn.setReadTimeout(500);
                 conn.setRequestMethod("GET");
                 int code = conn.getResponseCode();
                 if (code == 200) return true;
