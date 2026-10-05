@@ -77,7 +77,14 @@ const state = {
     customUrl: SafeStorage.getItem('ae_custom_url') || '',
     ttsEnabled: SafeStorage.getItem('ae_tts') === 'true',
     hapticsEnabled: SafeStorage.getItem('ae_haptics') !== 'false',
-    savedTools: JSON.parse(SafeStorage.getItem('ae_saved_tools') || '[]'),
+    savedTools: (() => {
+        try {
+            const raw = SafeStorage.getItem('ae_saved_tools');
+            return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+            return [];
+        }
+    })(),
     isGenerating: false,
     personaHistories: {
         swarm: [],

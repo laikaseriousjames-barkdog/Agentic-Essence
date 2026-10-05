@@ -77,7 +77,14 @@ const state = {
     customUrl: SafeStorage.getItem('ae_custom_url') || '',
     ttsEnabled: SafeStorage.getItem('ae_tts') === 'true',
     hapticsEnabled: SafeStorage.getItem('ae_haptics') !== 'false',
-    savedTools: JSON.parse(SafeStorage.getItem('ae_saved_tools') || '[]'),
+    savedTools: (() => {
+        try {
+            const raw = SafeStorage.getItem('ae_saved_tools');
+            return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+            return [];
+        }
+    })(),
     isGenerating: false,
     personaHistories: {
         swarm: [],
@@ -433,21 +440,21 @@ if (typeof window.Bridge === 'undefined' || !window.Bridge.executeNetHunter) {
 let drawer, omniInput, outputFeed;
 
 function getFeed() {
-    if (!outputFeed || !outputFeed.isConnected) {
+    if (!outputFeed || !document.contains(outputFeed)) {
         outputFeed = document.getElementById('output-feed') || document.querySelector('.holo-canvas-feed');
     }
     return outputFeed;
 }
 
 function getInput() {
-    if (!omniInput || !omniInput.isConnected) {
+    if (!omniInput || !document.contains(omniInput)) {
         omniInput = document.getElementById('omni-input');
     }
     return omniInput;
 }
 
 function getDrawer() {
-    if (!drawer || !drawer.isConnected) {
+    if (!drawer || !document.contains(drawer)) {
         drawer = document.getElementById('settings-panel');
     }
     return drawer;
