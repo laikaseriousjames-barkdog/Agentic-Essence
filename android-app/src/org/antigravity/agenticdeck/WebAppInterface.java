@@ -1560,6 +1560,47 @@ public class WebAppInterface implements TextToSpeech.OnInitListener {
         openUrl(url);
     }
 
+    @JavascriptInterface
+    public String getNeuroCraftManifest() {
+        String[] candidatePaths = new String[]{
+            "/sdcard/Download/AgenticEssence/models/agentic_manifest.json",
+            "/sdcard/Download/NeuroCraft/models/models_manifest.json",
+            "/sdcard/Download/NeuroCraft/models_manifest.json"
+        };
+        for (String p : candidatePaths) {
+            File f = new File(p);
+            if (f.exists()) {
+                try {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(new java.io.FileInputStream(f), "UTF-8"));
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        sb.append(line).append("\n");
+                    }
+                    reader.close();
+                    return sb.toString().trim();
+                } catch (Exception ignored) {}
+            }
+        }
+        return "{}";
+    }
+
+    @JavascriptInterface
+    public boolean isNeuroCraftBridgeOnline() {
+        try {
+            URL url = new URL("http://127.0.0.1:11435/api/status");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(600);
+            conn.setReadTimeout(600);
+            conn.setRequestMethod("GET");
+            int code = conn.getResponseCode();
+            conn.disconnect();
+            return code == 200;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
     public void destroy() {
         if (mTTS != null) {
             try {

@@ -719,7 +719,12 @@ function initSettingsDrawer() {
 
     if (pSelect) pSelect.value = state.provider;
     if (aInput) {
-        if (state.provider === 'ollama') {
+        if (state.provider === 'neurocraft') {
+            aInput.type = 'text';
+            aInput.placeholder = 'http://127.0.0.1:11435';
+            aInput.value = state.customUrl || (state.apiKey && state.apiKey.startsWith('http') ? state.apiKey : 'http://127.0.0.1:11435');
+            if (label) label.textContent = "NEUROCRAFT OFFLINE BRIDGE URL";
+        } else if (state.provider === 'ollama') {
             aInput.type = 'text';
             aInput.placeholder = 'http://127.0.0.1:11434';
             aInput.value = state.customUrl || (state.apiKey && state.apiKey.startsWith('http') ? state.apiKey : 'http://127.0.0.1:11434');
@@ -808,6 +813,17 @@ window.onProviderChange = function() {
         if (!state.model) {
             autoSaveModel("google/gemini-2.5-flash");
         }
+    } else if (prov === 'neurocraft') {
+        if (label) label.textContent = "NEUROCRAFT OFFLINE BRIDGE URL";
+        if (aInput) {
+            aInput.type = 'text';
+            aInput.placeholder = 'http://127.0.0.1:11435';
+            aInput.value = state.customUrl && state.customUrl.includes('11435') ? state.customUrl : 'http://127.0.0.1:11435';
+        }
+        if (!state.model || state.model.startsWith('gemini') || state.model === 'llama3:latest') {
+            autoSaveModel("neurocraft:latest");
+        }
+        scanNeuroCraftOfflineModels().catch(() => {});
     } else if (prov === 'ollama') {
         if (label) label.textContent = "OLLAMA BASE URL";
         if (aInput) {
@@ -892,7 +908,7 @@ window.autoSaveApiKey = function(val) {
     state.apiKey = k;
     SafeStorage.setItem('ae_api_key', k);
     SafeStorage.setItem('holo_api_key', k);
-    if (state.provider === 'ollama' || k.startsWith('http://') || k.startsWith('https://')) {
+    if (state.provider === 'ollama' || state.provider === 'neurocraft' || k.startsWith('http://') || k.startsWith('https://')) {
         state.customUrl = k;
         SafeStorage.setItem('ae_custom_url', k);
         SafeStorage.setItem('holo_custom_url', k);
@@ -901,7 +917,7 @@ window.autoSaveApiKey = function(val) {
     if (status) {
         status.style.display = 'block';
         status.style.color = 'var(--term-green)';
-        status.textContent = (state.provider === 'ollama') ? '✓ URL AUTO-SAVED' : '✓ KEY AUTO-SAVED';
+        status.textContent = (state.provider === 'ollama' || state.provider === 'neurocraft') ? '✓ URL AUTO-SAVED' : '✓ KEY AUTO-SAVED';
         clearTimeout(window._saveTimer);
         window._saveTimer = setTimeout(() => { status.style.display = 'none'; }, 2500);
     }
@@ -915,7 +931,9 @@ window.saveApiKeyDirect = function() {
     if (aInput) {
         autoSaveApiKey(aInput.value);
         Bridge.vibrate(25);
-        if (state.provider === 'ollama') {
+        if (state.provider === 'neurocraft') {
+            Bridge.showToast("NeuroCraft Bridge URL Locked & Saved");
+        } else if (state.provider === 'ollama') {
             Bridge.showToast("Ollama Base URL Locked & Saved");
         } else {
             Bridge.showToast("API Key Locked & Saved");
@@ -1161,11 +1179,15 @@ window.testAIConnectionLive = async function() {
         } catch (e) {
             if (status) { status.textContent = `⚠ ${e.message}`; status.style.color = '#ff007f'; }
         }
-    } else if (prov === 'ollama') {
+    } else if (prov === 'ollama' || prov === 'neurocraft') {
         let candidateBases = [];
         const configured = state.customUrl || (state.apiKey && state.apiKey.startsWith('http') ? state.apiKey : '');
         if (configured) candidateBases.push(configured.replace(/\/+$/, ''));
-        candidateBases.push('http://127.0.0.1:11434', 'http://localhost:11434', 'http://10.0.2.2:11434');
+        if (prov === 'neurocraft') {
+            candidateBases.push('http://127.0.0.1:11435', 'http://localhost:11435', 'http://10.0.2.2:11435');
+        } else {
+            candidateBases.push('http://127.0.0.1:11434', 'http://localhost:11434', 'http://127.0.0.1:11435', 'http://10.0.2.2:11434');
+        }
         candidateBases = [...new Set(candidateBases.filter(Boolean))];
 
         let workingBase = null;
@@ -1188,9 +1210,13 @@ window.testAIConnectionLive = async function() {
             } catch (e) {}
         }
 
+        const isNc = prov === 'neurocraft' || (workingBase && workingBase.includes('11435'));
+        const provName = isNc ? 'NEUROCRAFT' : 'OLLAMA';
+        const defaultPort = isNc ? '11435' : '11434';
+
         if (!workingBase) {
-            updateStatus('⚠ OLLAMA UNREACHABLE', '#ff007f');
-            Bridge.showToast("Ollama unreachable on localhost:11434");
+            updateStatus(`⚠ ${provName} UNREACHABLE`, '#ff007f');
+            Bridge.showToast(`${provName} unreachable on localhost:${defaultPort}`);
             return;
         }
 
@@ -1200,7 +1226,7 @@ window.testAIConnectionLive = async function() {
 
         let testModel = (state.model && !state.model.startsWith('gemini')) ? state.model : '';
         if (!testModel || (availableModels.length > 0 && !availableModels.includes(testModel))) {
-            testModel = availableModels.length > 0 ? availableModels[0] : 'llama3:latest';
+            testModel = availableModels.length > 0 ? availableModels[0] : (isNc ? 'neurocraft:latest' : 'llama3:latest');
             autoSaveModel(testModel);
         }
 
@@ -1220,17 +1246,17 @@ window.testAIConnectionLive = async function() {
             clearTimeout(tid2);
 
             if (chatRes.ok) {
-                updateStatus(`✓ OLLAMA ONLINE (${testModel})`, 'var(--term-green)');
+                updateStatus(`✓ ${provName} ONLINE (${testModel})`, 'var(--term-green)');
                 Bridge.vibrate(30);
-                Bridge.showToast(`✓ Ollama Online: ${testModel}`);
-                Bridge.speak(`Ollama local neural link verified with model ${testModel}.`);
+                Bridge.showToast(`✓ ${provName} Online: ${testModel}`);
+                Bridge.speak(`${provName} local neural link verified with model ${testModel}.`);
             } else {
-                updateStatus(`✓ OLLAMA REACHED (${testModel})`, 'var(--term-green)');
-                Bridge.showToast("Ollama connected at " + workingBase);
+                updateStatus(`✓ ${provName} REACHED (${testModel})`, 'var(--term-green)');
+                Bridge.showToast(`${provName} connected at ` + workingBase);
             }
         } catch (chatErr) {
-            updateStatus(`✓ OLLAMA ONLINE (${availableModels.length} models)`, 'var(--term-green)');
-            Bridge.showToast("Ollama connected at " + workingBase);
+            updateStatus(`✓ ${provName} ONLINE (${availableModels.length} models)`, 'var(--term-green)');
+            Bridge.showToast(`${provName} connected at ` + workingBase);
         }
     }
 };
@@ -1890,7 +1916,7 @@ window.sendMessage = async function() {
     }
 
     // 4. Tool Synthesis & Greeting Routing
-    const hasAIConfig = !!state.apiKey || state.provider === 'ollama';
+    const hasAIConfig = !!state.apiKey || state.provider === 'ollama' || state.provider === 'neurocraft';
     const isToolIntent = isToolSynthesisIntent(text);
     const isGreeting = isGreetingIntent(text);
 
@@ -2950,6 +2976,9 @@ async function queryAIProvider(messages) {
         return await queryOpenAICompatible("https://api.groq.com/openai/v1/chat/completions", state.apiKey, messages);
     } else if (state.provider === 'openrouter') {
         return await queryOpenAICompatible("https://openrouter.ai/api/v1/chat/completions", state.apiKey, messages);
+    } else if (state.provider === 'neurocraft') {
+        const base = state.customUrl || "http://127.0.0.1:11435";
+        return await queryOllama(base, messages);
     } else if (state.provider === 'ollama') {
         const base = state.customUrl || "http://127.0.0.1:11434";
         return await queryOllama(base, messages);
@@ -3136,12 +3165,15 @@ async function queryOpenAICompatible(url, key, messages) {
 }
 
 async function queryOllama(base, messages) {
-    let ollamaModel = (state.model && !state.model.startsWith('gemini')) ? state.model : 'llama3:latest';
+    let ollamaModel = (state.model && !state.model.startsWith('gemini')) ? state.model : (state.provider === 'neurocraft' ? 'neurocraft:latest' : 'llama3:latest');
     const bases = [
         base,
         state.customUrl,
+        'http://127.0.0.1:11435',
+        'http://localhost:11435',
         'http://127.0.0.1:11434',
         'http://localhost:11434',
+        'http://10.0.2.2:11435',
         'http://10.0.2.2:11434'
     ].filter(Boolean);
     const uniqueBases = [...new Set(bases.map(b => b.replace(/\/+$/, '')))];
@@ -3216,6 +3248,68 @@ async function queryOllama(base, messages) {
     }
     throw lastErr || new Error("Failed to connect to Ollama at " + (base || "127.0.0.1:11434"));
 }
+
+window.scanNeuroCraftOfflineModels = async function() {
+    let found = [];
+    const dl = document.getElementById('aeModelDatalist');
+
+    // 1. Query NeuroCraft Loopback HTTP Bridge on port 11435
+    try {
+        const ctl = new AbortController();
+        const tid = setTimeout(() => ctl.abort(), 2500);
+        const res = await fetch('http://127.0.0.1:11435/api/tags', { signal: ctl.signal });
+        clearTimeout(tid);
+        if (res.ok) {
+            const data = await res.json().catch(() => ({}));
+            if (Array.isArray(data.models) && data.models.length > 0) {
+                found = data.models.map(m => m.name || m.model);
+            }
+        }
+    } catch (ignored) {}
+
+    // 2. Query exported manifest on disk via Android Bridge
+    if (found.length === 0 && window.Bridge && typeof Bridge.getNeuroCraftManifest === 'function') {
+        try {
+            const raw = Bridge.getNeuroCraftManifest();
+            if (raw && raw !== "{}") {
+                const manifest = JSON.parse(raw);
+                if (Array.isArray(manifest.models)) {
+                    manifest.models.forEach(m => found.push("neurocraft:" + (m.name || m.id)));
+                }
+                if (Array.isArray(manifest.adapters)) {
+                    manifest.adapters.forEach(a => found.push("neurocraft-lora:" + (a.name || a.id)));
+                }
+            }
+        } catch (ignored) {}
+    }
+
+    // 3. Fallback standard offline identities
+    if (found.length === 0) {
+        found = [
+            "neurocraft:latest",
+            "neurocraft:smollm-135m",
+            "neurocraft-lora:customer-care-lora",
+            "neurocraft-lora:python-coder-lora"
+        ];
+    }
+
+    if (dl && found.length > 0) {
+        found.forEach(mId => {
+            if (!dl.querySelector(`option[value="${mId}"]`)) {
+                const opt = document.createElement('option');
+                opt.value = mId;
+                opt.textContent = `NeuroCraft Offline: ${mId}`;
+                dl.appendChild(opt);
+            }
+        });
+    }
+
+    if (found.length > 0 && (!state.model || state.model.startsWith('gemini') || state.model === 'llama3:latest')) {
+        autoSaveModel(found[0]);
+    }
+
+    return found;
+};
 
 // ===================== 10. FORMATTING UTILITIES =====================
 function escapeHtml(str) {
