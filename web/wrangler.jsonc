@@ -15,14 +15,23 @@
   "preview_urls": false,
   "routes": [{ "pattern": "staging.agentic-essence.com", "custom_domain": true }],
   // Non-secret config only. Secrets (SUPABASE_SERVICE_ROLE_KEY, STRIPE_SECRET_KEY,
-  // STRIPE_WEBHOOK_SECRET) are set with `wrangler secret put` / scripts/set-secrets.mjs.
+  // STRIPE_WEBHOOK_SECRET) are set with `wrangler secret put <NAME>` (per environment).
+  "r2_buckets": [{ "binding": "DOWNLOADS", "bucket_name": "agentic" }],
   "vars": {
-    "NEXT_PUBLIC_SITE_URL": "https://staging.agentic-essence.com"
+    "NEXT_PUBLIC_SITE_URL": "https://staging.agentic-essence.com",
+    "STRIPE_PRICE_PRO_MONTHLY": "price_1UQ1POEByJKIp4jYh2JvFWGx",
+    "STRIPE_PRICE_PRO_LIFETIME": "price_1UQ1POEByJKIp4jY2Ond9D14"
   },
   "env": {
     "production": {
       "name": "agentic-essence-web",
-      "vars": { "NEXT_PUBLIC_SITE_URL": "https://agentic-essence.com" }
+      "routes": [{ "pattern": "agentic-essence.com", "custom_domain": true }],
+      "r2_buckets": [{ "binding": "DOWNLOADS", "bucket_name": "agentic" }],
+      "vars": {
+        "NEXT_PUBLIC_SITE_URL": "https://agentic-essence.com",
+        "STRIPE_PRICE_PRO_MONTHLY": "price_1UQ1POEByJKIp4jYh2JvFWGx",
+        "STRIPE_PRICE_PRO_LIFETIME": "price_1UQ1POEByJKIp4jY2Ond9D14"
+      }
     }
   }
 }
