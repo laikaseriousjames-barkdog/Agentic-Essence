@@ -1651,3 +1651,87 @@ footer {
         padding: 2rem 1.4rem;
     }
 }
+
+/* ─── NEUROCRAFT & OFFLINE LLM STUDIO STYLES ─── */
+.btn-neuro {
+    background: linear-gradient(135deg, #8b5cf6, #06b6d4) !important;
+    color: #fff !important;
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4) !important;
+}
+.btn-neuro:hover {
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.7) !important;
+    transform: translateY(-2px);
+}
+.neurocraft-card {
+    border-top: 3px solid #8b5cf6 !important;
+    position: relative;
+    overflow: hidden;
+}
+.neurocraft-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 140px;
+    height: 140px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+}
+.neurocraft-section {
+    background: linear-gradient(180deg, var(--bg-surface) 0%, var(--bg) 100%);
+    border-top: 1px solid var(--border);
+    position: relative;
+}
+.neurocraft-grid {
+    max-width: 1200px;
+    margin: 2.5rem auto 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+.neurocraft-feature-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: var(--radius-md);
+    padding: 1.8rem;
+    transition: all var(--transition);
+    position: relative;
+}
+.neurocraft-feature-card:hover {
+    border-color: #8b5cf6;
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(139, 92, 246, 0.15);
+}
+.neurocraft-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1.2rem;
+    color: #a855f7;
+}
+.neurocraft-bridge-box {
+    max-width: 900px;
+    margin: 3rem auto 0;
+    background: rgba(11, 15, 23, 0.85);
+    border: 1px solid rgba(6, 182, 212, 0.3);
+    border-radius: var(--radius-md);
+    padding: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+@media (max-width: 768px) {
+    .neurocraft-bridge-box {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+

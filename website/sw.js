@@ -1,10 +1,11 @@
-const CACHE_NAME = 'agentic-essence-v9.0';
+const CACHE_NAME = 'agentic-essence-v10.0';
 const ASSETS = [
   '/',
   '/index.html',
   '/styles.css',
   '/manifest.json',
   '/favicon.svg',
+  '/neurocraft-logo.svg',
   '/vox-logo.png',
   '/docs/eula.html',
   '/docs/privacy.html'

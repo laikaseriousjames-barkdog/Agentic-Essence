@@ -2,7 +2,7 @@
   "name": "Agentic Essence & Agentic Vox",
   "short_name": "AgenticSwarm",
   "description": "Autonomous AI, Untethered. Local-first Tri-Agent AI orchestration console and spatial holographic voice holodeck.",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#060913",
@@ -24,6 +24,11 @@
   ],
   "categories": ["productivity", "utilities", "developer", "security"],
   "shortcuts": [
+    {
+      "name": "NeuroCraft Studio",
+      "url": "/#neurocraft",
+      "description": "On-Device LoRA & GGUF Model Studio"
+    },
     {
       "name": "Download Vox",
       "url": "/#download",
