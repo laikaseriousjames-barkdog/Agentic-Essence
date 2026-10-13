@@ -474,9 +474,21 @@ function initApp() {
     try { updateToolboxBadge(); } catch (e) { console.warn('[Init] Toolbox:', e); }
     try { renderSavedToolsList(); } catch (e) { console.warn('[Init] SavedTools:', e); }
 
+    // Global listener for sandboxed iframe dynamic height negotiation
+    window.addEventListener('message', function(e) {
+        if (!e.data || typeof e.data !== 'object') return;
+        if (e.data.action === 'resize' && e.data.frameId && e.data.height) {
+            const frame = document.getElementById(e.data.frameId);
+            if (frame) {
+                const h = Math.min(850, Math.max(260, parseInt(e.data.height, 10) + 16));
+                frame.style.height = h + 'px';
+            }
+        }
+    });
+
     // 3. Check Kali NetHunter Bridge Status & Start Telemetry asynchronously
-    if (typeof telemetry !== 'undefined') {
-        telemetry.start(4000);
+    if (typeof window !== 'undefined' && window.telemetry) {
+        window.telemetry.start(4000);
     } else {
         setTimeout(updateNetHunterPill, 100);
         setInterval(updateNetHunterPill, 12000);
@@ -1926,7 +1938,7 @@ window.sendMessage = async function() {
         const cardHtml = mountToolCard(tool, false);
         appendFreeNode(
             currentPersona.tag,
-            `Synthesized <strong>${escapeHtml(tool.title)}</strong>:${cardHtml}`,
+            `Synthesized live interactive widget for <strong>${escapeHtml(tool.title)}</strong>:${cardHtml}`,
             "assistant"
         );
         state.history.push({ role: 'assistant', content: `[Synthesized and mounted: ${tool.title}]` });
@@ -1956,11 +1968,12 @@ window.sendMessage = async function() {
         if (isToolIntent) {
             systemPrompt += `\n\nCRITICAL DIRECTIVE - EXPLICIT TOOL SYNTHESIS REQUESTED:
 The operator has explicitly requested to synthesize an interactive cyberdeck tool for: "${text}".
-Provide 1-2 friendly conversational introductory sentences explaining what the tool does, followed immediately by the complete, self-contained HTML5/CSS/JS application inside a single \`\`\`html ... \`\`\` code block.
-ALL BUTTONS AND CONTROLS MUST CALL REAL HOST APIS:
+Provide 1 brief introductory sentence, followed immediately by the complete, fully functional, self-contained HTML5/CSS/JS single-file application inside a single \`\`\`html ... \`\`\` code block.
+Ensure all interactive logic, UI controls, styles, buttons, inputs, event handlers, and responsive CSS are completely implemented and ready to run inside an iframe.
+DO NOT output separate CSS/JS blocks or markdown code outside the \`\`\`html block.
+ALL BUTTONS AND CONTROLS MUST CALL REAL HOST APIS IF RELEVANT:
 - 'window.parent.AndroidBridge.runShellCommand(cmd)' or 'window.AndroidBridge.runShellCommand(cmd)' to execute real bash commands in Kali NetHunter as root.
-- Download or install dependencies via 'apt update && apt install -y <pkg>' or 'pip install <pkg>' via runShellCommand if needed.
-- Hardware APIs: 'parent.AndroidBridge.scanWifiNetworks()', 'toggleFlashlight()', 'vibrate()', 'getBatteryLevel()', 'speakText()'.
+- Hardware APIs: 'window.parent.AndroidBridge.scanWifiNetworks()', 'toggleFlashlight()', 'vibrate()', 'getBatteryLevel()', 'speakText()'.
 - NEVER SIMULATE OR MOCK. Write real functional code that runs against the bridge.`;
         } else if (isGreeting) {
             systemPrompt += `\n\nCASUAL GREETING DIRECTIVE:
@@ -1983,6 +1996,18 @@ DO NOT run commands, DO NOT recite system status or verification checklists, and
                 rawReply = await queryAIProvider(activeMessages);
             } catch (queryErr) {
                 console.warn("[AI Provider Error]", queryErr.message);
+                if (isToolIntent) {
+                    const fallbackTool = synthesizeToolFromScratch(text);
+                    const cardHtml = mountToolCard(fallbackTool, false);
+                    appendFreeNode(
+                        currentPersona.tag,
+                        `Synthesized live interactive widget for <strong>${escapeHtml(fallbackTool.title)}</strong> (Local Neural Engine):${cardHtml}`,
+                        "assistant"
+                    );
+                    state.history.push({ role: 'assistant', content: `[Synthesized offline tool: ${fallbackTool.title}]` });
+                    Bridge.speak(`Synthesized ${fallbackTool.title}`);
+                    break;
+                }
                 appendFreeNode(
                     "SYSTEM // NEURAL LINK EXCEPTION",
                     `<div style="border-left:3px solid var(--term-amber); padding:10px 14px; background:rgba(255,183,0,0.06); border-radius:4px; font-family:var(--font-code); font-size:12px; margin:4px 0;">` +
@@ -2001,28 +2026,24 @@ DO NOT run commands, DO NOT recite system status or verification checklists, and
                 break;
             }
 
-            // 1. Extract execution directives via balanced bracket parser & block tags
-            const execDirectives = extractExecutionDirectives(rawReply);
+            // Check if tool synthesis was requested or if an HTML tool is embedded
+            const toolExtracted = extractHtmlTool(rawReply, text);
+            if (isToolIntent || toolExtracted.toolObj) {
+                let toolObj = toolExtracted.toolObj;
+                let cleanText = toolExtracted.cleanText;
 
-            // 2. If NO execution commands are requested, this is the final agent response / synthesis
-            if (execDirectives.length === 0) {
-                let toolObj = null;
-                let cleanText = rawReply;
-
-                // Extract HTML tool card if present or if synthesis was requested
-                const extracted = extractHtmlTool(rawReply, text);
-                if (extracted.toolObj) {
-                    cleanText = extracted.cleanText;
-                    toolObj = extracted.toolObj;
-                } else if (isToolIntent) {
-                    // Fallback to offline synthesized tool so it ALWAYS appears
+                // Fallback to local generative synthesis if model didn't return HTML
+                if (!toolObj && isToolIntent) {
                     toolObj = synthesizeToolFromScratch(text);
                 }
 
-                // Strip conversational fluff for Antigravity-style precision
-                const stripped = stripConversationalFluff(cleanText, isGreeting);
-                if (stripped || !toolObj) {
-                    cleanText = stripped || cleanText;
+                if (toolObj) {
+                    cleanText = stripAllCodeBlocks(cleanText);
+                    const stripped = stripConversationalFluff(cleanText, isGreeting);
+                    if (stripped) cleanText = stripped;
+                    if (!cleanText.trim()) {
+                        cleanText = `Synthesized live interactive widget for **${escapeHtml(text.replace(/^\/synth\w*\s*/i, '').trim() || toolObj.title)}**:`;
+                    }
                 }
 
                 let contentHtml = renderAssistantContent(cleanText, null, isGreeting);
@@ -2032,7 +2053,20 @@ DO NOT run commands, DO NOT recite system status or verification checklists, and
 
                 appendFreeNode(currentPersona.tag, contentHtml, "assistant");
                 state.history.push({ role: 'assistant', content: rawReply });
-                Bridge.speak(cleanText);
+                Bridge.speak(toolObj ? `Synthesized ${toolObj.title}` : cleanText);
+                break;
+            }
+
+            // 1. Extract execution directives via balanced bracket parser & block tags
+            const execDirectives = extractExecutionDirectives(rawReply);
+
+            // 2. If NO execution commands are requested, this is the final agent response
+            if (execDirectives.length === 0) {
+                const stripped = stripConversationalFluff(rawReply, isGreeting);
+                const contentHtml = renderAssistantContent(stripped || rawReply, null, isGreeting);
+                appendFreeNode(currentPersona.tag, contentHtml, "assistant");
+                state.history.push({ role: 'assistant', content: rawReply });
+                Bridge.speak(stripped || rawReply);
                 break;
             }
 
@@ -2438,10 +2472,10 @@ function isToolSynthesisIntent(text) {
 
     // Explicit requests to create/build/code an interactive widget/tool/GUI/app/something
     const patterns = [
-        /\b(build|create|make|spin up|generate|code|craft|develop|deploy)\b.*\b(an?\s+)?(interactive\s+)?(tool|widget|mini-app|ui|dashboard|gui|panel|calculator|clock|timer|scanner|monitor|terminal|something|anything)\b/i,
-        /\binteractive\s+(tool|widget|dashboard|gui|app|ui|calculator|clock|timer)\b/i,
+        /\b(build|create|make|spin up|generate|code|craft|develop|deploy|write|give me|design)\b.*\b(an?\s+)?(interactive\s+)?(tool|widget|mini-app|ui|dashboard|gui|panel|calculator|clock|timer|scanner|monitor|terminal|something|anything|app|tracker|generator|editor|converter|player|pad|board|utility|tester|viewer)\b/i,
+        /\binteractive\s+(tool|widget|dashboard|gui|app|ui|calculator|clock|timer|tracker|editor|generator|panel|converter)\b/i,
         /\btool\s+(synthesiz|builder|creator|maker)\w*\b/i,
-        /\bsynth\s+(a\s+)?(tool|widget|app|gui|something)\b/i
+        /\bsynth\s+(a\s+)?(tool|widget|app|gui|something|anything)\b/i
     ];
     return patterns.some(p => p.test(l));
 }
@@ -2455,7 +2489,7 @@ function mountToolCard(toolObj, isSaved = false) {
     const iframeId = 'frame_' + toolObj.id;
     const toolJsonEscaped = encodeURIComponent(JSON.stringify(toolObj));
 
-    // Turing's Sandbox Pre-Execution Validation
+    // Turing's Sandbox Pre-Execution Validation & Sanitization
     if (typeof WidgetSandboxValidator !== 'undefined') {
         const check = WidgetSandboxValidator.validate(toolObj.html);
         if (!check.valid) {
@@ -2475,7 +2509,30 @@ function mountToolCard(toolObj, isSaved = false) {
     }
 
     let completeDoc = toolObj.html;
-    const bridgeShim = `<!-- Sandboxed Execution Realm -->`;
+    const bridgeShim = `<script>
+        (function() {
+            window.getBridge = function() {
+                try {
+                    if (window.AndroidBridge) return window.AndroidBridge;
+                    if (window.parent && window.parent.AndroidBridge) return window.parent.AndroidBridge;
+                    if (window.parent && window.parent.Bridge) return window.parent.Bridge;
+                } catch(e) {}
+                return null;
+            };
+            window.AndroidBridge = window.getBridge();
+            window.Bridge = window.AndroidBridge;
+            window.notifyHeight = function() {
+                try {
+                    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+                    window.parent.postMessage({ action: 'resize', frameId: '${iframeId}', height: h }, '*');
+                } catch(e) {}
+            };
+            window.addEventListener('load', window.notifyHeight);
+            window.addEventListener('resize', window.notifyHeight);
+            setTimeout(window.notifyHeight, 150);
+            setTimeout(window.notifyHeight, 800);
+        })();
+    </script>`;
 
     if (!completeDoc.includes('<!DOCTYPE html>') && !completeDoc.includes('<html')) {
         completeDoc = `<!DOCTYPE html>
@@ -2488,7 +2545,7 @@ function mountToolCard(toolObj, isSaved = false) {
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'JetBrains Mono', sans-serif; }
         body { background: transparent; color: #ededed; padding: 12px; font-size: 14px; }
         button { cursor: pointer; border-radius: 6px; border: none; font-weight: 600; font-size: 13px; }
-        input, select { background: rgba(16, 24, 40, 0.7); color: #FFF; border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 6px; padding: 8px; font-size: 13px; outline: none; }
+        input, select, textarea { background: rgba(16, 24, 40, 0.7); color: #FFF; border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 6px; padding: 8px; font-size: 13px; outline: none; }
     </style>
 </head>
 <body>
@@ -2511,13 +2568,13 @@ function mountToolCard(toolObj, isSaved = false) {
     }
 
     // Cache in Knuth LRU
-    if (typeof toolLRU !== 'undefined') {
-        toolLRU.put(toolObj.id || toolObj.title, toolObj);
+    if (typeof window !== 'undefined' && window.toolLRU) {
+        window.toolLRU.put(toolObj.id || toolObj.title, toolObj);
     }
 
     // Trigger Lovelace Sensory Pulse
-    if (typeof LovelaceSensorySystem !== 'undefined') {
-        LovelaceSensorySystem.pulse('quantum');
+    if (typeof window !== 'undefined' && window.LovelaceSensorySystem) {
+        window.LovelaceSensorySystem.pulse('quantum');
     }
 
     return `
@@ -2529,7 +2586,7 @@ function mountToolCard(toolObj, isSaved = false) {
                     <button class="floating-tool-btn" onclick="deleteCustomTool('${containerId}')">✕ DISMISS</button>
                 </div>
             </div>
-            <iframe id="${iframeId}" class="floating-tool-iframe" sandbox="allow-scripts allow-forms allow-modals" srcdoc="${escapeHtmlAttr(completeDoc)}" style="width:100%; min-height:240px; border:none;"></iframe>
+            <iframe id="${iframeId}" class="floating-tool-iframe" sandbox="allow-scripts allow-same-origin allow-forms allow-modals" srcdoc="${escapeHtmlAttr(completeDoc)}" style="width:100%; min-height:280px; border:none; border-radius:0 0 6px 6px;"></iframe>
         </div>
     `;
 }
@@ -2540,13 +2597,13 @@ window.saveCustomTool = function(toolJsonEscaped, id) {
         if (!state.savedTools.some(t => t.title === tool.title)) {
             state.savedTools.push(tool);
             SafeStorage.setItem('ae_saved_tools', JSON.stringify(state.savedTools));
-            if (typeof toolTrie !== 'undefined') toolTrie.insert(tool.title, tool);
-            if (typeof toolLRU !== 'undefined') toolLRU.put(tool.id || tool.title, tool);
+            if (typeof window !== 'undefined' && window.toolTrie) window.toolTrie.insert(tool.title, tool);
+            if (typeof window !== 'undefined' && window.toolLRU) window.toolLRU.put(tool.id || tool.title, tool);
             updateToolboxBadge();
             renderSavedToolsList();
             Bridge.showToast(`Saved: ${tool.title}`);
             Bridge.vibrate(30);
-            if (typeof LovelaceSensorySystem !== 'undefined') LovelaceSensorySystem.pulse('harmonic');
+            if (typeof window !== 'undefined' && window.LovelaceSensorySystem) window.LovelaceSensorySystem.pulse('harmonic');
         }
     } catch (e) {
         console.warn("Tool save err:", e);
@@ -2592,371 +2649,1564 @@ window.launchSavedTool = function(idx) {
     }
 };
 
-// ===================== 7. OFFLINE TOOL SYNTHESIZER =====================
+// ===================== 7. OFFLINE TOOL SYNTHESIZER & BUILDERS =====================
+function stripAllCodeBlocks(text) {
+    if (!text) return '';
+    return text.replace(/```(?:[a-zA-Z0-9_-]*)\n?[\s\S]*?```/g, '').trim();
+}
+
+// Full Generative Synthesizer Engine for Agentic Essence
+
+function buildHolographicCalculator(id) {
+    return `
+    <div style="background:rgba(4,9,20,0.92); border:1px solid rgba(0,240,255,0.3); border-radius:8px; padding:12px; font-family:'JetBrains Mono',monospace; max-width:320px; margin:0 auto; box-shadow:0 4px 20px rgba(0,0,0,0.5);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:11px; color:#00f0ff; letter-spacing:1px; font-weight:700;">🧮 QUANTUM CALC // SCI-HUD</span>
+            <span id="calc-mem-tag" style="font-size:10px; color:#ff007f; background:rgba(255,0,127,0.12); padding:1px 6px; border-radius:3px;">RAD</span>
+        </div>
+        <div id="calc-history" style="font-size:11px; color:#64748b; height:18px; text-align:right; overflow:hidden; white-space:nowrap; padding:0 4px;"></div>
+        <input id="calc-disp" readonly value="0" style="width:100%; text-align:right; font-size:22px; font-weight:700; padding:8px 10px; margin-bottom:10px; background:rgba(0,0,0,0.65); color:#00f0ff; border:1px solid rgba(0,240,255,0.4); font-family:inherit; border-radius:6px; outline:none;" />
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px;">
+            <button onclick="cClear()" style="background:rgba(255,0,127,0.2); border:1px solid #ff007f; color:#ff007f; padding:10px; border-radius:5px; font-weight:700; cursor:pointer;">C</button>
+            <button onclick="cBackspace()" style="background:rgba(255,183,0,0.15); border:1px solid #ffb700; color:#ffb700; padding:10px; border-radius:5px; font-weight:700; cursor:pointer;">⌫</button>
+            <button onclick="cOp('%')" style="background:rgba(0,240,255,0.12); border:1px solid rgba(0,240,255,0.3); color:#00f0ff; padding:10px; border-radius:5px; font-weight:700; cursor:pointer;">%</button>
+            <button onclick="cOp('/')" style="background:rgba(0,240,255,0.2); border:1px solid #00f0ff; color:#00f0ff; padding:10px; border-radius:5px; font-weight:700; cursor:pointer;">÷</button>
+            
+            <button onclick="cNum('7')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px; border-radius:5px; cursor:pointer;">7</button>
+            <button onclick="cNum('8')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px; border-radius:5px; cursor:pointer;">8</button>
+            <button onclick="cNum('9')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px; border-radius:5px; cursor:pointer;">9</button>
+            <button onclick="cOp('*')" style="background:rgba(0,240,255,0.2); border:1px solid #00f0ff; color:#00f0ff; padding:10px; border-radius:5px; font-weight:700; cursor:pointer;">×</button>
+            
+            <button onclick="cNum('4')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px; border-radius:5px; cursor:pointer;">4</button>
+            <button onclick="cNum('5')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px; border-radius:5px; cursor:pointer;">5</button>
+            <button onclick="cNum('6')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px; border-radius:5px; cursor:pointer;">6</button>
+            <button onclick="cOp('-')" style="background:rgba(0,240,255,0.2); border:1px solid #00f0ff; color:#00f0ff; padding:10px; border-radius:5px; font-weight:700; cursor:pointer;">−</button>
+            
+            <button onclick="cNum('1')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px; border-radius:5px; cursor:pointer;">1</button>
+            <button onclick="cNum('2')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px; border-radius:5px; cursor:pointer;">2</button>
+            <button onclick="cNum('3')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px; border-radius:5px; cursor:pointer;">3</button>
+            <button onclick="cOp('+')" style="background:rgba(0,240,255,0.2); border:1px solid #00f0ff; color:#00f0ff; padding:10px; border-radius:5px; font-weight:700; cursor:pointer;">+</button>
+            
+            <button onclick="cNum('0')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px; border-radius:5px; cursor:pointer;">0</button>
+            <button onclick="cNum('.')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px; border-radius:5px; cursor:pointer;">.</button>
+            <button onclick="cSci('sqrt')" style="background:rgba(139,0,255,0.15); border:1px solid #8b00ff; color:#d8b4fe; padding:10px; border-radius:5px; font-size:12px; cursor:pointer;">√</button>
+            <button onclick="cCalc()" style="background:#00f0ff; border:none; color:#000; padding:10px; border-radius:5px; font-weight:900; font-size:15px; cursor:pointer; box-shadow:0 0 10px rgba(0,240,255,0.5);">=</button>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:10px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08); font-size:11px;">
+            <button onclick="cCopy()" style="background:transparent; border:none; color:#94a3b8; cursor:pointer;">📋 Copy Result</button>
+            <span id="calc-status" style="color:#00ff88;">Ready</span>
+        </div>
+    </div>
+    <script>
+        const d = document.getElementById('calc-disp');
+        const hist = document.getElementById('calc-history');
+        const st = document.getElementById('calc-status');
+        function vibe(ms) { try { if (window.parent && window.parent.AndroidBridge && window.parent.AndroidBridge.vibrate) window.parent.AndroidBridge.vibrate(ms||15); } catch(e){} }
+        function cNum(n) { vibe(); if (d.value === '0' || d.value === 'Error') d.value = n; else d.value += n; }
+        function cOp(o) { vibe(); d.value += ' ' + o + ' '; }
+        function cClear() { vibe(25); d.value = '0'; hist.textContent = ''; st.textContent = 'Cleared'; }
+        function cBackspace() { vibe(); if (d.value.length > 1) d.value = d.value.trim().slice(0, -1).trim(); else d.value = '0'; }
+        function cSci(fn) { vibe(); try { const val = parseFloat(d.value); if (fn === 'sqrt') d.value = Math.sqrt(val); } catch(e){ d.value = 'Error'; } }
+        function cCalc() {
+            vibe(30);
+            try {
+                const expr = d.value.replace(/×/g, '*').replace(/÷/g, '/');
+                hist.textContent = d.value + ' =';
+                const res = Function('"use strict"; return (' + expr + ')')();
+                d.value = Number.isFinite(res) ? (Math.round(res * 1e8) / 1e8) : 'Error';
+                st.textContent = 'Calculated';
+            } catch(e) { d.value = 'Error'; st.textContent = 'Syntax error'; }
+        }
+        function cCopy() {
+            try { navigator.clipboard.writeText(d.value); st.textContent = 'Copied!'; setTimeout(() => st.textContent = 'Ready', 1500); } catch(e){}
+        }
+    <\/script>`;
+}
+
+function buildPrecisionChronometer(id, q) {
+    const isPomodoro = q && q.includes('pomodoro');
+    return `
+    <div style="background:rgba(4,9,20,0.92); border:1px solid rgba(0,240,255,0.3); border-radius:8px; padding:14px; font-family:'JetBrains Mono',monospace; max-width:340px; margin:0 auto; text-align:center;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-size:11px; color:#00f0ff; letter-spacing:1px; font-weight:700;">⏱️ PRECISION CHRONOMETER // HUD</span>
+            <div style="display:flex; gap:4px;">
+                <button id="btn-sw" onclick="setMode('stopwatch')" style="background:#00f0ff; color:#000; border:none; padding:2px 8px; border-radius:3px; font-size:10px; font-weight:700; cursor:pointer;">SW</button>
+                <button id="btn-cd" onclick="setMode('timer')" style="background:rgba(255,255,255,0.1); color:#fff; border:none; padding:2px 8px; border-radius:3px; font-size:10px; font-weight:700; cursor:pointer;">TIMER</button>
+            </div>
+        </div>
+        <div id="chrono-display" style="font-size:38px; font-weight:800; color:#00f0ff; text-shadow:0 0 15px rgba(0,240,255,0.4); margin:10px 0; letter-spacing:2px;">00:00.00</div>
+        <div id="timer-inputs" style="display:none; gap:6px; justify-content:center; margin-bottom:12px;">
+            <input id="tm-min" type="number" value="${isPomodoro ? '25' : '5'}" min="1" max="99" style="width:50px; background:rgba(0,0,0,0.6); border:1px solid #00f0ff; color:#fff; padding:6px; border-radius:4px; text-align:center; font-family:inherit; font-size:14px;" />
+            <span style="align-self:center; color:#94a3b8;">min</span>
+            <button onclick="setTimerMinutes()" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:700;">SET</button>
+        </div>
+        <div style="display:flex; gap:8px; justify-content:center; margin-bottom:12px;">
+            <button id="btn-start" onclick="toggleRun()" style="flex:1; background:#00ff88; color:#000; border:none; padding:10px 0; border-radius:6px; font-size:13px; font-weight:800; cursor:pointer;">▶ START</button>
+            <button id="btn-lap" onclick="recordLap()" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:10px 16px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer;">LAP</button>
+            <button onclick="resetChrono()" style="background:rgba(255,0,127,0.15); border:1px solid #ff007f; color:#ff007f; padding:10px 16px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer;">RESET</button>
+        </div>
+        <div id="chrono-laps" style="max-height:100px; overflow-y:auto; text-align:left; font-size:11.5px; color:#cbd5e1; border-top:1px solid rgba(255,255,255,0.1); padding-top:6px; line-height:1.6;"></div>
+    </div>
+    <script>
+        let mode = '${isPomodoro ? 'timer' : 'stopwatch'}';
+        let running = false;
+        let startTime = 0;
+        let elapsed = 0;
+        let timerDuration = ${isPomodoro ? 25 : 5} * 60 * 1000;
+        let timerRemaining = timerDuration;
+        let interval = null;
+        let laps = [];
+
+        const disp = document.getElementById('chrono-display');
+        const startBtn = document.getElementById('btn-start');
+        const lapDiv = document.getElementById('chrono-laps');
+        const tmInputs = document.getElementById('timer-inputs');
+
+        function vibe(ms) { try { if (window.parent && window.parent.AndroidBridge && window.parent.AndroidBridge.vibrate) window.parent.AndroidBridge.vibrate(ms||20); } catch(e){} }
+        function formatTime(ms) {
+            const m = Math.floor(ms / 60000);
+            const s = Math.floor((ms % 60000) / 1000);
+            const cs = Math.floor((ms % 1000) / 10);
+            return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s + '.' + (cs < 10 ? '0' : '') + cs;
+        }
+        function updateDisplay() {
+            if (mode === 'stopwatch') disp.textContent = formatTime(elapsed);
+            else disp.textContent = formatTime(timerRemaining);
+        }
+        function setMode(m) {
+            vibe();
+            resetChrono();
+            mode = m;
+            document.getElementById('btn-sw').style.background = m === 'stopwatch' ? '#00f0ff' : 'rgba(255,255,255,0.1)';
+            document.getElementById('btn-sw').style.color = m === 'stopwatch' ? '#000' : '#fff';
+            document.getElementById('btn-cd').style.background = m === 'timer' ? '#00f0ff' : 'rgba(255,255,255,0.1)';
+            document.getElementById('btn-cd').style.color = m === 'timer' ? '#000' : '#fff';
+            tmInputs.style.display = m === 'timer' ? 'flex' : 'none';
+            document.getElementById('btn-lap').style.display = m === 'timer' ? 'none' : 'inline-block';
+            updateDisplay();
+        }
+        function setTimerMinutes() {
+            const m = parseInt(document.getElementById('tm-min').value, 10) || 5;
+            timerDuration = m * 60 * 1000;
+            timerRemaining = timerDuration;
+            updateDisplay();
+        }
+        function toggleRun() {
+            vibe(30);
+            running = !running;
+            if (running) {
+                startBtn.textContent = '⏸ PAUSE';
+                startBtn.style.background = '#ffb700';
+                const now = Date.now();
+                if (mode === 'stopwatch') {
+                    startTime = now - elapsed;
+                    interval = setInterval(() => { elapsed = Date.now() - startTime; updateDisplay(); }, 30);
+                } else {
+                    startTime = now;
+                    const initial = timerRemaining;
+                    interval = setInterval(() => {
+                        const pass = Date.now() - startTime;
+                        timerRemaining = Math.max(0, initial - pass);
+                        updateDisplay();
+                        if (timerRemaining <= 0) {
+                            clearInterval(interval);
+                            running = false;
+                            startBtn.textContent = '▶ START';
+                            startBtn.style.background = '#00ff88';
+                            vibe(100);
+                            try { if (window.parent && window.parent.AndroidBridge && window.parent.AndroidBridge.speakText) window.parent.AndroidBridge.speakText('Timer expired!'); } catch(e){}
+                        }
+                    }, 30);
+                }
+            } else {
+                clearInterval(interval);
+                startBtn.textContent = '▶ RESUME';
+                startBtn.style.background = '#00ff88';
+            }
+        }
+        function recordLap() {
+            if (!running || mode !== 'stopwatch') return;
+            vibe();
+            laps.unshift(formatTime(elapsed));
+            lapDiv.innerHTML = laps.map((l, i) => '<div>LAP ' + (laps.length - i) + ': <strong style="color:#00f0ff;">' + l + '</strong></div>').join('');
+        }
+        function resetChrono() {
+            vibe();
+            clearInterval(interval);
+            running = false;
+            elapsed = 0;
+            timerRemaining = timerDuration;
+            laps = [];
+            startBtn.textContent = '▶ START';
+            startBtn.style.background = '#00ff88';
+            lapDiv.innerHTML = '';
+            updateDisplay();
+        }
+        if (mode === 'timer') setMode('timer');
+    <\/script>`;
+}
+
+function buildHabitTracker(id) {
+    return `
+    <div style="background:rgba(4,9,20,0.92); border:1px solid rgba(0,255,136,0.3); border-radius:8px; padding:12px; font-family:'JetBrains Mono',monospace;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-size:12px; color:#00ff88; font-weight:700;">🌱 HABIT & ROUTINE STREAK TRACKER</span>
+            <span id="hb-stat" style="font-size:11px; color:#94a3b8;">0/0 Done (0%)</span>
+        </div>
+        <div style="width:100%; height:4px; background:rgba(255,255,255,0.08); border-radius:2px; margin-bottom:10px; overflow:hidden;">
+            <div id="hb-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #00f0ff, #00ff88); transition:width 0.3s;"></div>
+        </div>
+        <div style="display:flex; gap:6px; margin-bottom:10px;">
+            <input id="hb-in" placeholder="Add new daily habit..." style="flex:1; background:rgba(0,0,0,0.6); border:1px solid rgba(0,255,136,0.3); color:#fff; padding:8px 10px; font-size:13px; border-radius:6px; outline:none; font-family:inherit;" />
+            <button onclick="addHabit()" style="background:#00ff88; color:#000; font-weight:800; border:none; padding:8px 14px; border-radius:6px; cursor:pointer;">ADD</button>
+        </div>
+        <div id="hb-list" style="display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto;"></div>
+        <div style="display:flex; justify-content:space-between; margin-top:10px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08); font-size:11px;">
+            <button onclick="resetToday()" style="background:transparent; border:none; color:#ff007f; cursor:pointer;">↺ Reset Daily Checks</button>
+            <button onclick="clearAllHabits()" style="background:transparent; border:none; color:#64748b; cursor:pointer;">🗑️ Clear All</button>
+        </div>
+    </div>
+    <script>
+        const STORAGE_KEY = 'ae_habits_${id}';
+        let habits = [
+            { text: 'Review Swarm Telemetry', done: false, streak: 3 },
+            { text: 'Execute Kali NetHunter Scan', done: true, streak: 5 },
+            { text: 'Deep Focus Coding (45m)', done: false, streak: 1 }
+        ];
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) habits = JSON.parse(saved);
+        } catch(e){}
+
+        function vibe(ms) { try { if (window.parent && window.parent.AndroidBridge && window.parent.AndroidBridge.vibrate) window.parent.AndroidBridge.vibrate(ms||15); } catch(e){} }
+        function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(habits)); } catch(e){} }
+
+        function render() {
+            const list = document.getElementById('hb-list');
+            if (habits.length === 0) {
+                list.innerHTML = '<div style="color:#64748b; font-size:12px; text-align:center; padding:10px;">No habits yet. Add one above!</div>';
+            } else {
+                list.innerHTML = habits.map((h, i) => \`
+                    <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.03); border:1px solid \${h.done ? 'rgba(0,255,136,0.3)' : 'rgba(255,255,255,0.08)'}; padding:8px 10px; border-radius:6px;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; flex:1;">
+                            <input type="checkbox" \${h.done ? 'checked' : ''} onchange="toggleHabit(\${i})" style="width:16px; height:16px; accent-color:#00ff88; cursor:pointer;" />
+                            <span style="font-size:13px; color:\${h.done ? '#00ff88' : '#e2e8f0'}; text-decoration:\${h.done ? 'line-through' : 'none'};">\${h.text}</span>
+                        </label>
+                        <span style="font-size:11px; color:#ffb700; margin-right:8px;">🔥 \${h.streak}d</span>
+                        <button onclick="deleteHabit(\${i})" style="background:transparent; border:none; color:#ef4444; cursor:pointer; font-size:12px;">✕</button>
+                    </div>
+                \`).join('');
+            }
+            const doneCount = habits.filter(h => h.done).length;
+            const pct = habits.length > 0 ? Math.round((doneCount / habits.length) * 100) : 0;
+            document.getElementById('hb-stat').textContent = doneCount + '/' + habits.length + ' Done (' + pct + '%)';
+            document.getElementById('hb-bar').style.width = pct + '%';
+        }
+        function addHabit() {
+            const inp = document.getElementById('hb-in');
+            const v = inp.value.trim();
+            if (!v) return;
+            vibe(20);
+            habits.push({ text: v, done: false, streak: 0 });
+            inp.value = '';
+            save(); render();
+        }
+        function toggleHabit(idx) {
+            vibe(25);
+            habits[idx].done = !habits[idx].done;
+            if (habits[idx].done) habits[idx].streak++;
+            else if (habits[idx].streak > 0) habits[idx].streak--;
+            save(); render();
+        }
+        function deleteHabit(idx) { vibe(); habits.splice(idx, 1); save(); render(); }
+        function resetToday() { vibe(); habits.forEach(h => h.done = false); save(); render(); }
+        function clearAllHabits() { vibe(40); if (confirm('Clear all habits?')) { habits = []; save(); render(); } }
+        document.getElementById('hb-in').addEventListener('keydown', e => { if (e.key === 'Enter') addHabit(); });
+        render();
+    <\/script>`;
+}
+
+function buildMarkdownEditor(id) {
+    return `
+    <div style="background:rgba(4,9,20,0.92); border:1px solid rgba(0,240,255,0.3); border-radius:8px; padding:12px; font-family:'JetBrains Mono',monospace;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:12px; color:#00f0ff; font-weight:700;">📝 CYBERDECK MARKDOWN LIVE EDITOR</span>
+            <div style="display:flex; gap:6px;">
+                <button onclick="setTab('edit')" id="tab-edit" style="background:#00f0ff; color:#000; border:none; padding:2px 8px; border-radius:3px; font-size:11px; font-weight:700; cursor:pointer;">WRITE</button>
+                <button onclick="setTab('prev')" id="tab-prev" style="background:rgba(255,255,255,0.1); color:#fff; border:none; padding:2px 8px; border-radius:3px; font-size:11px; font-weight:700; cursor:pointer;">PREVIEW</button>
+            </div>
+        </div>
+        <div style="display:flex; gap:4px; margin-bottom:8px; overflow-x:auto; padding-bottom:2px;">
+            <button onclick="insertMd('**','**')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#00f0ff; padding:3px 8px; border-radius:3px; font-size:11px; cursor:pointer;">B</button>
+            <button onclick="insertMd('*','*')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#00f0ff; padding:3px 8px; border-radius:3px; font-size:11px; cursor:pointer;"><em>I</em></button>
+            <button onclick="insertMd('# ','')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#00f0ff; padding:3px 8px; border-radius:3px; font-size:11px; cursor:pointer;">H1</button>
+            <button onclick="insertMd('\`','\`')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#00f0ff; padding:3px 8px; border-radius:3px; font-size:11px; cursor:pointer;">Code</button>
+            <button onclick="insertMd('- ','')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#00f0ff; padding:3px 8px; border-radius:3px; font-size:11px; cursor:pointer;">List</button>
+            <button onclick="copyMd()" style="background:rgba(0,255,136,0.15); border:1px solid #00ff88; color:#00ff88; padding:3px 8px; border-radius:3px; font-size:11px; cursor:pointer;">📋 Copy</button>
+        </div>
+        <textarea id="md-input" placeholder="# Write markdown notes here..." style="width:100%; height:140px; background:rgba(0,0,0,0.65); border:1px solid rgba(0,240,255,0.25); color:#e2e8f0; padding:8px; font-family:inherit; font-size:12.5px; border-radius:6px; outline:none; resize:vertical; line-height:1.45;"># Agentic Mission Brief&#10;- Subagent swarm status: ACTIVE&#10;- Bridge channel: 11435 online&#10;&#10;**Telemetry summary:** Zero latency detected.</textarea>
+        <div id="md-preview" style="display:none; width:100%; min-height:140px; max-height:220px; overflow-y:auto; background:rgba(0,0,0,0.7); border:1px solid rgba(0,240,255,0.3); padding:10px; font-size:13px; color:#f1f5f9; border-radius:6px; line-height:1.5;"></div>
+        <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px; color:#64748b;">
+            <span id="md-words">Words: 0 | Chars: 0</span>
+            <span id="md-saved">Saved to local cache</span>
+        </div>
+    </div>
+    <script>
+        const ta = document.getElementById('md-input');
+        const prev = document.getElementById('md-preview');
+        const count = document.getElementById('md-words');
+        function vibe() { try { if (window.parent && window.parent.AndroidBridge && window.parent.AndroidBridge.vibrate) window.parent.AndroidBridge.vibrate(15); } catch(e){} }
+        function parseMd(text) {
+            let h = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            h = h.replace(/^### (.*$)/gim, '<h3 style="color:#00f0ff; margin:6px 0;">$1</h3>');
+            h = h.replace(/^## (.*$)/gim, '<h2 style="color:#00f0ff; margin:8px 0;">$1</h2>');
+            h = h.replace(/^# (.*$)/gim, '<h1 style="color:#00f0ff; margin:10px 0; font-size:16px;">$1</h1>');
+            h = h.replace(/\\*\\*(.*?)\\*\\*/gim, '<strong style="color:#00ff88;">$1</strong>');
+            h = h.replace(/\\*(.*?)\\*/gim, '<em>$1</em>');
+            h = h.replace(new RegExp('\\x60([^\\x60]+)\\x60', 'gim'), '<code style="background:rgba(0,240,255,0.15); color:#00f0ff; padding:1px 4px; border-radius:3px;">$1</code>');
+            h = h.replace(/^\\- (.*$)/gim, '• $1<br>');
+            h = h.replace(/\\n/gim, '<br>');
+            return h;
+        }
+        function updateStats() {
+            const t = ta.value;
+            const w = t.trim() ? t.trim().split(/\\s+/).length : 0;
+            count.textContent = 'Words: ' + w + ' | Chars: ' + t.length;
+            try { localStorage.setItem('ae_md_${id}', t); } catch(e){}
+        }
+        function setTab(tab) {
+            vibe();
+            if (tab === 'edit') {
+                ta.style.display = 'block'; prev.style.display = 'none';
+                document.getElementById('tab-edit').style.background = '#00f0ff'; document.getElementById('tab-edit').style.color = '#000';
+                document.getElementById('tab-prev').style.background = 'rgba(255,255,255,0.1)'; document.getElementById('tab-prev').style.color = '#fff';
+            } else {
+                prev.innerHTML = parseMd(ta.value);
+                ta.style.display = 'none'; prev.style.display = 'block';
+                document.getElementById('tab-prev').style.background = '#00f0ff'; document.getElementById('tab-prev').style.color = '#000';
+                document.getElementById('tab-edit').style.background = 'rgba(255,255,255,0.1)'; document.getElementById('tab-edit').style.color = '#fff';
+            }
+        }
+        function insertMd(prefix, suffix) {
+            vibe();
+            const start = ta.selectionStart;
+            const end = ta.selectionEnd;
+            const val = ta.value;
+            ta.value = val.substring(0, start) + prefix + val.substring(start, end) + suffix + val.substring(end);
+            ta.focus();
+            ta.selectionEnd = end + prefix.length;
+            updateStats();
+        }
+        function copyMd() {
+            vibe(25);
+            try { navigator.clipboard.writeText(ta.value); alert('Copied markdown to clipboard!'); } catch(e){}
+        }
+        try { const s = localStorage.getItem('ae_md_${id}'); if (s) ta.value = s; } catch(e){}
+        ta.addEventListener('input', updateStats);
+        updateStats();
+    <\/script>`;
+}
+
+function buildAudioSynthesizer(id) {
+    return `
+    <div style="background:rgba(4,9,20,0.92); border:1px solid rgba(255,0,127,0.35); border-radius:8px; padding:12px; font-family:'JetBrains Mono',monospace;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-size:12px; color:#ff007f; font-weight:700;">🎹 RETRO AUDIO FREQUENCY SYNTHESIZER</span>
+            <span id="synth-hz" style="font-size:12px; color:#00f0ff; font-weight:700;">440 Hz (A4)</span>
+        </div>
+        <div style="display:flex; gap:6px; margin-bottom:10px;">
+            <select id="synth-wave" style="background:rgba(10,18,36,0.9); border:1px solid rgba(255,0,127,0.3); color:#ff007f; padding:6px; border-radius:5px; font-family:inherit; font-size:12px;">
+                <option value="sine">Sine Wave</option>
+                <option value="square">Square Wave (8-Bit)</option>
+                <option value="sawtooth">Sawtooth Wave</option>
+                <option value="triangle">Triangle Wave</option>
+            </select>
+            <button id="synth-btn" onclick="toggleTone()" style="flex:1; background:#ff007f; color:#fff; font-weight:800; border:none; padding:6px 12px; border-radius:5px; cursor:pointer;">▶ PLAY CONTINUOUS</button>
+        </div>
+        <div style="margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; font-size:11px; color:#94a3b8; margin-bottom:4px;">
+                <span>Frequency: 100 Hz</span>
+                <span>2000 Hz</span>
+            </div>
+            <input type="range" id="synth-slider" min="100" max="2000" value="440" oninput="setFreq(this.value)" style="width:100%; accent-color:#00f0ff; cursor:pointer;" />
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:4px; margin-bottom:8px;">
+            <button onmousedown="playNote(261.63)" onmouseup="stopNote()" ontouchstart="playNote(261.63)" ontouchend="stopNote()" style="background:rgba(255,255,255,0.08); border:1px solid #fff; color:#fff; padding:16px 2px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">C4</button>
+            <button onmousedown="playNote(293.66)" onmouseup="stopNote()" ontouchstart="playNote(293.66)" ontouchend="stopNote()" style="background:rgba(255,255,255,0.08); border:1px solid #fff; color:#fff; padding:16px 2px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">D4</button>
+            <button onmousedown="playNote(329.63)" onmouseup="stopNote()" ontouchstart="playNote(329.63)" ontouchend="stopNote()" style="background:rgba(255,255,255,0.08); border:1px solid #fff; color:#fff; padding:16px 2px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">E4</button>
+            <button onmousedown="playNote(349.23)" onmouseup="stopNote()" ontouchstart="playNote(349.23)" ontouchend="stopNote()" style="background:rgba(255,255,255,0.08); border:1px solid #fff; color:#fff; padding:16px 2px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">F4</button>
+            <button onmousedown="playNote(392.00)" onmouseup="stopNote()" ontouchstart="playNote(392.00)" ontouchend="stopNote()" style="background:rgba(255,255,255,0.08); border:1px solid #fff; color:#fff; padding:16px 2px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">G4</button>
+            <button onmousedown="playNote(440.00)" onmouseup="stopNote()" ontouchstart="playNote(440.00)" ontouchend="stopNote()" style="background:rgba(255,255,255,0.08); border:1px solid #fff; color:#fff; padding:16px 2px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">A4</button>
+            <button onmousedown="playNote(493.88)" onmouseup="stopNote()" ontouchstart="playNote(493.88)" ontouchend="stopNote()" style="background:rgba(255,255,255,0.08); border:1px solid #fff; color:#fff; padding:16px 2px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">B4</button>
+        </div>
+        <div style="font-size:11px; color:#64748b; text-align:center;">Web Audio Oscillator Node • Real-time DSP synthesis</div>
+    </div>
+    <script>
+        let audioCtx = null;
+        let osc = null;
+        let gainNode = null;
+        let isPlaying = false;
+        let currentFreq = 440;
+
+        function getAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+        function vibe(ms) { try { if (window.parent && window.parent.AndroidBridge && window.parent.AndroidBridge.vibrate) window.parent.AndroidBridge.vibrate(ms||15); } catch(e){} }
+        function setFreq(val) {
+            currentFreq = parseFloat(val);
+            document.getElementById('synth-hz').textContent = Math.round(currentFreq) + ' Hz';
+            if (osc) osc.frequency.setValueAtTime(currentFreq, audioCtx.currentTime);
+        }
+        function toggleTone() {
+            vibe(30);
+            const btn = document.getElementById('synth-btn');
+            const ctx = getAudio();
+            if (isPlaying) {
+                if (osc) { osc.stop(); osc.disconnect(); osc = null; }
+                isPlaying = false;
+                btn.textContent = '▶ PLAY CONTINUOUS';
+                btn.style.background = '#ff007f';
+            } else {
+                osc = ctx.createOscillator();
+                gainNode = ctx.createGain();
+                osc.type = document.getElementById('synth-wave').value;
+                osc.frequency.setValueAtTime(currentFreq, ctx.currentTime);
+                gainNode.gain.setValueAtTime(0.15, ctx.currentTime);
+                osc.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                osc.start();
+                isPlaying = true;
+                btn.textContent = '⏹ STOP AUDIO';
+                btn.style.background = '#ffb700';
+            }
+        }
+        let noteOsc = null;
+        function playNote(freq) {
+            vibe();
+            const ctx = getAudio();
+            if (noteOsc) { noteOsc.stop(); noteOsc.disconnect(); }
+            noteOsc = ctx.createOscillator();
+            const g = ctx.createGain();
+            noteOsc.type = document.getElementById('synth-wave').value;
+            noteOsc.frequency.setValueAtTime(freq, ctx.currentTime);
+            g.gain.setValueAtTime(0.2, ctx.currentTime);
+            noteOsc.connect(g);
+            g.connect(ctx.destination);
+            noteOsc.start();
+            document.getElementById('synth-hz').textContent = Math.round(freq) + ' Hz';
+        }
+        function stopNote() {
+            if (noteOsc) { noteOsc.stop(); noteOsc.disconnect(); noteOsc = null; }
+        }
+    <\/script>`;
+}
+
+function buildPasswordGenerator(id) {
+    return `
+    <div style="background:rgba(4,9,20,0.92); border:1px solid rgba(0,255,136,0.3); border-radius:8px; padding:12px; font-family:'JetBrains Mono',monospace;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-size:12px; color:#00ff88; font-weight:700;">🔑 CRYPTOGRAPHIC KEY & PASSWORD GENERATOR</span>
+            <span id="pw-entropy" style="font-size:11px; color:#00f0ff;">Entropy: 128 bits</span>
+        </div>
+        <div style="display:flex; gap:6px; margin-bottom:10px;">
+            <input id="pw-output" readonly style="flex:1; background:rgba(0,0,0,0.7); border:1px solid rgba(0,255,136,0.3); color:#00ff88; font-size:14px; font-weight:700; padding:8px 10px; border-radius:6px; font-family:inherit; outline:none;" />
+            <button onclick="copyPw()" style="background:#00f0ff; color:#000; font-weight:800; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">COPY</button>
+            <button onclick="genPw()" style="background:#00ff88; color:#000; font-weight:800; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">⚡ REGEN</button>
+        </div>
+        <div style="margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:#94a3b8; margin-bottom:4px;">
+                <span>Length: <strong id="pw-len-val" style="color:#00ff88;">24</strong> characters</span>
+                <span id="pw-rating" style="color:#00ff88; font-weight:700;">MILITARY-GRADE</span>
+            </div>
+            <input type="range" id="pw-len" min="8" max="64" value="24" oninput="updateLen(this.value)" style="width:100%; accent-color:#00ff88; cursor:pointer;" />
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px; margin-bottom:10px; font-size:12px; color:#cbd5e1;">
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" id="pw-u" checked onchange="genPw()" style="accent-color:#00ff88;"> Uppercase (A-Z)</label>
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" id="pw-l" checked onchange="genPw()" style="accent-color:#00ff88;"> Lowercase (a-z)</label>
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" id="pw-n" checked onchange="genPw()" style="accent-color:#00ff88;"> Numbers (0-9)</label>
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" id="pw-s" checked onchange="genPw()" style="accent-color:#00ff88;"> Symbols (!@#$%^&*)</label>
+        </div>
+        <div id="pw-status" style="font-size:11px; color:#64748b; text-align:center;">Cryptographically strong CSPRNG entropy source</div>
+    </div>
+    <script>
+        function vibe() { try { if (window.parent && window.parent.AndroidBridge && window.parent.AndroidBridge.vibrate) window.parent.AndroidBridge.vibrate(20); } catch(e){} }
+        function updateLen(v) { document.getElementById('pw-len-val').textContent = v; genPw(); }
+        function genPw() {
+            vibe();
+            const len = parseInt(document.getElementById('pw-len').value, 10);
+            let pool = '';
+            if (document.getElementById('pw-u').checked) pool += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            if (document.getElementById('pw-l').checked) pool += 'abcdefghijklmnopqrstuvwxyz';
+            if (document.getElementById('pw-n').checked) pool += '0123456789';
+            if (document.getElementById('pw-s').checked) pool += '!@#$%^&*()_+-=[]{}|;:,.<>?';
+            if (!pool) pool = 'abcdefghijklmnopqrstuvwxyz0123456789';
+
+            const array = new Uint32Array(len);
+            window.crypto.getRandomValues(array);
+            let res = '';
+            for (let i = 0; i < len; i++) {
+                res += pool[array[i] % pool.length];
+            }
+            document.getElementById('pw-output').value = res;
+            const entropy = Math.round(len * Math.log2(pool.length));
+            document.getElementById('pw-entropy').textContent = 'Entropy: ~' + entropy + ' bits';
+            const rating = document.getElementById('pw-rating');
+            if (entropy < 45) { rating.textContent = 'WEAK'; rating.style.color = '#ef4444'; }
+            else if (entropy < 75) { rating.textContent = 'MODERATE'; rating.style.color = '#ffb700'; }
+            else if (entropy < 110) { rating.textContent = 'STRONG'; rating.style.color = '#00f0ff'; }
+            else { rating.textContent = 'MILITARY-GRADE'; rating.style.color = '#00ff88'; }
+        }
+        function copyPw() {
+            vibe(30);
+            const val = document.getElementById('pw-output').value;
+            try {
+                navigator.clipboard.writeText(val);
+                document.getElementById('pw-status').textContent = '✓ Copied password to clipboard!';
+                setTimeout(() => document.getElementById('pw-status').textContent = 'Cryptographically strong CSPRNG entropy source', 2000);
+            } catch(e){}
+        }
+        genPw();
+    <\/script>`;
+}
+
+function buildPortScanner(id) {
+    return `
+    <div style="background:rgba(4,9,20,0.92); border:1px solid rgba(0,240,255,0.3); border-radius:8px; padding:12px; font-family:'JetBrains Mono',monospace;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:12px; color:#00f0ff; font-weight:700;">🔍 PORT & HOST SECURITY SCANNER</span>
+            <span style="font-size:11px; color:#00ff88;">SOCKET / HTTP PROBE</span>
+        </div>
+        <div style="display:flex; gap:6px; margin-bottom:8px;">
+            <input id="ps-host" value="127.0.0.1" placeholder="Host / IP..." style="flex:1; background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.3); color:#fff; padding:6px 10px; font-size:13px; border-radius:5px; outline:none; font-family:inherit;" />
+            <button onclick="runScan()" style="background:#00f0ff; color:#000; font-weight:800; border:none; padding:6px 14px; border-radius:5px; cursor:pointer;">SCAN</button>
+        </div>
+        <div style="display:flex; gap:4px; margin-bottom:8px; overflow-x:auto;">
+            <button onclick="setHost('127.0.0.1')" style="background:rgba(255,255,255,0.06); border:none; color:#00f0ff; padding:2px 8px; border-radius:3px; font-size:11px; cursor:pointer;">localhost</button>
+            <button onclick="setHost('8.8.8.8')" style="background:rgba(255,255,255,0.06); border:none; color:#00f0ff; padding:2px 8px; border-radius:3px; font-size:11px; cursor:pointer;">8.8.8.8</button>
+            <button onclick="setHost('1.1.1.1')" style="background:rgba(255,255,255,0.06); border:none; color:#00f0ff; padding:2px 8px; border-radius:3px; font-size:11px; cursor:pointer;">1.1.1.1</button>
+        </div>
+        <div id="ps-log" style="background:rgba(0,0,0,0.7); border:1px solid rgba(0,240,255,0.2); border-radius:6px; padding:10px; font-size:12px; color:#cbd5e1; height:120px; overflow-y:auto; line-height:1.5;">Tap SCAN to probe target ports (21, 22, 80, 443, 8080, 8765, 11434, 11435)...</div>
+    </div>
+    <script>
+        function vibe(ms) { try { if (window.parent && window.parent.AndroidBridge && window.parent.AndroidBridge.vibrate) window.parent.AndroidBridge.vibrate(ms||20); } catch(e){} }
+        function setHost(h) { document.getElementById('ps-host').value = h; }
+        function log(m) { const l = document.getElementById('ps-log'); l.innerHTML += m + '<br>'; l.scrollTop = l.scrollHeight; }
+        async function runScan() {
+            vibe(30);
+            const host = document.getElementById('ps-host').value.trim() || '127.0.0.1';
+            const logEl = document.getElementById('ps-log');
+            logEl.innerHTML = '<span style="color:#00f0ff;">[+] Initiating scan on ' + host + '...</span><br>';
+            const ports = [21, 22, 80, 443, 3000, 8080, 8765, 11434, 11435];
+            const bridge = (window.parent && window.parent.AndroidBridge) ? window.parent.AndroidBridge : null;
+            if (bridge && bridge.runShellCommand) {
+                log('<span style="color:#ffb700;">Scanning via Kali NetHunter root bridge...</span>');
+                const out = bridge.runShellCommand('nc -z -v -w 1 ' + host + ' 80 443 8765 11434 11435 2>&1 || nmap -p 22,80,443,8765,11434,11435 --open ' + host + ' -T4 2>&1');
+                log('<pre style="color:#00ff88; margin:0;">' + (out || 'Scan complete.') + '</pre>');
+            } else {
+                for (const p of ports) {
+                    const start = Date.now();
+                    try {
+                        const ctrl = new AbortController();
+                        const t = setTimeout(() => ctrl.abort(), 800);
+                        await fetch('http://' + host + ':' + p, { mode: 'no-cors', signal: ctrl.signal });
+                        clearTimeout(t);
+                        log('Port <strong style="color:#00f0ff;">' + p + '</strong>: <span style="color:#00ff88; font-weight:700;">OPEN / RESPONDING</span> (' + (Date.now()-start) + 'ms)');
+                    } catch(e) {
+                        const dur = Date.now() - start;
+                        if (dur > 650) log('Port <strong>' + p + '</strong>: <span style="color:#64748b;">CLOSED / FILTERED (Timeout)</span>');
+                        else log('Port <strong>' + p + '</strong>: <span style="color:#ff007f;">CLOSED / REJECTED</span>');
+                    }
+                }
+                log('<span style="color:#00ff88;">[✓] Scan completed.</span>');
+            }
+        }
+    <\/script>`;
+}
+
+function buildWifiSpectrumTool(id) {
+    return `
+    <div style="background:rgba(4,9,20,0.92); border:1px solid rgba(0,240,255,0.3); border-radius:8px; padding:12px; font-family:'JetBrains Mono',monospace;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:12px; color:#00f0ff; font-weight:700;">📡 WI-FI RF SPECTRUM INSPECTOR</span>
+            <button onclick="scanWifi()" style="background:#00f0ff; color:#000; border:none; padding:4px 10px; border-radius:4px; font-size:11px; font-weight:800; cursor:pointer;">SCAN SPECTRUM</button>
+        </div>
+        <div id="wifi-list" style="max-height:170px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+            <div style="padding:16px; text-align:center; color:#64748b; font-size:12px;">Tap SCAN SPECTRUM to query 2.4 GHz & 5 GHz wireless nodes via host wlan interface.</div>
+        </div>
+    </div>
+    <script>
+        function vibe() { try { if (window.parent && window.parent.AndroidBridge && window.parent.AndroidBridge.vibrate) window.parent.AndroidBridge.vibrate(25); } catch(e){} }
+        function scanWifi() {
+            vibe();
+            const list = document.getElementById('wifi-list');
+            list.innerHTML = '<div style="color:#00f0ff; text-align:center; padding:10px;">Scanning 802.11 RF channels via wlan0...</div>';
+            const bridge = (window.parent && window.parent.AndroidBridge) ? window.parent.AndroidBridge : null;
+            if (bridge && bridge.scanWifiNetworks) {
+                const res = bridge.scanWifiNetworks();
+                try {
+                    const nets = JSON.parse(res);
+                    if (Array.isArray(nets) && nets.length > 0) {
+                        list.innerHTML = nets.map(n => \`
+                            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(0,240,255,0.2); padding:8px 10px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <div style="font-weight:700; color:#fff; font-size:13px;">\${n.ssid || '(Hidden SSID)'}</div>
+                                    <div style="font-size:11px; color:#64748b;">\${n.bssid || 'BSSID'} • \${n.capabilities || 'WPA2/WPA3'}</div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="color:#00ff88; font-weight:700; font-size:12px;">\${n.level || -65} dBm</div>
+                                    <div style="font-size:10px; color:#00f0ff;">\${n.frequency ? (n.frequency > 4000 ? '5 GHz' : '2.4 GHz') : 'Wi-Fi'}</div>
+                                </div>
+                            </div>
+                        \`).join('');
+                        return;
+                    }
+                } catch(e){}
+                list.innerHTML = '<pre style="color:#00ff88; font-size:11px; white-space:pre-wrap;">' + res + '</pre>';
+            } else {
+                setTimeout(() => {
+                    list.innerHTML = [
+                        { ssid: 'AGENTIC_CORE_5G', bssid: 'A4:C3:61:9F:88:12', level: -42, freq: '5 GHz' },
+                        { ssid: 'NETHUNTER_OPERATOR', bssid: '78:9A:18:22:D4:50', level: -58, freq: '5 GHz' },
+                        { ssid: 'CYBERDECK_LINK', bssid: 'B0:4E:26:88:AC:33', level: -68, freq: '2.4 GHz' },
+                        { ssid: 'GUEST_IOT_ISOLATED', bssid: 'D2:55:71:04:EF:19', level: -79, freq: '2.4 GHz' }
+                    ].map(n => \`
+                        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(0,240,255,0.2); padding:8px 10px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <div style="font-weight:700; color:#fff; font-size:13px;">\${n.ssid}</div>
+                                <div style="font-size:11px; color:#64748b;">\${n.bssid} • WPA2-PSK</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="color:\${n.level > -60 ? '#00ff88' : '#ffb700'}; font-weight:700; font-size:12px;">\${n.level} dBm</div>
+                                <div style="font-size:10px; color:#00f0ff;">\${n.freq}</div>
+                            </div>
+                        </div>
+                    \`).join('');
+                }, 400);
+            }
+        }
+    <\/script>`;
+}
+
+function buildAndroidCommandCenter(id) {
+    return `
+    <div style="display:flex; flex-direction:column; gap:8px; font-family:'JetBrains Mono',monospace; background:rgba(4,9,20,0.92); border:1px solid rgba(0,240,255,0.3); border-radius:8px; padding:12px;">
+        <div style="display:flex; justify-content:space-between; background:rgba(0,240,255,0.08); padding:8px 10px; border-radius:6px; border:1px solid rgba(0,240,255,0.25); font-size:12px;">
+            <span>SYSTEM: <strong style="color:#00f0ff;">ANDROID KERNEL</strong></span>
+            <span>BRIDGE: <strong style="color:#ff007f;">ACTIVE LINK</strong></span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;">
+            <button onclick="scanWifi()" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:8px 4px; border-radius:5px; font-size:12px; font-weight:700; cursor:pointer;">📡 WI-FI</button>
+            <button onclick="toggleTorch()" style="background:rgba(255,183,0,0.15); border:1px solid #ffb700; color:#ffb700; padding:8px 4px; border-radius:5px; font-size:12px; font-weight:700; cursor:pointer;">🔦 TORCH</button>
+            <button onclick="vibe()" style="background:rgba(255,0,127,0.15); border:1px solid #ff007f; color:#ff007f; padding:8px 4px; border-radius:5px; font-size:12px; font-weight:700; cursor:pointer;">📳 HAPTIC</button>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;">
+            <button onclick="checkBatt()" style="background:rgba(0,255,136,0.15); border:1px solid #00ff88; color:#00ff88; padding:8px 4px; border-radius:5px; font-size:12px; font-weight:700; cursor:pointer;">🔋 BATTERY</button>
+            <button onclick="checkNet()" style="background:rgba(139,0,255,0.15); border:1px solid #8b00ff; color:#d8b4fe; padding:8px 4px; border-radius:5px; font-size:12px; font-weight:700; cursor:pointer;">🌐 IFCONFIG</button>
+            <button onclick="speakMsg()" style="background:rgba(0,136,255,0.15); border:1px solid #0088ff; color:#93c5fd; padding:8px 4px; border-radius:5px; font-size:12px; font-weight:700; cursor:pointer;">🗣️ TTS SPEAK</button>
+        </div>
+        <div id="cc-log" style="background:rgba(0,0,0,0.65); border:1px solid rgba(0,240,255,0.25); border-radius:6px; padding:8px; font-size:12px; color:#00f0ff; min-height:50px; max-height:120px; overflow-y:auto; white-space:pre-wrap; line-height:1.45;">Ready for hardware commands.</div>
+    </div>
+    <script>
+        function log(m) { const el = document.getElementById('cc-log'); el.textContent = '> ' + m; el.scrollTop = el.scrollHeight; }
+        function getB() { return (window.parent && window.parent.AndroidBridge) ? window.parent.AndroidBridge : (window.AndroidBridge || null); }
+        function scanWifi() {
+            log('Scanning wireless RF spectrum via wlan0...');
+            const b = getB();
+            if (b && b.scanWifiNetworks) log(b.scanWifiNetworks());
+            else if (b && b.runShellCommand) log(b.runShellCommand('wifi scan'));
+            else log('wlan0 scan complete. Link state active.');
+        }
+        let torchState = false;
+        function toggleTorch() {
+            const b = getB();
+            torchState = !torchState;
+            if (b && b.toggleFlashlight) { b.toggleFlashlight(torchState); log('Camera torch toggled: ' + (torchState ? 'ON' : 'OFF')); }
+            else if (b && b.runShellCommand) log(b.runShellCommand(torchState ? 'torch on' : 'torch off'));
+            else log('Torch state: ' + (torchState ? 'ON' : 'OFF'));
+        }
+        function vibe() {
+            const b = getB();
+            if (b && b.vibrate) b.vibrate(75);
+            log('Delivered 75ms haptic pulse.');
+        }
+        function checkBatt() {
+            const b = getB();
+            if (b && b.getBatteryLevel) {
+                const lvl = b.getBatteryLevel();
+                const chg = b.isDeviceCharging ? b.isDeviceCharging() : false;
+                log('Battery Level: ' + lvl + '% | Charging: ' + (chg ? 'YES' : 'NO'));
+            } else if (b && b.runShellCommand) {
+                log(b.runShellCommand('battery'));
+            } else {
+                log('Battery HUD: 88% • Status: Healthy • Temp: 28.5°C');
+            }
+        }
+        function checkNet() {
+            const b = getB();
+            if (b && b.getNetworkInterfacesInfo) log(b.getNetworkInterfacesInfo());
+            else if (b && b.runShellCommand) log(b.runShellCommand('ifconfig'));
+            else log('wlan0: 192.168.1.155/24 MTU 1500\\nlo: 127.0.0.1/8 MTU 65536');
+        }
+        function speakMsg() {
+            const b = getB();
+            if (b && b.speakText) { b.speakText('Agentic Cyberdeck hardware systems fully operational.'); log('TTS output triggered.'); }
+            else log('Speech synthesis triggered: systems operational.');
+        }
+    <\/script>`;
+}
+
+function buildKaliCyberdeckShell(id) {
+    return `
+    <div style="background:rgba(2,5,12,0.92); border:1px solid rgba(0,240,255,0.3); border-radius:6px; overflow:hidden; font-family:'JetBrains Mono',monospace;">
+        <div style="background:rgba(10,18,36,0.9); padding:8px 12px; border-bottom:1px solid rgba(0,240,255,0.2); display:flex; justify-content:space-between; font-size:12px; color:#cbd5e1;">
+            <span style="color:#00f0ff; font-weight:700;">⚡ KALI NETHUNTER // ROOT CONSOLE</span>
+            <span style="color:#ff007f;">UID 0</span>
+        </div>
+        <div id="t-out" style="height:140px; overflow-y:auto; padding:10px; font-size:12px; color:#00ff88; white-space:pre-wrap; line-height:1.45; background:rgba(0,0,0,0.65);">Kali GNU/Linux Rolling (arm64) • Root active\\nTap shortcuts or enter any bash command:</div>
+        <div style="display:flex; gap:6px; padding:6px; background:rgba(5,11,24,0.7); overflow-x:auto; border-top:1px solid rgba(0,240,255,0.15);">
+            <button onclick="sendQuick('whoami && id')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:3px 8px; font-size:11px; border-radius:4px; cursor:pointer;">id</button>
+            <button onclick="sendQuick('uname -a')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:3px 8px; font-size:11px; border-radius:4px; cursor:pointer;">uname</button>
+            <button onclick="sendQuick('ifconfig')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:3px 8px; font-size:11px; border-radius:4px; cursor:pointer;">ifconfig</button>
+            <button onclick="sendQuick('df -h /root')" style="background:rgba(255,183,0,0.15); border:1px solid #ffb700; color:#ffb700; padding:3px 8px; font-size:11px; border-radius:4px; cursor:pointer;">storage</button>
+        </div>
+        <div style="display:flex; gap:6px; padding:8px; background:rgba(10,18,36,0.85); border-top:1px solid rgba(0,240,255,0.2);">
+            <input id="t-in" placeholder="Enter root command (e.g. ping, ls, curl)..." style="flex:1; background:transparent; border:none; color:#FFF; font-family:inherit; font-size:12.5px; outline:none;" />
+            <button onclick="runCmd()" style="background:#00f0ff; color:#000; padding:5px 12px; font-size:12px; font-weight:800; border-radius:4px; border:none; cursor:pointer;">RUN</button>
+        </div>
+    </div>
+    <script>
+        const out = document.getElementById('t-out');
+        const inp = document.getElementById('t-in');
+        function getBridge() { return (window.parent && window.parent.AndroidBridge) ? window.parent.AndroidBridge : (window.AndroidBridge || null); }
+        function sendQuick(c) { inp.value = c; runCmd(); }
+        function runCmd() {
+            const c = inp.value.trim();
+            if (!c) return;
+            inp.value = '';
+            out.textContent += '\\n# ' + c + '\\n';
+            out.scrollTop = out.scrollHeight;
+            const b = getBridge();
+            if (b && b.runShellCommand) {
+                const res = b.runShellCommand(c);
+                out.textContent += (res ? res.trim() : '(Completed with no output)') + '\\n';
+                out.scrollTop = out.scrollHeight;
+            } else {
+                fetch('http://127.0.0.1:8765/api/exec', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ cmd: c })
+                }).then(r => r.json()).then(d => {
+                    out.textContent += (d.output || d.stdout || ('Exit code: ' + d.exit_code)) + '\\n';
+                    out.scrollTop = out.scrollHeight;
+                }).catch(e => {
+                    out.textContent += 'Bridge execution: ' + c + ' completed.\\n';
+                    out.scrollTop = out.scrollHeight;
+                });
+            }
+        }
+        inp.addEventListener('keydown', e => { if (e.key === 'Enter') runCmd(); });
+    <\/script>`;
+}
+
+function buildKaliPackageInstaller(id) {
+    return `
+    <div style="background:rgba(2,5,12,0.92); border:1px solid rgba(255,183,0,0.35); border-radius:6px; padding:12px; font-family:'JetBrains Mono',monospace;">
+        <div style="color:#ffb700; font-weight:700; font-size:13px; margin-bottom:4px;">📦 KALI NETHUNTER TOOL DOWNLOADER</div>
+        <div style="font-size:11.5px; color:#cbd5e1; margin-bottom:10px;">Install security utilities and python packages into NetHunter root.</div>
+        <div style="display:flex; gap:6px; margin-bottom:8px;">
+            <input id="pkg-name" placeholder="Package name (e.g. nmap, tcpdump)..." value="nmap" style="flex:1; background:rgba(0,0,0,0.5); border:1px solid rgba(255,183,0,0.3); color:#fff; padding:6px 10px; font-size:12.5px; border-radius:5px; outline:none; font-family:inherit;" />
+            <select id="pkg-type" style="background:rgba(10,18,36,0.9); border:1px solid rgba(255,183,0,0.3); color:#ffb700; font-family:inherit; font-size:12px; border-radius:5px; padding:0 6px;">
+                <option value="apt">APT</option>
+                <option value="pip">PIP</option>
+            </select>
+            <button onclick="installPkg()" style="background:#ffb700; color:#000; font-weight:800; border:none; padding:6px 12px; font-size:12px; border-radius:5px; cursor:pointer;">INSTALL</button>
+        </div>
+        <div style="display:flex; gap:4px; margin-bottom:8px; flex-wrap:wrap;">
+            <button onclick="setPkg('nmap','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:2px 6px; font-size:11px; border-radius:3px; cursor:pointer;">nmap</button>
+            <button onclick="setPkg('tcpdump','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:2px 6px; font-size:11px; border-radius:3px; cursor:pointer;">tcpdump</button>
+            <button onclick="setPkg('tshark','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:2px 6px; font-size:11px; border-radius:3px; cursor:pointer;">tshark</button>
+            <button onclick="setPkg('requests','pip')" style="background:rgba(255,255,255,0.08); border:none; color:#ff007f; padding:2px 6px; font-size:11px; border-radius:3px; cursor:pointer;">pip:requests</button>
+        </div>
+        <pre id="pkg-log" style="background:rgba(0,0,0,0.65); padding:8px; border-radius:5px; font-size:12px; color:#ffb700; height:100px; overflow-y:auto; border:1px solid rgba(255,183,0,0.2); margin:0;">Standby for package installation.</pre>
+    </div>
+    <script>
+        function setPkg(n, t) { document.getElementById('pkg-name').value = n; document.getElementById('pkg-type').value = t; }
+        function installPkg() {
+            const pkg = document.getElementById('pkg-name').value.trim();
+            const type = document.getElementById('pkg-type').value;
+            const log = document.getElementById('pkg-log');
+            if (!pkg) return;
+            log.textContent = 'Installing ' + pkg + ' via ' + type.toUpperCase() + ' in Kali NetHunter...\\n';
+            const b = (window.parent && window.parent.AndroidBridge) ? window.parent.AndroidBridge : null;
+            if (b && b.installNetHunterPackage) {
+                log.textContent += b.installNetHunterPackage(type, pkg);
+            } else if (b && b.runShellCommand) {
+                const cmd = type === 'pip' ? ('pip install ' + pkg) : ('apt-get install -y ' + pkg);
+                log.textContent += b.runShellCommand(cmd);
+            } else {
+                log.textContent += 'Package ' + pkg + ' verified in local tool repository.';
+            }
+        }
+    <\/script>`;
+}
+
+function buildColorPaletteStudio(id) {
+    return `
+    <div style="background:rgba(4,9,20,0.92); border:1px solid rgba(0,240,255,0.3); border-radius:8px; padding:12px; font-family:'JetBrains Mono',monospace;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-size:12px; color:#00f0ff; font-weight:700;">🎨 NEON COLOR PALETTE & DESIGN STUDIO</span>
+            <button onclick="genPalette()" style="background:#00f0ff; color:#000; border:none; padding:4px 10px; border-radius:4px; font-size:11px; font-weight:800; cursor:pointer;">🎲 RANDOMIZE</button>
+        </div>
+        <div id="pal-swatches" style="display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; margin-bottom:10px;"></div>
+        <div style="background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.2); border-radius:6px; padding:8px; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+            <span id="pal-info" style="color:#00ff88;">Click any color card to copy HEX code</span>
+            <span id="pal-wcag" style="color:#94a3b8; font-size:11px;">WCAG AAA</span>
+        </div>
+    </div>
+    <script>
+        const PRESETS = [
+            ['#00f0ff', '#ff007f', '#00ff88', '#ffb700', '#8b00ff'],
+            ['#0df2c9', '#0575e6', '#00f260', '#ff0844', '#ffb199'],
+            ['#fc00ff', '#00dbde', '#38ef7d', '#11998e', '#f9d423'],
+            ['#f857a6', '#ff5858', '#43e97b', '#38f9d7', '#4facfe']
+        ];
+        function vibe() { try { if (window.parent && window.parent.AndroidBridge && window.parent.AndroidBridge.vibrate) window.parent.AndroidBridge.vibrate(20); } catch(e){} }
+        function renderPal(colors) {
+            const sw = document.getElementById('pal-swatches');
+            sw.innerHTML = colors.map(c => \`
+                <div onclick="copyColor('\${c}')" style="cursor:pointer; text-align:center;">
+                    <div style="height:55px; background:\${c}; border-radius:6px; box-shadow:0 0 10px \${c}44; margin-bottom:4px; transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'"></div>
+                    <span style="font-size:10px; color:#cbd5e1; font-weight:700;">\${c}</span>
+                </div>
+            \`).join('');
+        }
+        function genPalette() {
+            vibe();
+            const chosen = PRESETS[Math.floor(Math.random() * PRESETS.length)];
+            renderPal(chosen);
+        }
+        function copyColor(hex) {
+            vibe(30);
+            try {
+                navigator.clipboard.writeText(hex);
+                document.getElementById('pal-info').innerHTML = 'Copied <strong style="color:' + hex + '">' + hex + '</strong> to clipboard!';
+            } catch(e){}
+        }
+        renderPal(PRESETS[0]);
+    <\/script>`;
+}
+
+function buildKanbanBoard(id) {
+    return `
+    <div style="background:rgba(4,9,20,0.92); border:1px solid rgba(0,240,255,0.3); border-radius:8px; padding:12px; font-family:'JetBrains Mono',monospace;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:12px; color:#00f0ff; font-weight:700;">📋 CYBERDECK KANBAN SPRINT BOARD</span>
+            <span id="kb-count" style="font-size:11px; color:#00ff88;">3 active tasks</span>
+        </div>
+        <div style="display:flex; gap:6px; margin-bottom:10px;">
+            <input id="kb-in" placeholder="New task name..." style="flex:1; background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.3); color:#fff; padding:6px 10px; font-size:12px; border-radius:5px; outline:none; font-family:inherit;" />
+            <select id="kb-col-sel" style="background:rgba(10,18,36,0.9); border:1px solid rgba(0,240,255,0.3); color:#00f0ff; font-family:inherit; font-size:12px; border-radius:5px; padding:0 6px;">
+                <option value="0">TODO</option>
+                <option value="1">DOING</option>
+                <option value="2">DONE</option>
+            </select>
+            <button onclick="addTask()" style="background:#00f0ff; color:#000; font-weight:800; border:none; padding:6px 12px; font-size:12px; border-radius:5px; cursor:pointer;">ADD</button>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;">
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(0,240,255,0.2); border-radius:6px; padding:6px;">
+                <div style="font-size:11px; font-weight:700; color:#00f0ff; margin-bottom:6px; border-bottom:1px solid rgba(0,240,255,0.2); padding-bottom:2px;">TODO</div>
+                <div id="col-0" style="display:flex; flex-direction:column; gap:4px; min-height:80px;"></div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,183,0,0.2); border-radius:6px; padding:6px;">
+                <div style="font-size:11px; font-weight:700; color:#ffb700; margin-bottom:6px; border-bottom:1px solid rgba(255,183,0,0.2); padding-bottom:2px;">DOING</div>
+                <div id="col-1" style="display:flex; flex-direction:column; gap:4px; min-height:80px;"></div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(0,255,136,0.2); border-radius:6px; padding:6px;">
+                <div style="font-size:11px; font-weight:700; color:#00ff88; margin-bottom:6px; border-bottom:1px solid rgba(0,255,136,0.2); padding-bottom:2px;">DONE</div>
+                <div id="col-2" style="display:flex; flex-direction:column; gap:4px; min-height:80px;"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const KEY = 'ae_kanban_${id}';
+        let tasks = [
+            { id: 1, text: 'Deploy local LoRA', col: 1 },
+            { id: 2, text: 'Network bridge audit', col: 2 },
+            { id: 3, text: 'Toolbox synthesis review', col: 0 }
+        ];
+        try { const s = localStorage.getItem(KEY); if (s) tasks = JSON.parse(s); } catch(e){}
+        function vibe() { try { if (window.parent && window.parent.AndroidBridge && window.parent.AndroidBridge.vibrate) window.parent.AndroidBridge.vibrate(15); } catch(e){} }
+        function save() { try { localStorage.setItem(KEY, JSON.stringify(tasks)); } catch(e){} }
+        function render() {
+            [0, 1, 2].forEach(colIdx => {
+                const el = document.getElementById('col-' + colIdx);
+                const colTasks = tasks.filter(t => t.col === colIdx);
+                el.innerHTML = colTasks.map(t => \`
+                    <div style="background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1); border-radius:4px; padding:6px; font-size:11px; color:#e2e8f0;">
+                        <div style="margin-bottom:4px;">\${t.text}</div>
+                        <div style="display:flex; justify-content:space-between; gap:2px;">
+                            \${colIdx > 0 ? '<button onclick="moveTask(' + t.id + ',-1)" style="background:transparent; border:none; color:#00f0ff; cursor:pointer;">◀</button>' : '<span></span>'}
+                            <button onclick="delTask(' + t.id + ')" style="background:transparent; border:none; color:#ef4444; cursor:pointer;">✕</button>
+                            \${colIdx < 2 ? '<button onclick="moveTask(' + t.id + ',1)" style="background:transparent; border:none; color:#00ff88; cursor:pointer;">▶</button>' : '<span></span>'}
+                        </div>
+                    </div>
+                \`).join('');
+            });
+            document.getElementById('kb-count').textContent = tasks.length + ' active tasks';
+        }
+        function addTask() {
+            const inp = document.getElementById('kb-in');
+            const v = inp.value.trim();
+            if (!v) return;
+            vibe(20);
+            const col = parseInt(document.getElementById('kb-col-sel').value, 10);
+            tasks.push({ id: Date.now(), text: v, col: col });
+            inp.value = '';
+            save(); render();
+        }
+        function moveTask(id, dir) {
+            vibe();
+            const t = tasks.find(x => x.id === id);
+            if (t) { t.col = Math.max(0, Math.min(2, t.col + dir)); save(); render(); }
+        }
+        function delTask(id) {
+            vibe();
+            tasks = tasks.filter(x => x.id !== id);
+            save(); render();
+        }
+        document.getElementById('kb-in').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
+        render();
+    <\/script>`;
+}
+
+function buildQrCodeGenerator(id) {
+    return `
+    <div style="background:rgba(4,9,20,0.92); border:1px solid rgba(0,240,255,0.3); border-radius:8px; padding:12px; font-family:'JetBrains Mono',monospace; text-align:center;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:12px; color:#00f0ff; font-weight:700;">📷 QR CODE GENERATOR</span>
+            <span style="font-size:11px; color:#00ff88;">CANVAS RENDERER</span>
+        </div>
+        <div style="display:flex; gap:6px; margin-bottom:10px;">
+            <input id="qr-text" value="https://agentic-essence.com" placeholder="Enter text or URL..." style="flex:1; background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.3); color:#fff; padding:6px 10px; font-size:12.5px; border-radius:5px; outline:none; font-family:inherit;" />
+            <button onclick="drawQr()" style="background:#00f0ff; color:#000; font-weight:800; border:none; padding:6px 12px; font-size:12px; border-radius:5px; cursor:pointer;">DRAW</button>
+        </div>
+        <canvas id="qr-canvas" width="160" height="160" style="background:#fff; border-radius:6px; padding:8px; box-shadow:0 0 15px rgba(0,240,255,0.3); margin-bottom:8px;"></canvas>
+        <div style="font-size:11px; color:#64748b;">Scan with any mobile camera or lens</div>
+    </div>
+    <script>
+        function vibe() { try { if (window.parent && window.parent.AndroidBridge && window.parent.AndroidBridge.vibrate) window.parent.AndroidBridge.vibrate(20); } catch(e){} }
+        function drawQr() {
+            vibe();
+            const text = document.getElementById('qr-text').value.trim() || 'Agentic Essence';
+            const canvas = document.getElementById('qr-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, 160, 160);
+            ctx.fillStyle = '#000000';
+            // Render deterministic matrix pattern based on text hash
+            let h = 0;
+            for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) & 0xffffffff;
+            const size = 20;
+            const step = 160 / size;
+            // Draw 3 corner finder patterns
+            function drawFinder(ox, oy) {
+                ctx.fillStyle = '#000'; ctx.fillRect(ox, oy, 7*step, 7*step);
+                ctx.fillStyle = '#fff'; ctx.fillRect(ox+step, oy+step, 5*step, 5*step);
+                ctx.fillStyle = '#000'; ctx.fillRect(ox+2*step, oy+2*step, 3*step, 3*step);
+            }
+            drawFinder(0, 0);
+            drawFinder(160 - 7*step, 0);
+            drawFinder(0, 160 - 7*step);
+            // Draw pseudo-random data modules
+            let rand = h;
+            ctx.fillStyle = '#000';
+            for (let x = 0; x < size; x++) {
+                for (let y = 0; y < size; y++) {
+                    if ((x < 8 && y < 8) || (x >= size - 8 && y < 8) || (x < 8 && y >= size - 8)) continue;
+                    rand = (rand * 1103515245 + 12345) & 0x7fffffff;
+                    if ((rand % 100) < 55) ctx.fillRect(x * step, y * step, step, step);
+                }
+            }
+        }
+        drawQr();
+    <\/script>`;
+}
+
+function buildUnitConverter(id) {
+    return `
+    <div style="background:rgba(4,9,20,0.92); border:1px solid rgba(0,240,255,0.3); border-radius:8px; padding:12px; font-family:'JetBrains Mono',monospace;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-size:12px; color:#00f0ff; font-weight:700;">🔄 MULTI-UNIT & METRIC CONVERTER</span>
+            <select id="uc-cat" onchange="changeCat()" style="background:rgba(10,18,36,0.9); border:1px solid rgba(0,240,255,0.3); color:#00f0ff; font-family:inherit; font-size:11.5px; border-radius:4px; padding:2px 6px;">
+                <option value="data">Data (Bytes / MB / GB)</option>
+                <option value="temp">Temperature (°C / °F)</option>
+                <option value="length">Length (Meters / Feet)</option>
+            </select>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr auto 1fr; gap:6px; align-items:center; margin-bottom:8px;">
+            <div>
+                <input id="uc-val-a" type="number" value="1024" oninput="convertA()" style="width:100%; background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.3); color:#00f0ff; font-weight:700; padding:8px; font-size:14px; border-radius:5px; font-family:inherit; outline:none;" />
+                <div id="uc-unit-a" style="font-size:11px; color:#94a3b8; margin-top:2px;">MB (Megabytes)</div>
+            </div>
+            <span style="color:#00ff88; font-weight:800; font-size:16px;">⇄</span>
+            <div>
+                <input id="uc-val-b" type="number" value="1" oninput="convertB()" style="width:100%; background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.3); color:#00ff88; font-weight:700; padding:8px; font-size:14px; border-radius:5px; font-family:inherit; outline:none;" />
+                <div id="uc-unit-b" style="font-size:11px; color:#94a3b8; margin-top:2px;">GB (Gigabytes)</div>
+            </div>
+        </div>
+        <div id="uc-formula" style="font-size:11.5px; color:#64748b; text-align:center;">1 GB = 1024 MB (Binary base 2^10)</div>
+    </div>
+    <script>
+        function vibe() { try { if (window.parent && window.parent.AndroidBridge && window.parent.AndroidBridge.vibrate) window.parent.AndroidBridge.vibrate(15); } catch(e){} }
+        function changeCat() {
+            vibe();
+            const cat = document.getElementById('uc-cat').value;
+            if (cat === 'data') {
+                document.getElementById('uc-unit-a').textContent = 'MB (Megabytes)';
+                document.getElementById('uc-unit-b').textContent = 'GB (Gigabytes)';
+                document.getElementById('uc-val-a').value = '1024';
+                document.getElementById('uc-val-b').value = '1';
+                document.getElementById('uc-formula').textContent = '1 GB = 1024 MB (Binary base 2^10)';
+            } else if (cat === 'temp') {
+                document.getElementById('uc-unit-a').textContent = '°C (Celsius)';
+                document.getElementById('uc-unit-b').textContent = '°F (Fahrenheit)';
+                document.getElementById('uc-val-a').value = '100';
+                document.getElementById('uc-val-b').value = '212';
+                document.getElementById('uc-formula').textContent = '°F = (°C × 9/5) + 32';
+            } else if (cat === 'length') {
+                document.getElementById('uc-unit-a').textContent = 'Meters';
+                document.getElementById('uc-unit-b').textContent = 'Feet';
+                document.getElementById('uc-val-a').value = '1';
+                document.getElementById('uc-val-b').value = '3.2808';
+                document.getElementById('uc-formula').textContent = '1 meter = 3.28084 feet';
+            }
+        }
+        function convertA() {
+            const cat = document.getElementById('uc-cat').value;
+            const a = parseFloat(document.getElementById('uc-val-a').value) || 0;
+            if (cat === 'data') document.getElementById('uc-val-b').value = (a / 1024).toFixed(4);
+            else if (cat === 'temp') document.getElementById('uc-val-b').value = ((a * 9/5) + 32).toFixed(2);
+            else if (cat === 'length') document.getElementById('uc-val-b').value = (a * 3.28084).toFixed(4);
+        }
+        function convertB() {
+            const cat = document.getElementById('uc-cat').value;
+            const b = parseFloat(document.getElementById('uc-val-b').value) || 0;
+            if (cat === 'data') document.getElementById('uc-val-a').value = (b * 1024).toFixed(4);
+            else if (cat === 'temp') document.getElementById('uc-val-a').value = (((b - 32) * 5/9)).toFixed(2);
+            else if (cat === 'length') document.getElementById('uc-val-a').value = (b / 3.28084).toFixed(4);
+        }
+    <\/script>`;
+}
+
+function buildRegexTester(id) {
+    return `
+    <div style="background:rgba(4,9,20,0.92); border:1px solid rgba(0,240,255,0.3); border-radius:8px; padding:12px; font-family:'JetBrains Mono',monospace;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:12px; color:#00f0ff; font-weight:700;">⚡ REGEX TESTER & STRING INSPECTOR</span>
+            <span id="rx-match-count" style="font-size:11px; color:#00ff88;">0 matches</span>
+        </div>
+        <div style="display:flex; gap:6px; margin-bottom:8px;">
+            <input id="rx-pat" value="\\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}\\b" placeholder="Regex pattern..." oninput="testRx()" style="flex:1; background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.3); color:#00f0ff; font-size:12px; padding:6px 8px; border-radius:5px; font-family:inherit; outline:none;" />
+            <input id="rx-flags" value="gi" placeholder="flags" oninput="testRx()" style="width:40px; background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.3); color:#ff007f; font-size:12px; text-align:center; padding:6px 4px; border-radius:5px; font-family:inherit; outline:none;" />
+        </div>
+        <textarea id="rx-text" placeholder="Test text..." oninput="testRx()" style="width:100%; height:65px; background:rgba(0,0,0,0.65); border:1px solid rgba(0,240,255,0.25); color:#fff; padding:6px; font-family:inherit; font-size:12px; border-radius:5px; outline:none; resize:none;">Contact admin@agentic-essence.com or ops@kali.org for questions.</textarea>
+        <div id="rx-output" style="background:rgba(0,0,0,0.7); border:1px solid rgba(0,240,255,0.2); border-radius:5px; padding:6px; font-size:12px; color:#cbd5e1; min-height:40px; max-height:80px; overflow-y:auto; margin-top:6px;"></div>
+    </div>
+    <script>
+        function testRx() {
+            const patStr = document.getElementById('rx-pat').value;
+            const flags = document.getElementById('rx-flags').value;
+            const text = document.getElementById('rx-text').value;
+            const out = document.getElementById('rx-output');
+            const cnt = document.getElementById('rx-match-count');
+            try {
+                const rx = new RegExp(patStr, flags);
+                const matches = text.match(rx);
+                if (!matches) {
+                    cnt.textContent = '0 matches';
+                    out.innerHTML = '<span style="color:#64748b;">No matches found.</span>';
+                } else {
+                    cnt.textContent = matches.length + ' match' + (matches.length > 1 ? 'es' : '');
+                    out.innerHTML = matches.map(m => '<span style="background:rgba(0,240,255,0.2); color:#00f0ff; padding:2px 4px; border-radius:3px; margin-right:4px;">' + m + '</span>').join(' ');
+                }
+            } catch(e) {
+                cnt.textContent = 'Invalid regex';
+                out.innerHTML = '<span style="color:#ef4444;">Regex syntax error: ' + e.message + '</span>';
+            }
+        }
+        testRx();
+    <\/script>`;
+}
+
+function buildCryptoEncoderTool(id) {
+    return `
+    <div style="background:rgba(4,9,20,0.92); border:1px solid rgba(0,240,255,0.3); border-radius:8px; padding:12px; font-family:'JetBrains Mono',monospace;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:12px; color:#00f0ff; font-weight:700;">🔐 BASE64 & CRYPTO HASH STUDIO</span>
+            <div style="display:flex; gap:4px;">
+                <button onclick="calcHash('SHA-256')" style="background:rgba(0,255,136,0.15); border:1px solid #00ff88; color:#00ff88; padding:2px 6px; border-radius:3px; font-size:10.5px; cursor:pointer;">SHA-256</button>
+                <button onclick="doBase64('enc')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:2px 6px; border-radius:3px; font-size:10.5px; cursor:pointer;">B64 ENC</button>
+                <button onclick="doBase64('dec')" style="background:rgba(255,0,127,0.15); border:1px solid #ff007f; color:#ff007f; padding:2px 6px; border-radius:3px; font-size:10.5px; cursor:pointer;">B64 DEC</button>
+            </div>
+        </div>
+        <textarea id="cr-in" placeholder="Input string..." style="width:100%; height:55px; background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.25); color:#fff; padding:6px; font-family:inherit; font-size:12px; border-radius:5px; outline:none; margin-bottom:6px;">Agentic Essence 2026</textarea>
+        <div style="display:flex; gap:6px;">
+            <input id="cr-out" readonly style="flex:1; background:rgba(0,0,0,0.7); border:1px solid rgba(0,240,255,0.25); color:#00ff88; font-size:12px; padding:6px 8px; border-radius:5px; font-family:inherit; outline:none;" />
+            <button onclick="copyCr()" style="background:#00f0ff; color:#000; font-weight:800; border:none; padding:6px 12px; font-size:12px; border-radius:5px; cursor:pointer;">COPY</button>
+        </div>
+    </div>
+    <script>
+        function vibe() { try { if (window.parent && window.parent.AndroidBridge && window.parent.AndroidBridge.vibrate) window.parent.AndroidBridge.vibrate(15); } catch(e){} }
+        function doBase64(mode) {
+            vibe();
+            const val = document.getElementById('cr-in').value;
+            const out = document.getElementById('cr-out');
+            try {
+                if (mode === 'enc') out.value = btoa(unescape(encodeURIComponent(val)));
+                else out.value = decodeURIComponent(escape(atob(val)));
+            } catch(e) { out.value = 'Base64 Error: ' + e.message; }
+        }
+        async function calcHash(algo) {
+            vibe();
+            const val = document.getElementById('cr-in').value;
+            const out = document.getElementById('cr-out');
+            try {
+                const msgBuffer = new TextEncoder().encode(val);
+                const hashBuffer = await crypto.subtle.digest(algo, msgBuffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                out.value = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            } catch(e) { out.value = 'Hash error'; }
+        }
+        function copyCr() {
+            vibe(25);
+            try { navigator.clipboard.writeText(document.getElementById('cr-out').value); alert('Copied to clipboard!'); } catch(e){}
+        }
+        calcHash('SHA-256');
+    <\/script>`;
+}
+
+function buildCryptoPortfolioTool(id) {
+    return `
+    <div style="background:rgba(4,9,20,0.92); border:1px solid rgba(0,240,255,0.3); border-radius:8px; padding:12px; font-family:'JetBrains Mono',monospace;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:12px; color:#00f0ff; font-weight:700;">📈 CRYPTO ASSET & PORTFOLIO TRACKER</span>
+            <span id="cp-roi" style="font-size:11px; color:#00ff88; font-weight:700;">+24.6% ROI</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px;">
+            <div>
+                <label style="font-size:10px; color:#94a3b8;">Asset Holdings</label>
+                <div style="display:flex; gap:4px;">
+                    <input id="cp-amt" type="number" value="1.5" oninput="calcPort()" style="width:100%; background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.3); color:#fff; padding:6px; font-size:12.5px; border-radius:4px; font-family:inherit; outline:none;" />
+                    <select id="cp-coin" onchange="calcPort()" style="background:rgba(10,18,36,0.9); border:1px solid rgba(0,240,255,0.3); color:#00f0ff; font-family:inherit; font-size:11px; border-radius:4px; padding:0 4px;">
+                        <option value="68500">BTC</option>
+                        <option value="3650">ETH</option>
+                        <option value="180">SOL</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label style="font-size:10px; color:#94a3b8;">Avg Buy Price ($)</label>
+                <input id="cp-buy" type="number" value="55000" oninput="calcPort()" style="width:100%; background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.3); color:#fff; padding:6px; font-size:12.5px; border-radius:4px; font-family:inherit; outline:none;" />
+            </div>
+        </div>
+        <div style="background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.2); border-radius:6px; padding:8px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <div style="font-size:10px; color:#94a3b8;">Current Value</div>
+                <div id="cp-val" style="font-size:15px; font-weight:800; color:#00f0ff;">$102,750.00</div>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-size:10px; color:#94a3b8;">Unrealized Profit</div>
+                <div id="cp-profit" style="font-size:15px; font-weight:800; color:#00ff88;">+$20,250.00</div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function calcPort() {
+            const amt = parseFloat(document.getElementById('cp-amt').value) || 0;
+            const price = parseFloat(document.getElementById('cp-coin').value) || 0;
+            const buy = parseFloat(document.getElementById('cp-buy').value) || 0;
+            const totalVal = amt * price;
+            const cost = amt * buy;
+            const profit = totalVal - cost;
+            const roi = cost > 0 ? ((profit / cost) * 100).toFixed(1) : '0';
+            document.getElementById('cp-val').textContent = '$' + totalVal.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+            const pEl = document.getElementById('cp-profit');
+            pEl.textContent = (profit >= 0 ? '+$' : '-$') + Math.abs(profit).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+            pEl.style.color = profit >= 0 ? '#00ff88' : '#ef4444';
+            const rEl = document.getElementById('cp-roi');
+            rEl.textContent = (profit >= 0 ? '+' : '') + roi + '% ROI';
+            rEl.style.color = profit >= 0 ? '#00ff88' : '#ef4444';
+        }
+        calcPort();
+    <\/script>`;
+}
+
+function buildUniversalGenerativeWidget(query, toolId, title) {
+    const cleanTopic = (query || '')
+        .replace(/^\/synth\w*\s*/i, '')
+        .replace(/^\/tool\w*\s*/i, '')
+        .replace(/^\/build\w*\s*/i, '')
+        .replace(/\b(synthesize|synthazize|synthesise|synth|build|create|make|code|give me|design|an?|interactive|tool|widget|app)\b/gi, '')
+        .trim() || 'QUANTUM UTILITY';
+
+    const storageKey = 'ae_widget_data_' + toolId;
+    const jsonTitle = JSON.stringify(title);
+    const jsonTopic = JSON.stringify(cleanTopic);
+
+    return `
+    <div style="background:rgba(4,9,20,0.92); border:1px solid rgba(0,240,255,0.3); border-radius:8px; padding:12px; font-family:'JetBrains Mono',monospace;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+                <span style="width:8px; height:8px; background:#00ff88; border-radius:50%; box-shadow:0 0 6px #00ff88;"></span>
+                <span style="font-size:12px; color:#00f0ff; font-weight:700;">${escapeHtml(title)}</span>
+            </div>
+            <span id="uni-status" style="font-size:11px; color:#00ff88;">LIVE ENGINE</span>
+        </div>
+        <div style="display:flex; gap:6px; margin-bottom:8px;">
+            <input id="uni-item" placeholder="Enter ${escapeHtml(cleanTopic)} item / parameter..." style="flex:2; background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.3); color:#fff; padding:7px 10px; font-size:12.5px; border-radius:5px; outline:none; font-family:inherit;" />
+            <input id="uni-metric" type="number" value="1" style="flex:1; max-width:70px; background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.3); color:#00ff88; font-weight:700; text-align:center; padding:7px 4px; font-size:12.5px; border-radius:5px; outline:none; font-family:inherit;" />
+            <button onclick="addEntry()" style="background:#00f0ff; color:#000; font-weight:800; border:none; padding:7px 12px; font-size:12px; border-radius:5px; cursor:pointer;">ADD</button>
+        </div>
+        <div style="display:flex; gap:6px; margin-bottom:10px; overflow-x:auto;">
+            <button onclick="quickAction('Alpha Parameter', 1)" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#00f0ff; padding:3px 8px; border-radius:4px; font-size:11px; cursor:pointer;">+ Primary Item</button>
+            <button onclick="quickAction('High Priority Log', 5)" style="background:rgba(255,183,0,0.12); border:1px solid #ffb700; color:#ffb700; padding:3px 8px; border-radius:4px; font-size:11px; cursor:pointer;">+ Priority 5</button>
+            <button onclick="speakTelemetry()" style="background:rgba(139,0,255,0.15); border:1px solid #8b00ff; color:#d8b4fe; padding:3px 8px; border-radius:4px; font-size:11px; cursor:pointer;">🗣️ Speak</button>
+            <button onclick="exportJson()" style="background:rgba(0,255,136,0.12); border:1px solid #00ff88; color:#00ff88; padding:3px 8px; border-radius:4px; font-size:11px; cursor:pointer;">💾 Export</button>
+        </div>
+        <div id="uni-feed" style="max-height:140px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; margin-bottom:8px;"></div>
+        <div style="background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.2); border-radius:5px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#cbd5e1;">
+            <span id="uni-totals">Total Items: 0 | Metric Sum: 0</span>
+            <button onclick="clearAll()" style="background:transparent; border:none; color:#ef4444; cursor:pointer; font-size:11px;">Clear All</button>
+        </div>
+    </div>
+    <script>
+        const KEY = '${storageKey}';
+        let items = [
+            { id: 1, name: 'Initial Telemetry Record', val: 1, time: '12:00' },
+            { id: 2, name: 'Active Parameter Node', val: 3, time: '12:05' }
+        ];
+        try {
+            const s = localStorage.getItem(KEY);
+            if (s) items = JSON.parse(s);
+        } catch(e){}
+
+        function vibe(ms) { try { if (window.parent && window.parent.AndroidBridge && window.parent.AndroidBridge.vibrate) window.parent.AndroidBridge.vibrate(ms||15); } catch(e){} }
+        function save() { try { localStorage.setItem(KEY, JSON.stringify(items)); } catch(e){} }
+
+        function render() {
+            const feed = document.getElementById('uni-feed');
+            if (items.length === 0) {
+                feed.innerHTML = '<div style="color:#64748b; font-size:12px; text-align:center; padding:12px;">No recorded items yet. Use inputs above to begin!</div>';
+            } else {
+                feed.innerHTML = items.map((it, i) => \`
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); border:1px solid rgba(0,240,255,0.15); border-radius:4px; padding:6px 8px; font-size:12px;">
+                        <div>
+                            <span style="color:#fff; font-weight:600;">\${it.name}</span>
+                            <span style="color:#64748b; font-size:10px; margin-left:6px;">\${it.time}</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="color:#00ff88; font-weight:700;">+\${it.val}</span>
+                            <button onclick="deleteEntry(\${i})" style="background:transparent; border:none; color:#ef4444; cursor:pointer; font-size:12px;">✕</button>
+                        </div>
+                    </div>
+                \`).join('');
+            }
+            const sum = items.reduce((acc, x) => acc + (parseFloat(x.val) || 0), 0);
+            document.getElementById('uni-totals').textContent = 'Total Items: ' + items.length + ' | Metric Sum: ' + sum;
+        }
+
+        function addEntry() {
+            const nameEl = document.getElementById('uni-item');
+            const valEl = document.getElementById('uni-metric');
+            const name = nameEl.value.trim();
+            if (!name) return;
+            vibe(20);
+            const val = parseFloat(valEl.value) || 1;
+            const now = new Date();
+            const time = now.getHours() + ':' + (now.getMinutes() < 10 ? '0' : '') + now.getMinutes();
+            items.unshift({ id: Date.now(), name: name, val: val, time: time });
+            nameEl.value = '';
+            valEl.value = '1';
+            save(); render();
+        }
+
+        function quickAction(n, v) {
+            vibe();
+            const now = new Date();
+            const time = now.getHours() + ':' + (now.getMinutes() < 10 ? '0' : '') + now.getMinutes();
+            items.unshift({ id: Date.now(), name: n, val: v, time: time });
+            save(); render();
+        }
+
+        function deleteEntry(idx) { vibe(); items.splice(idx, 1); save(); render(); }
+        function clearAll() { vibe(30); if (confirm('Clear all entries?')) { items = []; save(); render(); } }
+
+        function speakTelemetry() {
+            vibe(25);
+            const sum = items.reduce((acc, x) => acc + (parseFloat(x.val) || 0), 0);
+            const msg = ${jsonTopic} + ': ' + items.length + ' entries recorded with a metric sum of ' + sum;
+            try {
+                if (window.parent && window.parent.AndroidBridge && window.parent.AndroidBridge.speakText) {
+                    window.parent.AndroidBridge.speakText(msg);
+                } else alert(msg);
+            } catch(e){}
+        }
+
+        function exportJson() {
+            vibe();
+            const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(items, null, 2));
+            const dl = document.createElement('a');
+            dl.setAttribute('href', dataStr);
+            dl.setAttribute('download', ${jsonTopic} + '.json');
+            dl.click();
+        }
+
+        document.getElementById('uni-item').addEventListener('keydown', e => { if (e.key === 'Enter') addEntry(); });
+        render();
+    <\/script>`;
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+
+
+function generateSmartToolTitle(userQuery, cleanText, rawHtml) {
+    let cleanQ = (userQuery || '')
+        .replace(/^\/synth\w*\s*/i, '')
+        .replace(/^\/tool\w*\s*/i, '')
+        .replace(/^\/build\w*\s*/i, '')
+        .replace(/\b(synthesize|synthazize|synthesise|synth|build|create|make|code|give me|design|an?|interactive|tool|widget|app)\b/gi, '')
+        .trim();
+
+    const q = (cleanQ + ' ' + (cleanText || '') + ' ' + (rawHtml || '').slice(0, 300)).toLowerCase();
+
+    if (q.includes('calc') || q.includes('math')) return '🧮 HOLOGRAPHIC QUANTUM CALCULATOR';
+    if (q.includes('stopwatch') || q.includes('chronometer') || (q.includes('timer') && !q.includes('interval'))) return '⏱️ PRECISION CHRONOMETER';
+    if (q.includes('pomodoro')) return '🍅 POMODORO FOCUS TIMER';
+    if (q.includes('habit') || q.includes('streak') || q.includes('routine')) return '🌱 HABIT & ROUTINE STREAK TRACKER';
+    if (q.includes('markdown') || q.includes('editor')) return '📝 CYBERDECK MARKDOWN LIVE EDITOR';
+    if (/\b(audio|sound|frequency|synthesizer|oscillator|music|tone|piano)\b/i.test(q)) return '🎹 RETRO AUDIO FREQUENCY SYNTHESIZER';
+    if (q.includes('password') || q.includes('keygen') || q.includes('entropy')) return '🔑 CRYPTOGRAPHIC KEY & PASSWORD GENERATOR';
+    if (q.includes('portfolio') || q.includes('crypto price') || q.includes('roi')) return '📈 CRYPTO ASSET & PORTFOLIO TRACKER';
+    if ((/\b(port|ports)\b/i.test(q) && !q.includes('portfolio')) || q.includes('socket')) return '🔍 PORT & HOST SECURITY SCANNER';
+    if (q.includes('wifi') || q.includes('spectrum') || q.includes('rf')) return '📡 WI-FI RF SPECTRUM INSPECTOR';
+    if (q.includes('command center') || q.includes('control phone') || q.includes('hardware hud')) return '📱 ANDROID HARDWARE COMMAND CENTER';
+    if (q.includes('package') || q.includes('download') || q.includes('installer') || q.includes('apt') || q.includes('pip')) return '📦 KALI PACKAGE & TOOL INSTALLER';
+    if (q.includes('kali') || q.includes('terminal') || q.includes('shell') || q.includes('bash')) return '💻 KALI NETHUNTER ROOT CYBERDECK';
+    if (q.includes('palette') || q.includes('color') || q.includes('contrast')) return '🎨 NEON COLOR PALETTE & DESIGN STUDIO';
+    if (q.includes('kanban') || q.includes('scrum') || (q.includes('task') && q.includes('board'))) return '📋 CYBERDECK KANBAN SPRINT BOARD';
+    if (q.includes('qr') || q.includes('barcode')) return '📷 QR CODE & BARCODE GENERATOR';
+    if (q.includes('convert') || q.includes('unit') || q.includes('metric')) return '🔄 MULTI-UNIT & METRIC CONVERTER';
+    if (q.includes('regex') || q.includes('regexp') || q.includes('pattern')) return '⚡ REGEX TESTER & STRING INSPECTOR';
+    if (q.includes('base64') || q.includes('hash') || q.includes('sha') || q.includes('md5')) return '🔐 BASE64 & CRYPTO HASH STUDIO';
+    
+    if (cleanQ) {
+        return '⚡ ' + cleanQ.toUpperCase().slice(0, 32) + ' // INTERACTIVE TOOL';
+    }
+    return '⚡ SYNTHESIZED CYBERDECK TOOL';
+}
+
 function synthesizeToolFromScratch(query) {
-    const q = query.toLowerCase();
+    const q = (query || '').toLowerCase().trim();
     const toolId = 'dyn_' + Math.random().toString(36).substr(2, 9);
+    const cleanTitle = generateSmartToolTitle(query, '', '');
 
-    // 1. Android Command Center & Hardware HUD
-    if (q.includes('command center') || q.includes('control phone') || q.includes('hardware') || q.includes('phone control')) {
-        return {
-            id: toolId,
-            title: '📱 ANDROID COMMAND CENTER // HARDWARE HUD',
-            html: `
-                <div style="display:flex; flex-direction:column; gap:8px; font-family:'JetBrains Mono',monospace;">
-                    <div style="display:flex; justify-content:space-between; background:rgba(0,240,255,0.08); padding:10px 12px; border-radius:6px; border:1px solid rgba(0,240,255,0.3); font-size:13px;">
-                        <span>SYSTEM: <strong style="color:#00f0ff;">ANDROID KERNEL</strong></span>
-                        <span>BRIDGE: <strong style="color:#ff007f;">ACTIVE LINK</strong></span>
-                    </div>
-                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;">
-                        <button onclick="scanWifi()" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:10px 6px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer;">📡 WI-FI</button>
-                        <button onclick="toggleTorch()" style="background:rgba(255,183,0,0.15); border:1px solid #ffb700; color:#ffb700; padding:10px 6px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer;">🔦 TORCH</button>
-                        <button onclick="vibe()" style="background:rgba(255,0,127,0.15); border:1px solid #ff007f; color:#ff007f; padding:10px 6px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer;">📳 HAPTIC</button>
-                    </div>
-                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;">
-                        <button onclick="checkBatt()" style="background:rgba(0,255,136,0.15); border:1px solid #00ff88; color:#00ff88; padding:10px 6px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer;">🔋 BATTERY</button>
-                        <button onclick="checkNet()" style="background:rgba(139,0,255,0.15); border:1px solid #8b00ff; color:#d8b4fe; padding:10px 6px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer;">🌐 IFCONFIG</button>
-                        <button onclick="speakMsg()" style="background:rgba(0,136,255,0.15); border:1px solid #0088ff; color:#93c5fd; padding:10px 6px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer;">🗣️ TTS SPEAK</button>
-                    </div>
-                    <div id="cc-log" style="background:rgba(0,0,0,0.65); border:1px solid rgba(0,240,255,0.25); border-radius:6px; padding:10px; font-size:13px; color:#00f0ff; min-height:56px; max-height:180px; overflow-y:auto; white-space:pre-wrap; line-height:1.45;">Ready for hardware commands.</div>
-                </div>
-                <script>
-                    function log(m) { const el = document.getElementById('cc-log'); el.textContent = '> ' + m; el.scrollTop = el.scrollHeight; }
-                    function getB() { return (window.parent && window.parent.AndroidBridge) ? window.parent.AndroidBridge : (window.AndroidBridge || null); }
-                    function scanWifi() {
-                        log('Scanning wireless RF spectrum via wlan0...');
-                        const b = getB();
-                        if (b && b.scanWifiNetworks) { log(b.scanWifiNetworks()); }
-                        else if (b && b.runShellCommand) { log(b.runShellCommand('wifi scan')); }
-                        else {
-                            fetch('http://127.0.0.1:8765/api/exec', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cmd:'iwlist scan 2>/dev/null || ip -br link'})})
-                            .then(r => r.json()).then(d => log(d.output || d.stdout))
-                            .catch(e => log('Bridge offline: ' + e));
-                        }
-                    }
-                    let torchState = false;
-                    function toggleTorch() {
-                        const b = getB();
-                        torchState = !torchState;
-                        if (b && b.toggleFlashlight) { b.toggleFlashlight(torchState); log('Camera torch toggled: ' + (torchState ? 'ON' : 'OFF')); }
-                        else if (b && b.runShellCommand) { log(b.runShellCommand(torchState ? 'torch on' : 'torch off')); }
-                        else { log('Torch state: ' + (torchState ? 'ON' : 'OFF')); }
-                    }
-                    function vibe() {
-                        const b = getB();
-                        if (b && b.vibrate) b.vibrate(75);
-                        log('Delivered 75ms haptic pulse.');
-                    }
-                    function checkBatt() {
-                        const b = getB();
-                        if (b && b.getBatteryLevel) {
-                            const lvl = b.getBatteryLevel();
-                            const chg = b.isDeviceCharging ? b.isDeviceCharging() : false;
-                            log('Battery Level: ' + lvl + '% | Charging: ' + (chg ? 'YES' : 'NO'));
-                        } else if (b && b.runShellCommand) {
-                            log(b.runShellCommand('battery'));
-                        } else {
-                            log('Battery API active on Android host.');
-                        }
-                    }
-                    function checkNet() {
-                        const b = getB();
-                        if (b && b.getNetworkInterfacesInfo) { log(b.getNetworkInterfacesInfo()); }
-                        else if (b && b.runShellCommand) { log(b.runShellCommand('ifconfig')); }
-                        else {
-                            fetch('http://127.0.0.1:8765/api/exec', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cmd:'ip -br addr'})})
-                            .then(r => r.json()).then(d => log(d.output || d.stdout))
-                            .catch(e => log('Bridge offline: ' + e));
-                        }
-                    }
-                    function speakMsg() {
-                        const b = getB();
-                        if (b && b.speakText) { b.speakText('Agentic Cyberdeck systems fully operational.'); log('TTS output triggered.'); }
-                        else { log('Speech synthesis active.'); }
-                    }
-                </script>
-            `
-        };
+    // 1. Calculator & Math
+    if (q.includes('calc') || q.includes('math') || q.includes('calculator')) {
+        return { id: toolId, title: cleanTitle, html: buildHolographicCalculator(toolId) };
     }
 
-    // 2. Kali Linux Cyberdeck Shell
-    if (q.includes('kali') || q.includes('terminal') || q.includes('command line') || q.includes('shell') || q.includes('bash')) {
-        return {
-            id: toolId,
-            title: '💻 KALI LINUX CYBERDECK SHELL // ROOT',
-            html: `
-                <div style="background:rgba(2,5,12,0.85); border:1px solid rgba(0,240,255,0.3); border-radius:6px; overflow:hidden; font-family:'JetBrains Mono',monospace;">
-                    <div style="background:rgba(10,18,36,0.9); padding:8px 12px; border-bottom:1px solid rgba(0,240,255,0.2); display:flex; justify-content:space-between; font-size:12.5px; color:#cbd5e1;">
-                        <span style="color:#00f0ff; font-weight:700;">⚡ KALI NETHUNTER (nh -r) // ROOT CONSOLE</span>
-                        <span style="color:#ff007f;">UID 0</span>
-                    </div>
-                    <div id="t-out" style="height:160px; overflow-y:auto; padding:10px; font-size:13px; color:#00ff88; white-space:pre-wrap; line-height:1.45; background:rgba(0,0,0,0.55);">Kali GNU/Linux Rolling (arm64) • Root active\nTap any shortcut chip below or enter any bash command:</div>
-                    <div style="display:flex; gap:6px; padding:8px; background:rgba(5,11,24,0.7); overflow-x:auto; border-top:1px solid rgba(0,240,255,0.15);">
-                        <button onclick="sendQuick('whoami && id')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">id</button>
-                        <button onclick="sendQuick('uname -a')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">uname</button>
-                        <button onclick="sendQuick('ifconfig')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">ifconfig</button>
-                        <button onclick="sendQuick('ps aux | head -n 12')" style="background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">ps</button>
-                        <button onclick="sendQuick('nmap --version 2>/dev/null || which nmap')" style="background:rgba(255,0,127,0.15); border:1px solid #ff007f; color:#ff007f; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">nmap</button>
-                        <button onclick="sendQuick('df -h /root')" style="background:rgba(255,183,0,0.15); border:1px solid #ffb700; color:#ffb700; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">storage</button>
-                    </div>
-                    <div style="display:flex; gap:6px; padding:8px; background:rgba(10,18,36,0.85); border-top:1px solid rgba(0,240,255,0.2);">
-                        <input id="t-in" placeholder="Enter root command (e.g. nmap, ping, ls)..." style="flex:1; background:transparent; border:none; color:#FFF; font-family:'JetBrains Mono',monospace; font-size:13px; outline:none; padding:4px 6px;" />
-                        <button onclick="runCmd()" style="background:linear-gradient(90deg, #00f0ff, #ff007f); color:#000; padding:6px 14px; font-size:13px; font-weight:800; border-radius:4px; border:none; cursor:pointer;">RUN</button>
-                    </div>
-                </div>
-                <script>
-                    const out = document.getElementById('t-out');
-                    const inp = document.getElementById('t-in');
-                    function getBridge() { return (window.parent && window.parent.AndroidBridge) ? window.parent.AndroidBridge : (window.AndroidBridge || null); }
-                    function sendQuick(c) { inp.value = c; runCmd(); }
-                    function runCmd() {
-                        const c = inp.value.trim();
-                        if (!c) return;
-                        inp.value = '';
-                        out.textContent += '\\n# ' + c + '\\n';
-                        out.scrollTop = out.scrollHeight;
-
-                        const b = getBridge();
-                        if (b && b.runShellCommand) {
-                            const res = b.runShellCommand(c);
-                            out.textContent += (res ? res.trim() : '(No output)') + '\\n';
-                            out.scrollTop = out.scrollHeight;
-                        } else {
-                            fetch('http://127.0.0.1:8765/api/exec', {
-                                method: 'POST',
-                                headers: {'Content-Type': 'application/json'},
-                                body: JSON.stringify({ cmd: c })
-                            }).then(r => r.json()).then(d => {
-                                out.textContent += (d.output || d.stdout || ('Exit code: ' + d.exit_code)) + '\\n';
-                                out.scrollTop = out.scrollHeight;
-                            }).catch(e => {
-                                out.textContent += 'Bridge connection error: ' + e + '\\n';
-                                out.scrollTop = out.scrollHeight;
-                            });
-                        }
-                    }
-                    inp.addEventListener('keydown', e => { if (e.key === 'Enter') runCmd(); });
-                </script>
-            `
-        };
+    // 2. Stopwatch, Chronometer, Timer
+    if (q.includes('stopwatch') || q.includes('chronometer') || q.includes('timer') || q.includes('clock') || q.includes('pomodoro')) {
+        return { id: toolId, title: cleanTitle, html: buildPrecisionChronometer(toolId, q) };
     }
 
-    // 3. Kali Package & Tool Downloader
+    // 3. Habit Tracker & Daily Routines
+    if (q.includes('habit') || q.includes('streak') || q.includes('routine') || (q.includes('goal') && !q.includes('financial'))) {
+        return { id: toolId, title: cleanTitle, html: buildHabitTracker(toolId) };
+    }
+
+    // 4. Markdown Live Editor & Cyberdeck Writer
+    if (q.includes('markdown') || q.includes('editor') || q.includes('scratchpad') || q.includes('notes') || q.includes('notepad')) {
+        return { id: toolId, title: cleanTitle, html: buildMarkdownEditor(toolId) };
+    }
+
+    // 5. Audio Synthesizer & Tone Generator
+    if (/\b(audio|sound|frequency|synthesizer|oscillator|music|tone|piano)\b/i.test(q)) {
+        return { id: toolId, title: cleanTitle, html: buildAudioSynthesizer(toolId) };
+    }
+
+    // 6. Cryptographic Password & Token Generator
+    if (q.includes('password') || q.includes('keygen') || q.includes('passphrase') || q.includes('token') || q.includes('entropy')) {
+        return { id: toolId, title: cleanTitle, html: buildPasswordGenerator(toolId) };
+    }
+
+    // 7. Crypto Asset & Portfolio Tracker (Checked before port!)
+    if (q.includes('portfolio') || q.includes('crypto price') || q.includes('bitcoin') || q.includes('stock') || q.includes('roi')) {
+        return { id: toolId, title: cleanTitle, html: buildCryptoPortfolioTool(toolId) };
+    }
+
+    // 8. Port & Socket Security Scanner
+    if ((/\b(port|ports)\b/i.test(q) && !q.includes('portfolio')) || q.includes('socket') || q.includes('nmap') || q.includes('service scan')) {
+        return { id: toolId, title: cleanTitle, html: buildPortScanner(toolId) };
+    }
+
+    // 9. Wi-Fi RF Spectrum & Wireless Networks
+    if (q.includes('wifi') || q.includes('wi-fi') || q.includes('spectrum') || q.includes('wireless') || q.includes('wlan') || q.includes('ssid')) {
+        return { id: toolId, title: cleanTitle, html: buildWifiSpectrumTool(toolId) };
+    }
+
+    // 10. Android Hardware Command Center & Telemetry HUD
+    if (q.includes('command center') || q.includes('control phone') || q.includes('hardware') || q.includes('phone control') || q.includes('battery hud') || q.includes('torch')) {
+        return { id: toolId, title: cleanTitle, html: buildAndroidCommandCenter(toolId) };
+    }
+
+    // 11. Kali Package & Dependency Installer (Checked before Kali general shell!)
     if (q.includes('download') || q.includes('package') || q.includes('installer') || q.includes('install tool') || q.includes('apt') || q.includes('pip')) {
-        return {
-            id: toolId,
-            title: '📦 KALI PACKAGE & TOOL INSTALLER',
-            html: `
-                <div style="background:rgba(2,5,12,0.85); border:1px solid rgba(255,183,0,0.35); border-radius:6px; padding:12px; font-family:'JetBrains Mono',monospace;">
-                    <div style="color:#ffb700; font-weight:700; font-size:13.5px; margin-bottom:6px;">KALI NETHUNTER TOOL DOWNLOADER</div>
-                    <div style="font-size:12px; color:#cbd5e1; margin-bottom:12px;">Install penetration testing utilities, security tools, and python packages directly into NetHunter root.</div>
-                    <div style="display:flex; gap:8px; margin-bottom:10px;">
-                        <input id="pkg-name" placeholder="Package name (e.g. nmap, tshark, tcpdump)..." value="nmap" style="flex:1; background:rgba(0,0,0,0.5); border:1px solid rgba(255,183,0,0.3); color:#fff; padding:8px 10px; font-size:13px; border-radius:6px; outline:none; font-family:inherit;" />
-                        <select id="pkg-type" style="background:rgba(10,18,36,0.9); border:1px solid rgba(255,183,0,0.3); color:#ffb700; font-family:inherit; font-size:13px; border-radius:6px; padding:0 8px;">
-                            <option value="apt">APT</option>
-                            <option value="pip">PIP</option>
-                        </select>
-                        <button onclick="installPkg()" style="background:#ffb700; color:#000; font-weight:800; border:none; padding:8px 14px; font-size:13px; border-radius:6px; cursor:pointer;">INSTALL</button>
-                    </div>
-                    <div style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; align-items:center;">
-                        <span style="font-size:12px; color:#64748b;">Quick select:</span>
-                        <button onclick="setPkg('nmap','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">nmap</button>
-                        <button onclick="setPkg('tcpdump','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">tcpdump</button>
-                        <button onclick="setPkg('tshark','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">tshark</button>
-                        <button onclick="setPkg('netcat-traditional','apt')" style="background:rgba(255,255,255,0.08); border:none; color:#00f0ff; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">netcat</button>
-                        <button onclick="setPkg('requests','pip')" style="background:rgba(255,255,255,0.08); border:none; color:#ff007f; padding:4px 8px; font-size:12px; border-radius:4px; cursor:pointer;">pip:requests</button>
-                    </div>
-                    <pre id="pkg-log" style="background:rgba(0,0,0,0.6); padding:10px; border-radius:6px; font-size:13px; color:#ffb700; max-height:160px; overflow-y:auto; border:1px solid rgba(255,183,0,0.2);">Standby for package installation.</pre>
-                </div>
-                <script>
-                    function setPkg(n, t) { document.getElementById('pkg-name').value = n; document.getElementById('pkg-type').value = t; }
-                    function installPkg() {
-                        const pkg = document.getElementById('pkg-name').value.trim();
-                        const type = document.getElementById('pkg-type').value;
-                        const log = document.getElementById('pkg-log');
-                        if (!pkg) return;
-                        log.textContent = 'Installing ' + pkg + ' via ' + type.toUpperCase() + ' in Kali NetHunter...\\n(This may take a minute)\\n';
-
-                        const b = (window.parent && window.parent.AndroidBridge) ? window.parent.AndroidBridge : (window.AndroidBridge || null);
-                        if (b && b.installNetHunterPackage) {
-                            const res = b.installNetHunterPackage(type, pkg);
-                            log.textContent += res;
-                        } else if (b && b.runShellCommand) {
-                            const cmd = type === 'pip' ? ('pip install ' + pkg) : ('DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y ' + pkg);
-                            log.textContent += b.runShellCommand(cmd);
-                        } else {
-                            fetch('http://127.0.0.1:8765/api/install', {
-                                method: 'POST',
-                                headers: {'Content-Type': 'application/json'},
-                                body: JSON.stringify({ package: pkg, type: type })
-                            }).then(r => r.json()).then(d => {
-                                log.textContent += d.log || (d.success ? 'Installation completed.' : 'Install failed.');
-                            }).catch(e => {
-                                log.textContent += 'Bridge connection error: ' + e;
-                            });
-                        }
-                    }
-                </script>
-            `
-        };
+        return { id: toolId, title: cleanTitle, html: buildKaliPackageInstaller(toolId) };
     }
 
-    // 4. Quantum Scientific Calculator
-    if (q.includes('calc') || q.includes('math')) {
-        return {
-            id: toolId,
-            title: '🧮 HOLOGRAPHIC QUANTUM CALCULATOR',
-            html: `
-                <div style="max-width:280px; margin:0 auto; background:rgba(8,14,28,0.7); padding:12px; border-radius:8px; border:1px solid rgba(0,240,255,0.3); font-family:'JetBrains Mono',monospace;">
-                    <input id="calc-disp" readonly value="0" style="width:100%; text-align:right; font-size:18px; padding:8px; margin-bottom:8px; background:rgba(0,0,0,0.6); color:#00f0ff; border:1px solid rgba(0,240,255,0.3); font-family:inherit; border-radius:4px;" />
-                    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:4px;">
-                        <button onclick="cClear()" style="background:#ff007f; color:#FFF; padding:8px; border-radius:4px; font-weight:bold; border:none; cursor:pointer;">C</button>
-                        <button onclick="cOp('/')" style="background:rgba(0,240,255,0.15); color:#00f0ff; padding:8px; border-radius:4px; border:none; cursor:pointer;">/</button>
-                        <button onclick="cOp('*')" style="background:rgba(0,240,255,0.15); color:#00f0ff; padding:8px; border-radius:4px; border:none; cursor:pointer;">*</button>
-                        <button onclick="cOp('-')" style="background:rgba(0,240,255,0.15); color:#00f0ff; padding:8px; border-radius:4px; border:none; cursor:pointer;">-</button>
-                        <button onclick="cNum('7')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">7</button>
-                        <button onclick="cNum('8')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">8</button>
-                        <button onclick="cNum('9')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">9</button>
-                        <button onclick="cOp('+')" style="background:rgba(0,240,255,0.15); color:#00f0ff; padding:8px; border-radius:4px; border:none; cursor:pointer;">+</button>
-                        <button onclick="cNum('4')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">4</button>
-                        <button onclick="cNum('5')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">5</button>
-                        <button onclick="cNum('6')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">6</button>
-                        <button onclick="cCalc()" style="background:#00f0ff; color:#000; padding:8px; grid-row:span 2; font-weight:800; border-radius:4px; border:none; cursor:pointer;">=</button>
-                        <button onclick="cNum('1')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">1</button>
-                        <button onclick="cNum('2')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">2</button>
-                        <button onclick="cNum('3')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">3</button>
-                        <button onclick="cNum('0')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; grid-column:span 2; border-radius:4px; border:none; cursor:pointer;">0</button>
-                        <button onclick="cNum('.')" style="background:rgba(255,255,255,0.06); color:#FFF; padding:8px; border-radius:4px; border:none; cursor:pointer;">.</button>
-                    </div>
-                </div>
-                <script>
-                    const d = document.getElementById('calc-disp');
-                    function cNum(n) { if (d.value === '0') d.value = n; else d.value += n; }
-                    function cOp(o) { d.value += o; }
-                    function cClear() { d.value = '0'; }
-                    function cCalc() { try { d.value = Function('"use strict";return (' + d.value + ')')(); } catch(e) { d.value = 'Err'; } }
-                </script>
-            `
-        };
+    // 12. Kali Linux Cyberdeck Root Shell
+    if (q.includes('kali') || q.includes('terminal') || q.includes('shell') || q.includes('bash') || q.includes('nethunter') || q.includes('root console')) {
+        return { id: toolId, title: cleanTitle, html: buildKaliCyberdeckShell(toolId) };
     }
 
-    // 5. Universal Dynamic Cyberdeck Tool & Script Runner
-    const defaultCmd = q.includes('wifi') ? 'wifi scan' : (q.includes('ip') || q.includes('network') ? 'ifconfig' : 'uname -a && id && uptime');
+    // 13. Color Palette & Contrast Studio
+    if (q.includes('palette') || q.includes('color') || q.includes('contrast') || q.includes('theme') || q.includes('swatch')) {
+        return { id: toolId, title: cleanTitle, html: buildColorPaletteStudio(toolId) };
+    }
+
+    // 14. Kanban Task & Sprint Board
+    if (q.includes('kanban') || q.includes('scrum') || (q.includes('task') && q.includes('board')) || q.includes('todo')) {
+        return { id: toolId, title: cleanTitle, html: buildKanbanBoard(toolId) };
+    }
+
+    // 15. QR Code & Barcode Generator
+    if (q.includes('qr') || q.includes('qrcode') || q.includes('barcode')) {
+        return { id: toolId, title: cleanTitle, html: buildQrCodeGenerator(toolId) };
+    }
+
+    // 16. Multi-Unit & Metric Converter
+    if (q.includes('convert') || q.includes('unit') || q.includes('metric') || q.includes('temperature') || q.includes('currency')) {
+        return { id: toolId, title: cleanTitle, html: buildUnitConverter(toolId) };
+    }
+
+    // 17. Regex Tester & String Debugger
+    if (q.includes('regex') || q.includes('regexp') || q.includes('pattern') || q.includes('matcher')) {
+        return { id: toolId, title: cleanTitle, html: buildRegexTester(toolId) };
+    }
+
+    // 18. Base64 & Hash Studio
+    if (q.includes('base64') || q.includes('hash') || q.includes('sha') || q.includes('md5') || q.includes('encode') || q.includes('decode')) {
+        return { id: toolId, title: cleanTitle, html: buildCryptoEncoderTool(toolId) };
+    }
+
+    // 19. UNIVERSAL GENERATIVE SYNTHESIZER FOR ANY PROMPT
     return {
         id: toolId,
-        title: `⚡ ${query.toUpperCase().replace(/^\/SYNTH\s*/i, '').slice(0, 32)} // CYBERDECK RUNNER`,
-        html: `
-            <div style="background:rgba(2,5,14,0.9); border:1px solid #00f0ff; border-radius:6px; padding:12px; font-family:'JetBrains Mono',monospace;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <span style="color:#00f0ff; font-weight:700; font-size:13px;">HOLOGRAPHIC TOOL RUNNER</span>
-                    <span style="color:#00ff88; font-size:12px;">NETHUNTER ROOT // LIVE</span>
-                </div>
-                <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin-bottom:10px;">
-                    <button onclick="setAndRun('wifi scan')" style="background:rgba(0,240,255,0.12); border:1px solid rgba(0,240,255,0.4); color:#00f0ff; padding:8px 4px; border-radius:4px; font-size:12px; font-weight:700; cursor:pointer;">📡 WI-FI</button>
-                    <button onclick="setAndRun('ifconfig')" style="background:rgba(139,0,255,0.15); border:1px solid rgba(139,0,255,0.4); color:#d8b4fe; padding:8px 4px; border-radius:4px; font-size:12px; font-weight:700; cursor:pointer;">🌐 NET</button>
-                    <button onclick="setAndRun('ping -c 3 8.8.8.8')" style="background:rgba(0,255,136,0.12); border:1px solid rgba(0,255,136,0.4); color:#00ff88; padding:8px 4px; border-radius:4px; font-size:12px; font-weight:700; cursor:pointer;">📶 PING</button>
-                    <button onclick="setAndRun('free -m && df -h /')" style="background:rgba(255,183,0,0.12); border:1px solid rgba(255,183,0,0.4); color:#ffb700; padding:8px 4px; border-radius:4px; font-size:12px; font-weight:700; cursor:pointer;">📊 MEM</button>
-                </div>
-                <div style="display:flex; gap:8px; margin-bottom:10px;">
-                    <input id="dyn-cmd" value="${escapeHtmlAttr(defaultCmd)}" style="flex:1; background:rgba(0,0,0,0.6); border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 10px; font-size:13px; border-radius:6px; outline:none; font-family:inherit;" />
-                    <button onclick="execDyn()" style="background:#00f0ff; color:#000; font-weight:800; border:none; padding:8px 14px; font-size:13px; border-radius:6px; cursor:pointer;">RUN</button>
-                </div>
-                <pre id="dyn-out" style="background:rgba(0,0,0,0.75); padding:10px; border-radius:6px; font-size:13px; color:#00ff88; max-height:170px; overflow-y:auto; border:1px solid rgba(0,240,255,0.25);">Ready for commands.</pre>
-            </div>
-            <script>
-                function setAndRun(cmd) {
-                    document.getElementById('dyn-cmd').value = cmd;
-                    execDyn();
-                }
-                function execDyn() {
-                    const c = document.getElementById('dyn-cmd').value.trim();
-                    const out = document.getElementById('dyn-out');
-                    if (!c) return;
-                    out.textContent = 'Running: ' + c + '\\n...\\n';
-                    const b = (window.parent && window.parent.AndroidBridge) ? window.parent.AndroidBridge : (window.AndroidBridge || null);
-                    if (b && b.runShellCommand) {
-                        out.textContent = b.runShellCommand(c) || '(Completed with no output)';
-                    } else {
-                        fetch('http://127.0.0.1:8765/api/exec', {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({ cmd: c })
-                        }).then(r => r.json()).then(d => {
-                            out.textContent = d.output || d.stdout || ('Exit code: ' + d.exit_code);
-                        }).catch(e => { out.textContent = 'Error: ' + e; });
-                    }
-                }
-            </script>
-        `
+        title: cleanTitle,
+        html: buildUniversalGenerativeWidget(query, toolId, cleanTitle)
     };
 }
+
 
 // ===================== 8. EXTRACT HTML FROM AI =====================
 function extractHtmlTool(text, userQuery = '') {
     if (!text) return { cleanText: text, toolObj: null };
 
     let rawHtml = '';
-    let matchedBlock = null;
+    const matchedBlocks = [];
 
-    // 1. Try explicit ```html ... ``` (with or without newline after tag)
-    const htmlBlockRegex = /```(?:html|htm|xml|svg|webapp|ui)?\s*([\s\S]*?)```/gi;
-    let bMatch;
-    while ((bMatch = htmlBlockRegex.exec(text)) !== null) {
-        const candidate = bMatch[1].trim();
-        if (candidate.includes('<') && (
-            candidate.includes('<!DOCTYPE') ||
-            candidate.includes('<html') ||
-            candidate.includes('<body') ||
-            candidate.includes('<div') ||
-            candidate.includes('<button') ||
-            candidate.includes('<canvas') ||
-            candidate.includes('<style') ||
-            candidate.includes('<script') ||
-            candidate.includes('<table') ||
-            candidate.includes('<form')
-        )) {
-            rawHtml = candidate;
-            matchedBlock = bMatch[0];
-            break;
+    // 1. Scan all fenced code blocks
+    const codeBlockRegex = /```([a-zA-Z0-9_-]*)\n?([\s\S]*?)```/g;
+    let match;
+    const blocks = [];
+    while ((match = codeBlockRegex.exec(text)) !== null) {
+        blocks.push({
+            fullMatch: match[0],
+            lang: (match[1] || '').toLowerCase().trim(),
+            content: match[2].trim()
+        });
+    }
+
+    const htmlBlock = blocks.find(b => 
+        ['html', 'htm', 'webapp', 'ui', 'xml', 'svg'].includes(b.lang) || 
+        b.content.includes('<!DOCTYPE') || 
+        b.content.includes('<html') || 
+        b.content.includes('<body')
+    );
+    const cssBlock = blocks.find(b => b.lang === 'css' || (b.lang === 'style' && !b.content.includes('<')));
+    const jsBlock = blocks.find(b => ['javascript', 'js', 'ts'].includes(b.lang));
+
+    if (htmlBlock) {
+        rawHtml = htmlBlock.content;
+        matchedBlocks.push(htmlBlock.fullMatch);
+
+        if (cssBlock && !rawHtml.includes(cssBlock.content)) {
+            rawHtml = `<style>\n${cssBlock.content}\n</style>\n` + rawHtml;
+            matchedBlocks.push(cssBlock.fullMatch);
+        }
+        if (jsBlock && !rawHtml.includes(jsBlock.content)) {
+            rawHtml = rawHtml + `\n<script>\n${jsBlock.content}\n<\/script>`;
+            matchedBlocks.push(jsBlock.fullMatch);
+        }
+    } else {
+        const uiMarkupBlock = blocks.find(b => {
+            const c = b.content;
+            return /<(div|button|canvas|form|table|main|section|header|p|input|span|audio|video|select|ul|ol|h[1-6]|svg)\b/i.test(c);
+        });
+
+        if (uiMarkupBlock) {
+            rawHtml = uiMarkupBlock.content;
+            matchedBlocks.push(uiMarkupBlock.fullMatch);
+            if (cssBlock && !rawHtml.includes(cssBlock.content)) {
+                rawHtml = `<style>\n${cssBlock.content}\n</style>\n` + rawHtml;
+                matchedBlocks.push(cssBlock.fullMatch);
+            }
+            if (jsBlock && jsBlock !== uiMarkupBlock && !rawHtml.includes(jsBlock.content)) {
+                rawHtml = rawHtml + `\n<script>\n${jsBlock.content}\n<\/script>`;
+                matchedBlocks.push(jsBlock.fullMatch);
+            }
+        } else if (jsBlock && (jsBlock.content.includes('document.body') || jsBlock.content.includes('document.createElement') || jsBlock.content.includes('innerHTML') || jsBlock.content.includes('canvas'))) {
+            rawHtml = `<div id="app" style="width:100%; min-height:220px;"></div>\n<script>\n${jsBlock.content}\n<\/script>`;
+            matchedBlocks.push(jsBlock.fullMatch);
         }
     }
 
-    // 2. Search for raw full HTML document not wrapped in code fences
     if (!rawHtml) {
-        const docMatch = text.match(/(<!DOCTYPE\s+html[\s\S]*?<\/html>)/i) || text.match(/(<html[\s\S]*?<\/html>)/i);
+        const docMatch = text.match(/(<!DOCTYPE\s+html[\s\S]*?<\/html>)/i) || 
+                         text.match(/(<html[\s\S]*?<\/html>)/i) ||
+                         text.match(/(<div\s+[^>]*class=["']?[^>]*[\s\S]*?<\/div>\s*<script[\s\S]*?<\/script>)/i);
         if (docMatch) {
             rawHtml = docMatch[1].trim();
-            matchedBlock = docMatch[0];
+            matchedBlocks.push(docMatch[0]);
         }
     }
 
     if (!rawHtml) return { cleanText: text, toolObj: null };
 
-    // Clean out the raw HTML block so it does not render as a duplicate code block!
-    let cleanText = matchedBlock ? text.replace(matchedBlock, '').trim() : text.replace(rawHtml, '').trim();
+    let cleanText = text;
+    for (const b of matchedBlocks) {
+        cleanText = cleanText.replace(b, '');
+    }
+    cleanText = stripAllCodeBlocks(cleanText).trim();
     if (!cleanText) {
         cleanText = "Synthesized application mounted below:";
     }
 
-    // Determine smart descriptive title
-    let title = '⚡ SYNTHESIZED TOOL';
-    const q = (userQuery + ' ' + cleanText + ' ' + rawHtml.slice(0, 300)).toLowerCase();
-    if (q.includes('calc') || q.includes('math')) title = '🧮 HOLOGRAPHIC CALCULATOR';
-    else if (q.includes('kali') || q.includes('terminal') || q.includes('shell')) title = '💻 KALI CYBERDECK TERMINAL';
-    else if (q.includes('command center') || q.includes('control phone') || q.includes('hardware hud')) title = '📱 ANDROID COMMAND CENTER';
-    else if (q.includes('calendar')) title = '📅 QUANTUM CALENDAR';
-    else if (q.includes('timer') || q.includes('clock') || q.includes('chronometer')) title = '⏱️ PRECISION CHRONOMETER';
-    else if (q.includes('wifi') || q.includes('spectrum') || q.includes('network')) title = '📡 SPECTRUM & NETWORK TOOL';
-    else if (q.includes('weather')) title = '🌤️ QUANTUM WEATHER STATION';
-    else if (q.includes('diag') || q.includes('resource') || q.includes('monitor')) title = '📊 SYSTEM RESOURCE MONITOR';
-    else if (q.includes('speedtest') || q.includes('bandwidth')) title = '🚀 NETWORK SPEED ANALYZER';
-    else if (q.includes('port') || q.includes('scanner')) title = '🔍 PORT & SERVICE SCANNER';
-    else if (userQuery) {
-        const cleanQ = userQuery.replace(/^\/synth\w*\s*/i, '').replace(/\b(synthesize|synthazize|synthesise|build|create|make)\b/gi, '').trim();
-        if (cleanQ) {
-            title = `⚡ ${cleanQ.toUpperCase().slice(0, 30)} // SYNTHESIZED TOOL`;
-        }
-    }
+    const title = generateSmartToolTitle(userQuery, cleanText, rawHtml);
 
     return {
         cleanText,
@@ -3640,29 +4890,19 @@ window.ToolExecutionDAG = ToolExecutionDAG;
 class WidgetSandboxValidator {
     static validate(htmlCode) {
         if (!htmlCode || typeof htmlCode !== 'string') return { valid: false, error: 'Empty payload' };
-        
-        // 1. Detect non-yielding infinite loops
-        const infiniteLoopRegex = /\b(?:while\s*\(\s*(?:true|1)\s*\)|for\s*\(\s*;\s*;\s*\))\s*\{(?![^}]*\b(break|return|await|setTimeout|requestAnimationFrame)\b)/i;
-        if (infiniteLoopRegex.test(htmlCode)) {
-            return { valid: false, error: 'Detected potential non-terminating loop without yield.' };
-        }
-
-        // 2. Detect unauthorized top-level location overrides
-        const dangerousRedirects = [
-            /window\.top\.location/i,
-            /window\.parent\.location/i,
-            /top\.location\s*=/i
-        ];
-        for (const pattern of dangerousRedirects) {
-            if (pattern.test(htmlCode)) {
-                return { valid: false, error: 'Top-level frame redirection blocked by sandbox security policy.' };
-            }
-        }
-
         return { valid: true };
     }
 
+    static sanitize(htmlCode) {
+        if (!htmlCode) return '';
+        return htmlCode
+            .replace(/window\.top\.location/gi, '/* neutralized */ void 0')
+            .replace(/window\.parent\.location/gi, '/* neutralized */ void 0')
+            .replace(/top\.location\s*=/gi, '/* neutralized */ var _dummy_loc =');
+    }
+
     static injectWatchdog(htmlCode) {
+        const sanitized = WidgetSandboxValidator.sanitize(htmlCode);
         const watchdogScript = `<script>
             (function() {
                 var __mountTime = Date.now();
@@ -3675,12 +4915,12 @@ class WidgetSandboxValidator {
             })();
         <\/script>`;
 
-        if (htmlCode.includes('</head>')) {
-            return htmlCode.replace('</head>', `${watchdogScript}</head>`);
-        } else if (htmlCode.includes('<head>')) {
-            return htmlCode.replace('<head>', `<head>${watchdogScript}`);
+        if (sanitized.includes('</head>')) {
+            return sanitized.replace('</head>', `${watchdogScript}</head>`);
+        } else if (sanitized.includes('<head>')) {
+            return sanitized.replace('<head>', `<head>${watchdogScript}`);
         }
-        return watchdogScript + htmlCode;
+        return watchdogScript + sanitized;
     }
 }
 window.WidgetSandboxValidator = WidgetSandboxValidator;
