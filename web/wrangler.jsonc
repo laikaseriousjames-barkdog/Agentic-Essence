@@ -1,0 +1,28 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Staging Worker. Production (agentic-essence.com) is attached later via `env.production`
+  // once the staging site is approved, so the live `agentic-website` worker keeps serving until then.
+  "name": "agentic-essence-web-staging",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true },
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "staging.agentic-essence.com", "custom_domain": true }],
+  // Non-secret config only. Secrets (SUPABASE_SERVICE_ROLE_KEY, STRIPE_SECRET_KEY,
+  // STRIPE_WEBHOOK_SECRET) are set with `wrangler secret put` / scripts/set-secrets.mjs.
+  "vars": {
+    "NEXT_PUBLIC_SITE_URL": "https://staging.agentic-essence.com"
+  },
+  "env": {
+    "production": {
+      "name": "agentic-essence-web",
+      "vars": { "NEXT_PUBLIC_SITE_URL": "https://agentic-essence.com" }
+    }
+  }
+}
