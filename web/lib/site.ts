@@ -7,6 +7,7 @@ export const PRO_FEATURES = ["lora_tuning", "unlimited_agents"] as const;
 /** Binaries served (auth-gated) from the R2 bucket. */
 export const DOWNLOADS = {
   android: { key: "downloads/AgenticEssence-Android.apk", filename: "AgenticEssence-Android.apk", type: "application/vnd.android.package-archive" },
+  neurocraft: { key: "downloads/NeuroCraft-Android.apk", filename: "NeuroCraft-Android.apk", type: "application/vnd.android.package-archive" },
   windows: { key: "downloads/Agentic-Essence-Desktop-Setup.exe", filename: "Agentic-Essence-Desktop-Setup.exe", type: "application/vnd.microsoft.portable-executable" },
 } as const;
 

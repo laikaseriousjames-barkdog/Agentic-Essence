@@ -15,8 +15,8 @@ const FEATURES = [
     body: "Conversations and context stay in on-device storage that you control. Nothing is uploaded unless you choose to.",
   },
   {
-    title: "On-device LoRA tuning",
-    body: "Fine-tune adapters on your own data without it ever leaving your hardware. Included in Pro.",
+    title: "On-device LoRA tuning (NeuroCraft)",
+    body: "Fine-tune quantized adapters on your own data without it ever leaving your hardware with NeuroCraft Mobile Studio. Included in Pro.",
   },
 ];
 

@@ -83,16 +83,21 @@ export default async function Dashboard({
 
       <section className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
         <h2 className="text-lg font-medium">Downloads</h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- file download, not a page */}
-          <a href="/api/download/windows" className="rounded-xl border border-white/10 bg-white/5 px-4 py-4 hover:bg-white/10">
-            <div className="font-medium">Windows</div>
-            <div className="text-xs text-zinc-400">Agentic-Essence-Desktop-Setup.exe</div>
+          <a href="/api/download/neurocraft" className="rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-4 hover:bg-violet-500/20">
+            <div className="font-medium text-violet-200">NeuroCraft Mobile</div>
+            <div className="text-xs text-zinc-400">NeuroCraft-Android.apk (LoRA Fine-Tuning Studio)</div>
           </a>
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- file download, not a page */}
           <a href="/api/download/android" className="rounded-xl border border-white/10 bg-white/5 px-4 py-4 hover:bg-white/10">
-            <div className="font-medium">Android</div>
+            <div className="font-medium">Agentic Essence Android</div>
             <div className="text-xs text-zinc-400">AgenticEssence-Android.apk</div>
+          </a>
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- file download, not a page */}
+          <a href="/api/download/windows" className="rounded-xl border border-white/10 bg-white/5 px-4 py-4 hover:bg-white/10">
+            <div className="font-medium">Windows Desktop</div>
+            <div className="text-xs text-zinc-400">Agentic-Essence-Desktop-Setup.exe</div>
           </a>
         </div>
       </section>

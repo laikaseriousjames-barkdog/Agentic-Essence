@@ -10,7 +10,7 @@ type R2Like = {
 /** Auth-gated binary download streamed from the R2 bucket binding. */
 export async function GET(_req: Request, { params }: { params: Promise<{ platform: string }> }) {
   const { platform } = await params;
-  if (platform !== "android" && platform !== "windows") {
+  if (platform !== "android" && platform !== "windows" && platform !== "neurocraft") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
